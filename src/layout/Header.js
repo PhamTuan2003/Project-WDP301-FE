@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -15,7 +15,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 
 const menuLinks = [
-  { label: "Tìm du thuyền", href: "#" },
+  { label: "Tìm du thuyền", href: "/find-boat" },
   { label: "Vé máy bay", href: "#" },
   { label: "Khách sạn", href: "#" },
   { label: "Doanh nghiệp", href: "#" },
@@ -35,9 +35,24 @@ export default function Header() {
     >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* Logo */}
-        <Box component="a" href="#" sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <Box component="img" src="/images/logo.png" alt="Mixivivu Logo" sx={{ height: 80, mr: 2 }} />
-          <Typography variant="h6" color="primary" fontWeight={700} fontFamily="'Pacifico', cursive" fontSize={32}>
+        <Box
+          component="a"
+          href="#"
+          sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}
+        >
+          <Box
+            component="img"
+            src="/images/logo.png"
+            alt="Mixivivu Logo"
+            sx={{ height: 80, mr: 2 }}
+          />
+          <Typography
+            variant="h6"
+            color="primary"
+            fontWeight={700}
+            fontFamily="'Pacifico', cursive"
+            fontSize={20}
+          >
             𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
           </Typography>
         </Box>
@@ -45,7 +60,12 @@ export default function Header() {
         {!isMobile ? (
           <Stack direction="row" spacing={2} alignItems="center">
             {menuLinks.map((link) => (
-              <Button href={link.href} key={link.label} color="inherit" sx={{ fontWeight: 500 }}>
+              <Button
+                href={link.href}
+                key={link.label}
+                color="inherit"
+                md={{ fontWeight: 500, fontSize: 16, lineHeight: "24px" }}
+              >
                 {link.label}
               </Button>
             ))}
@@ -60,10 +80,22 @@ export default function Header() {
         )}
         {/* Login/Register */}
         <Stack direction="row" spacing={1} ml={3}>
-          <Button variant="outlined" color="primary" size="small" startIcon={<LoginIcon />}>
+          <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            sx={{ borderRadius: 20, textTransform: "none" }}
+            startIcon={<LoginIcon />}
+          >
             Đăng nhập
           </Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<PersonAddIcon />}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            sx={{ borderRadius: 20, textTransform: "none" }}
+            startIcon={<PersonAddIcon />}
+          >
             Đăng ký
           </Button>
         </Stack>
