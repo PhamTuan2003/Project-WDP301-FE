@@ -1,12 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap');
 
 .css-1sqq6so-MuiContainer-root,
-{
-font-family: "Archivo", sans-serif !important;
+.css-kk1bwy-MuiButtonBase-root-MuiMenuItem-root {
+     font-family: "Archivo", sans-serif !important;
 }
 
+
 .css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root,
-.css-kk7b3e-MuiButtonBase-root-MuiButton-root {
+.css-9ddj71-MuiInputBase-root-MuiOutlinedInput-root,
+.css-1q6at85-MuiInputBase-root-MuiOutlinedInput-root {
      font-family: "Archivo", sans-serif !important;
      position: relative !important;
      padding: 16px 20px !important;
@@ -15,13 +17,23 @@ font-family: "Archivo", sans-serif !important;
      box-shadow: 0px 1px 2px 0px #1018280d !important;
      display: flex !important;
      align-items: center !important;
-     gap: 8px !important;
+
      fill: #fff !important;
      height: 50px !important;
 }
 
+.css-19wlste-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input.css-19wlste-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input.css-19wlste-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input {
+     font-size: 14px !important;
+}
+
+.css-3dzjca-MuiPaper-root-MuiPopover-paper-MuiMenu-paper {
+     border-radius: 25px !important;
+}
+
 .css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root:hover,
-.css-kk7b3e-MuiButtonBase-root-MuiButton-root:hover {
+.css-kk7b3e-MuiButtonBase-root-MuiButton-root:hover,
+.css-9ddj71-MuiInputBase-root-MuiOutlinedInput-root:hover,
+.css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root:hover {
      border: 1px solid #58deff !important;
      box-shadow: 0px 1px 2px 0px #58deff !important;
      outline: none !important;
@@ -31,6 +43,7 @@ font-family: "Archivo", sans-serif !important;
 .css-5vsnzl-MuiButtonBase-root-MuiButton-root:hover {
      background-color: #34707f !important;
      color: #fff !important;
+
 }
 
 .css-18623pr-MuiButtonBase-root-MuiButton-root:hover {
