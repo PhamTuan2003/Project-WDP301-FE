@@ -6,9 +6,6 @@ import Destination from '../components/HomePages/Destination';
 import Review from '../components/HomePages/Review';
 import Partners from '../components/HomePages/Partners';
 import NewsList from '../components/HomePages/NewsList';
-import AboutUs from '../layout/componentsFooter/AboutUs';
-import TermsAndConditions from '../layout/componentsFooter/TermsAndConditions';
-import PrivacyPolicy from '../layout/componentsFooter/PrivacyPolicy';
 
 export default function HomePage() {
   const sections = [

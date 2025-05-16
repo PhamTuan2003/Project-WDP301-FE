@@ -13,7 +13,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { AiOutlineMoon, AiOutlineSun } from 'react-icons/ai';
+import { AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
 import { Link } from "react-router-dom";
 
 const menuLinks = [
@@ -59,7 +59,15 @@ export default function Header({ toggleTheme, mode }) {
                 href={link.href}
                 key={link.label}
                 color="inherit"
-                md={{ fontWeight: 500, fontSize: 16, lineHeight: "24px" }}
+                sx={{
+                  fontWeight: 500,
+                  fontSize: 18,
+                  lineHeight: "24px",
+                  textTransform: "none", // ko viết hoa toàn bộ
+                  "&:hover": {
+                    color: "text.secondary",
+                  },
+                }}
               >
                 {link.label}
               </Button>
