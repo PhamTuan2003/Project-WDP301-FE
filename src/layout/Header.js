@@ -19,7 +19,7 @@ import { Link } from "react-router-dom";
 const menuLinks = [
   { label: "Tìm du thuyền", href: "/find-boat" },
   { label: "Khách sạn", href: "#" },
-  { label: "Doanh nghiệp", href: "#" },
+  { label: "Doanh nghiệp", href: "/doanh-nghiep" },
   { label: "Blog", href: "#" },
 ];
 
