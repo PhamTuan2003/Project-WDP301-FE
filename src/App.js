@@ -29,7 +29,6 @@ function App() {
   const theme = getTheme(mode);
 
   return (
-    
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
