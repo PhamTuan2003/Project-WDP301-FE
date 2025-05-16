@@ -16,18 +16,18 @@ export default function Banner() {
         minHeight: 750,
         position: "relative",
         background: `url('/images/background.jpg') center/cover no-repeat`,
-        borderRadius: { xs: 0, md: 4 },
+        py: 10,
+        px: 2,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        mb: 4,
       }}
     >
       {/* Search Box */}
       <Paper
         elevation={3}
         sx={{
-          py: { xs: 5, md: 3 },
+          py: { xs: 5, md: 5 },
           px: { xs: 1, md: 4 },
           borderRadius: 4,
           minWidth: { xs: "95%", md: 600 },
@@ -37,7 +37,7 @@ export default function Banner() {
           flexDirection: "column",
           alignItems: "center",
           position: "absolute",
-          bottom: { xs: -48, md: -52 },
+          bottom: { xs: -48, md: -85 },
           left: 0,
           right: 0,
         }}

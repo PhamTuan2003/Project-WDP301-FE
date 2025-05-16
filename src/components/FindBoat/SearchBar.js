@@ -1,41 +1,24 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  Grid,
-  TextField,
-  InputAdornment,
-  Stack,
-  Button,
-  MenuItem,
-} from "@mui/material";
+import { Grid, TextField, InputAdornment, Stack, Button, MenuItem } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import PinDrop from "@mui/icons-material/PinDrop";
 import MonetizationOnOutlined from "@mui/icons-material/MonetizationOnOutlined";
-import {
-  setSearchTerm,
-  setDeparturePoint,
-  setPriceRange,
-  setSortOption,
-} from "../../redux/action";
+import { setSearchTerm, setDeparturePoint, setPriceRange, setSortOption } from "../../redux/action";
 import { cruiseData, priceRanges } from "../../data/cruiseData";
 
 const SearchBar = () => {
   const dispatch = useDispatch();
-  const { searchTerm, selectedDeparturePoint, selectedPriceRange } =
-    useSelector((state) => state.filters || {});
+  const { searchTerm, selectedDeparturePoint, selectedPriceRange } = useSelector(
+    (state) => state.filters || {}
+  );
 
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm || "");
-  const [localDeparturePoint, setLocalDeparturePoint] = useState(
-    selectedDeparturePoint || ""
-  );
-  const [localPriceRange, setLocalPriceRange] = useState(
-    selectedPriceRange || ""
-  );
+  const [localDeparturePoint, setLocalDeparturePoint] = useState(selectedDeparturePoint || "");
+  const [localPriceRange, setLocalPriceRange] = useState(selectedPriceRange || "");
 
   const uniqueDeparturePoints = [
-    ...new Set(
-      cruiseData.map((cruise) => cruise.departurePoint).filter(Boolean)
-    ),
+    ...new Set(cruiseData.map((cruise) => cruise.departurePoint).filter(Boolean)),
   ];
 
   const handleSearch = () => {
@@ -62,6 +45,13 @@ const SearchBar = () => {
             ),
           }}
           size="small"
+          sx={{
+            borderColor: (theme) => theme.palette.divider,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "32px",
+              color: 'text.primary',
+            },
+          }}
         />
       </Grid>
       <Grid item xs={12} md={6}>
@@ -79,11 +69,19 @@ const SearchBar = () => {
               ),
             }}
             size="small"
-            sx={{ opacity: 0.8 }}
+            sx={{
+              borderColor: (theme) => theme.palette.divider,
+              opacity: 0.8,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "32px",
+                color: 'text.primary',
+              },
+              "& .MuiSelect-icon": { color: 'text.primary' },
+            }}
           >
-            <MenuItem value="">Tất cả địa điểm</MenuItem>
+            <MenuItem value="" sx={{ color: 'text.primary' }}>Tất cả địa điểm</MenuItem>
             {uniqueDeparturePoints.map((point) => (
-              <MenuItem key={point} value={point}>
+              <MenuItem key={point} value={point} sx={{ color: 'text.primary' }}>
                 {point}
               </MenuItem>
             ))}
@@ -101,11 +99,19 @@ const SearchBar = () => {
               ),
             }}
             size="small"
-            sx={{ minWidth: 180, backgroundColor: "#fff" }}
+            sx={{
+              minWidth: 180,
+              borderColor: (theme) => theme.palette.divider,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "32px",
+                color: 'text.primary',
+              },
+              "& .MuiSelect-icon": { color: 'text.primary' },
+            }}
           >
-            <MenuItem value="">Tất cả mức giá</MenuItem>
+            <MenuItem value="" sx={{ color: 'text.primary' }}>Tất cả mức giá</MenuItem>
             {priceRanges.map((range) => (
-              <MenuItem key={range.value} value={range.value}>
+              <MenuItem key={range.value} value={range.value} sx={{ color: 'text.primary' }}>
                 {range.label}
               </MenuItem>
             ))}
@@ -117,9 +123,9 @@ const SearchBar = () => {
               fontFamily: "Archivo, sans-serif",
               height: "48px",
               borderRadius: "32px",
-              bgcolor: "#77dada",
-              color: "#333",
-              "&:hover": { bgcolor: "#0e4f4f", color: "#fff" },
+              bgcolor: "primary.main",
+              color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
+              "&:hover": { bgcolor: "primary.dark" },
             }}
             onClick={handleSearch}
           >

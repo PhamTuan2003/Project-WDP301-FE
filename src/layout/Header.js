@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -13,45 +13,40 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { AiOutlineMoon, AiOutlineSun } from 'react-icons/ai';
+import { Link } from "react-router-dom";
 
 const menuLinks = [
   { label: "Tìm du thuyền", href: "/find-boat" },
-  { label: "Vé máy bay", href: "#" },
   { label: "Khách sạn", href: "#" },
   { label: "Doanh nghiệp", href: "#" },
   { label: "Blog", href: "#" },
 ];
 
-export default function Header() {
+export default function Header({ toggleTheme, mode }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   return (
-    <AppBar
-      position="sticky"
-      color="inherit"
-      elevation={0}
-      sx={{ borderBottom: 1, borderColor: "#eee", py: 1 }}
-    >
+    <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 0, py: 1 }}>
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* Logo */}
-        <Box
-          component="a"
-          href="#"
-          sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}
-        >
-          <Box
-            component="img"
-            src="/images/logo.png"
-            alt="Mixivivu Logo"
-            sx={{ height: 80, mr: 2 }}
-          />
+        <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <Box component="img" src="/images/logo.png" alt="LongWave Logo" sx={{ height: 80, mr: 2 }} />
           <Typography
             variant="h6"
             color="primary"
             fontWeight={700}
             fontFamily="'Pacifico', cursive"
-            fontSize={20}
+            fontSize={32}
+            component={Link}
+            to="/"
+            sx={{
+              textDecoration: "none", // chính chủ, Material UI hiểu
+              "&:hover": {
+                textDecoration: "none", // ngăn nó underline khi hover luôn
+              },
+            }}
           >
             𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
           </Typography>
@@ -78,12 +73,14 @@ export default function Header() {
             <MenuIcon />
           </IconButton>
         )}
-        {/* Login/Register */}
+        {/* Login/Register/Theme Toggle */}
         <Stack direction="row" spacing={1} ml={3}>
           <Button
             variant="outlined"
             color="primary"
             size="small"
+            component={Link}
+            to="/login"
             sx={{ borderRadius: 20, textTransform: "none" }}
             startIcon={<LoginIcon />}
           >
@@ -93,11 +90,16 @@ export default function Header() {
             variant="contained"
             color="primary"
             size="small"
+            component={Link}
+            to="/register"
             sx={{ borderRadius: 20, textTransform: "none" }}
             startIcon={<PersonAddIcon />}
           >
             Đăng ký
           </Button>
+          <IconButton onClick={toggleTheme} color="inherit" sx={{ p: 1 }}>
+            {mode === "light" ? <AiOutlineMoon size={24} /> : <AiOutlineSun size={24} />}
+          </IconButton>
         </Stack>
       </Toolbar>
     </AppBar>

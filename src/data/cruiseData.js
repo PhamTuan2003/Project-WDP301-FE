@@ -1,7 +1,7 @@
 export const cruiseData = [
   {
     id: 1,
-    title: "Du thuyền Heritage Bình Chuẩn Cát Bà",
+    title: "Du thuyền Heritage Bình Chuẩn Cát Bà 1",
     price: 4150000,
     priceDisplay: "4,150,000đ / khách",
     image: "./images/heritage-binh-chuan.jpg",
@@ -21,7 +21,7 @@ export const cruiseData = [
   },
   {
     id: 2,
-    title: "Du thuyền Indochine",
+    title: "Du thuyền Indochine 2",
     price: 4125000,
     priceDisplay: "4,125,000đ / khách",
     image: "/images/indochine.jpg",
@@ -33,7 +33,7 @@ export const cruiseData = [
   },
   {
     id: 3,
-    title: "Du thuyền Le Theatre",
+    title: "Du thuyền Le Theatre 3",
     price: 2700000,
     priceDisplay: "2,700,000đ / khách",
     image: "/images/le-theatre.jpg",
@@ -45,7 +45,7 @@ export const cruiseData = [
   },
   {
     id: 4,
-    title: "Du thuyền Orchid Trendy",
+    title: "Du thuyền Orchid Trendy 4",
     price: 4150000,
     priceDisplay: "4,150,000đ / khách",
     image: "/images/orchid-trendy.webp",
@@ -57,7 +57,7 @@ export const cruiseData = [
   },
   {
     id: 5,
-    title: "Du thuyền Milalux",
+    title: "Du thuyền Milalux 5",
     price: 2300000,
     priceDisplay: "2,300,000đ / khách",
     image: "/images/milalux.webp",
@@ -69,7 +69,7 @@ export const cruiseData = [
   },
   {
     id: 6,
-    title: "Du thuyền Thuc",
+    title: "Du thuyền Thuc 6",
     price: 2300000,
     priceDisplay: "2,300,000đ / khách",
     image: "/images/milalux.webp",
@@ -81,7 +81,7 @@ export const cruiseData = [
   },
   {
     id: 7,
-    title: "Du thuyền Danh",
+    title: "Du thuyền Danh 7",
     price: 2300000,
     priceDisplay: "2,300,000đ / khách",
     image: "/images/milalux.webp",
@@ -93,7 +93,7 @@ export const cruiseData = [
   },
   {
     id: 8,
-    title: "Du thuyền Tran",
+    title: "Du thuyền Tran 8",
     price: 2300000,
     priceDisplay: "2,300,000đ / khách",
     image: "/images/milalux.webp",

@@ -24,12 +24,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import {
-  FilterAltOutlined,
-  MonetizationOnOutlined,
-  PinDrop,
-  StarOutline,
-} from "@mui/icons-material";
+import { FilterAltOutlined, MonetizationOnOutlined, PinDrop, StarOutline } from "@mui/icons-material";
+import cruiseData from "../../data/cruiseData.json";
 
 // Styled components
 const HotSaleBadge = styled("div")(({ theme }) => ({
@@ -64,81 +60,6 @@ const BlueIndicator = styled("div")(({ theme }) => ({
   marginLeft: theme.spacing(0.5),
 }));
 
-const cruiseData = [
-  {
-    id: 1,
-    title: "Du thuyền Heritage Bình Chuẩn Cát Bà",
-    price: 4150000,
-    priceDisplay: "4,150,000đ / khách",
-    image: "./images/heritage-binh-chuan.jpg",
-    rating: 10,
-    duration: "2 ngày 1 đêm",
-    departurePoint: "Hạ Long",
-    features: [
-      "Chỗ lưu trú",
-      "Lặn biển đi bộ",
-      "Bữa ăn",
-      "Chỗ lưu trú 1",
-      "Lặn biển đi bộ 2",
-      "Bữa ăn 3",
-      "Chỗ lưu trú 4",
-      "Lặn biển đi bộ 5",
-      "Bữa ăn 6",
-      "Chỗ lưu trú 7",
-      "Lặn biển đi bộ 8",
-      "Bữa ăn 9",
-      "Chỗ lưu trú 10",
-      "Lặn biển đi bộ 11",
-      "Bữa ăn 12",
-      "Chỗ lưu trú 13",
-      "Lặn biển đi bộ 14",
-    ],
-  },
-  {
-    id: 2,
-    title: "Du thuyền Indochine",
-    price: 4125000,
-    priceDisplay: "4,125,000đ / khách",
-    image: "/images/indochine.jpg",
-    rating: 7,
-    duration: "2 ngày 1 đêm",
-    departurePoint: "Cát Bà",
-    features: ["Bữa ăn", "Chỗ lưu trú", "Lặn biển đi bộ"],
-  },
-  {
-    id: 3,
-    title: "Du thuyền Le Theatre",
-    price: 2700000,
-    priceDisplay: "2,700,000đ / khách",
-    image: "/images/le-theatre.jpg",
-    rating: 8,
-    duration: "2 ngày 1 đêm",
-    departurePoint: "Quan Lạn",
-    features: ["Bữa ăn", "Chỗ lưu trú", "Lặn biển đi bộ"],
-  },
-  {
-    id: 4,
-    title: "Du thuyền Orchid Trendy",
-    price: 4150000,
-    priceDisplay: "4,150,000đ / khách",
-    image: "/images/orchid-trendy.webp",
-    rating: 7,
-    duration: "2 ngày 1 đêm",
-    departurePoint: "Nha Trang",
-    features: ["Bữa ăn", "Chỗ lưu trú", "Lặn biển đi bộ"],
-  },
-  {
-    id: 5,
-    title: "Du thuyền Milalux",
-    price: 2300000,
-    priceDisplay: "2,300,000đ / khách",
-    image: "/images/milalux.webp",
-    rating: 8,
-    duration: "2 ngày 1 đêm",
-    departurePoint: "Tuần Châu",
-    features: ["Bữa ăn", "Chỗ lưu trú", "Lặn biển đi bộ"],
-  },
-];
 const priceRanges = [
   { label: "1-3 triệu", value: "1-3", min: 1000000, max: 3000000 },
   { label: "3-6 triệu", value: "3-6", min: 3000000, max: 6000000 },
@@ -150,9 +71,7 @@ const sortOptions = [
   { label: "Giá: Cao đến thấp", value: "high-to-low" },
 ];
 // Derive unique features from cruiseData
-const availableFeatures = [
-  ...new Set(cruiseData.flatMap((cruise) => cruise.features)),
-];
+const availableFeatures = [...new Set(cruiseData.flatMap((cruise) => cruise.features))];
 
 const CardBoat = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -169,25 +88,19 @@ const CardBoat = () => {
   // Filter handlers
   const handleStarFilter = (star) => {
     setSelectedStars((prev) =>
-      prev.includes(star)
-        ? prev.filter((item) => item !== star)
-        : [...prev, star]
+      prev.includes(star) ? prev.filter((item) => item !== star) : [...prev, star]
     );
   };
 
   const handleDurationFilter = (duration) => {
     setSelectedDurations((prev) =>
-      prev.includes(duration)
-        ? prev.filter((item) => item !== duration)
-        : [...prev, duration]
+      prev.includes(duration) ? prev.filter((item) => item !== duration) : [...prev, duration]
     );
   };
 
   const handleFeatureFilter = (feature) => {
     setSelectedFeatures((prev) =>
-      prev.includes(feature)
-        ? prev.filter((item) => item !== feature)
-        : [...prev, feature]
+      prev.includes(feature) ? prev.filter((item) => item !== feature) : [...prev, feature]
     );
   };
 
@@ -202,16 +115,12 @@ const CardBoat = () => {
 
   if (selectedStars.length > 0) {
     filteredCruises = filteredCruises.filter((cruise) =>
-      selectedStars.includes(
-        cruise.rating >= 9 ? 5 : cruise.rating >= 7 ? 4 : 3
-      )
+      selectedStars.includes(cruise.rating >= 9 ? 5 : cruise.rating >= 7 ? 4 : 3)
     );
   }
 
   if (selectedDurations.length > 0) {
-    filteredCruises = filteredCruises.filter((cruise) =>
-      selectedDurations.includes(cruise.duration)
-    );
+    filteredCruises = filteredCruises.filter((cruise) => selectedDurations.includes(cruise.duration));
   }
 
   if (selectedFeatures.length > 0) {
@@ -222,27 +131,20 @@ const CardBoat = () => {
   const handleDeparturePointFilter = (point) => {
     setSelectedDeparturePoint(point);
   };
-  const uniqueDeparturePoints = [
-    ...new Set(cruiseData.map((cruise) => cruise.departurePoint)),
-  ];
+  const uniqueDeparturePoints = [...new Set(cruiseData.map((cruise) => cruise.departurePoint))];
   // Add after other filters
   if (selectedDeparturePoint) {
-    filteredCruises = filteredCruises.filter(
-      (cruise) => cruise.departurePoint === selectedDeparturePoint
-    );
+    filteredCruises = filteredCruises.filter((cruise) => cruise.departurePoint === selectedDeparturePoint);
   }
   const handlePriceRangeFilter = (range) => {
     setSelectedPriceRange(range);
   };
   // Add after other filters
   if (selectedPriceRange) {
-    const selectedRange = priceRanges.find(
-      (range) => range.value === selectedPriceRange
-    );
+    const selectedRange = priceRanges.find((range) => range.value === selectedPriceRange);
     if (selectedRange) {
       filteredCruises = filteredCruises.filter(
-        (cruise) =>
-          cruise.price >= selectedRange.min && cruise.price <= selectedRange.max
+        (cruise) => cruise.price >= selectedRange.min && cruise.price <= selectedRange.max
       );
     }
   }
@@ -267,10 +169,7 @@ const CardBoat = () => {
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentCruises = filteredCruises.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
+  const currentCruises = filteredCruises.slice(indexOfFirstItem, indexOfLastItem);
 
   const handleChangePage = (event, value) => {
     setCurrentPage(value);
@@ -289,8 +188,7 @@ const CardBoat = () => {
           borderRadius: "32px",
           border: "1px solid #eaecf0",
           bgcolor: "#fff",
-          boxShadow:
-            "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
+          boxShadow: "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
         }}
       >
         <Typography
@@ -471,26 +369,17 @@ const CardBoat = () => {
               p: 3,
               borderRadius: "32px",
               border: "1px solid #eaecf0",
-              boxShadow:
-                "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
+              boxShadow: "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
             }}
           >
-            <Typography
-              variant="h6"
-              fontFamily="Archivo, sans-serif"
-              fontWeight="bold"
-              sx={{ mb: 2 }}
-            >
+            <Typography variant="h6" fontFamily="Archivo, sans-serif" fontWeight="bold" sx={{ mb: 2 }}>
               Lọc kết quả
             </Typography>
             <Divider sx={{ my: 1 }} />
 
             {/* Star rating filter */}
             <Box sx={{ mb: 3 }}>
-              <FilterSectionTitle
-                fontFamily="Archivo, sans-serif"
-                variant="subtitle1"
-              >
+              <FilterSectionTitle fontFamily="Archivo, sans-serif" variant="subtitle1">
                 Xếp hạng sao
               </FilterSectionTitle>
               <FormGroup>
@@ -521,10 +410,7 @@ const CardBoat = () => {
 
             {/* Duration filter */}
             <Box sx={{ mb: 3 }}>
-              <FilterSectionTitle
-                fontFamily="Archivo, sans-serif"
-                variant="subtitle1"
-              >
+              <FilterSectionTitle fontFamily="Archivo, sans-serif" variant="subtitle1">
                 Thời gian
               </FilterSectionTitle>
               <FormGroup>
@@ -555,10 +441,7 @@ const CardBoat = () => {
 
             {/* Features filter */}
             <Box sx={{ mb: 3 }}>
-              <FilterSectionTitle
-                fontFamily="Archivo, sans-serif"
-                variant="subtitle1"
-              >
+              <FilterSectionTitle fontFamily="Archivo, sans-serif" variant="subtitle1">
                 Tiện ích
               </FilterSectionTitle>
               <FormGroup>
@@ -641,9 +524,7 @@ const CardBoat = () => {
                     height={200}
                     image={
                       cruise.image ||
-                      `https://via.placeholder.com/300x200?text=${encodeURIComponent(
-                        cruise.title
-                      )}`
+                      `https://via.placeholder.com/300x200?text=${encodeURIComponent(cruise.title)}`
                     }
                     alt={cruise.title}
                     sx={{
@@ -705,12 +586,10 @@ const CardBoat = () => {
                         width: "fit-content",
                         padding: "5px 8px",
 
-                        boxShadow:
-                          "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
                       }}
                     >
-                      {cruise.departurePoint &&
-                        `Du thuyền ${cruise.departurePoint}`}
+                      {cruise.departurePoint && `Du thuyền ${cruise.departurePoint}`}
                     </Typography>
                     <Typography
                       fontFamily={"Archivo, sans-serif"}
@@ -723,12 +602,7 @@ const CardBoat = () => {
                     >
                       {cruise.title}
                     </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={3}
-                      alignItems="center"
-                      sx={{ mb: 1.5 }}
-                    >
+                    <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 1.5 }}>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <CalendarTodayIcon
                           sx={{
@@ -737,11 +611,7 @@ const CardBoat = () => {
                             color: "text.secondary",
                           }}
                         />
-                        <Typography
-                          fontFamily={"Archivo, sans-serif"}
-                          variant="body2"
-                          color="text.secondary"
-                        >
+                        <Typography fontFamily={"Archivo, sans-serif"} variant="body2" color="text.secondary">
                           {cruise.duration}
                         </Typography>
                       </Box>
@@ -753,11 +623,7 @@ const CardBoat = () => {
                             color: "text.secondary",
                           }}
                         />
-                        <Typography
-                          fontFamily={"Archivo, sans-serif"}
-                          variant="body2"
-                          color="text.secondary"
-                        >
+                        <Typography fontFamily={"Archivo, sans-serif"} variant="body2" color="text.secondary">
                           {cruise.departurePoint}
                         </Typography>
                       </Box>
@@ -779,10 +645,7 @@ const CardBoat = () => {
                         <FeatureChip key={index} label={feature} size="small" />
                       ))}
                       {cruise.features.length > 5 && (
-                        <FeatureChip
-                          label={`+${cruise.features.length - 5}`}
-                          size="small"
-                        />
+                        <FeatureChip label={`+${cruise.features.length - 5}`} size="small" />
                       )}
                     </Stack>
                   </Box>
@@ -850,8 +713,7 @@ const CardBoat = () => {
                 backgroundColor: "#fff",
                 padding: "5px 10px",
                 borderRadius: "32px",
-                boxShadow:
-                  "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
               }}
             >
               Đang xem :{" "}
@@ -881,8 +743,7 @@ const CardBoat = () => {
                 backgroundColor: "#eaecf0",
                 padding: "5px 10px",
                 borderRadius: "32px",
-                boxShadow:
-                  "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
               }}
             />
           </Box>

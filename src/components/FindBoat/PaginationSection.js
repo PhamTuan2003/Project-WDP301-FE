@@ -3,17 +3,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { Box, Typography, Pagination } from "@mui/material";
 import { setCurrentPage } from "../../redux/action";
 
-const PaginationSection = ({
-  totalPages,
-  filteredCruisesLength,
-  indexOfFirstItem,
-  indexOfLastItem,
-}) => {
+const PaginationSection = ({ totalPages, filteredCruisesLength, indexOfFirstItem, indexOfLastItem }) => {
   const dispatch = useDispatch();
   const { currentPage } = useSelector((state) => state.filters || {});
 
   const startItem = filteredCruisesLength === 0 ? 0 : indexOfFirstItem + 1;
   const endItem = Math.min(indexOfLastItem, filteredCruisesLength);
+
+  const theme = {
+  palette: {
+    divider: (theme) => (theme.palette.mode === 'light' ? '#eaecf0' : '#2f3b44'),
+  },
+};
 
   return (
     <Box
@@ -33,19 +34,21 @@ const PaginationSection = ({
           fontWeight: 600,
           display: "flex",
           alignItems: "center",
-          backgroundColor: "#fff",
+          backgroundColor: (theme) => theme.palette.background.paper,
           padding: "5px 10px",
           borderRadius: "32px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+          boxShadow: (theme) => theme.shadows[1],
+          borderColor: (theme) => theme.palette.divider,
         }}
       >
         Đang xem :{" "}
         <p
           style={{
             padding: "5px 10px",
-            border: "2px solid gray",
+            border: `2px solid ${theme.palette.divider(theme)}`,
             borderRadius: "100%",
             margin: "0 5px",
+            color: 'text.primary',
           }}
         >
           {endItem}
@@ -62,10 +65,14 @@ const PaginationSection = ({
         sx={{
           fontFamily: "Archivo, sans-serif",
           fontWeight: 600,
-          backgroundColor: "#eaecf0",
+          backgroundColor: (theme) => theme.palette.background.paper,
           padding: "5px 10px",
           borderRadius: "32px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+          boxShadow: (theme) => theme.shadows[1],
+          borderColor: (theme) => theme.palette.divider,
+          "& .MuiPaginationItem-root": {
+            color: 'text.primary',
+          },
         }}
       />
     </Box>

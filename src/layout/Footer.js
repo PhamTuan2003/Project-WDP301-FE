@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Link, Grid, Stack } from "@mui/material";
+import { Box, Typography, Link as MuiLink, Grid, Stack } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
 import styled from "@emotion/styled";
 import { Fab } from "@mui/material";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -48,22 +49,32 @@ export default function Footer() {
   };
 
   return (
-    <Box sx={{ bgcolor: "#232c36", color: "#f8f9fa", pt: 6, pb: 2 }}>
+    <Box
+      sx={{
+        backgroundColor: (theme) => theme.palette.background.paper,
+        color: "text.primary",
+        pt: 6,
+        pb: 2,
+      }}
+    >
       <Box maxWidth={1100} mx="auto" px={2}>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-              <Box
-                component="img"
-                src="https://ext.same-assets.com/834882384/3783633550.svg"
-                alt="logo"
-                sx={{ height: 40 }}
-              />
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              mb={2}
+              component={RouterLink}
+              to="/"
+              sx={{ textDecoration: "none", cursor: "pointer" }}
+            >
+              <Box component="img" src="/images/logo.png" alt="Logo Booking Yacht" sx={{ height: 60 }} />
               <Typography variant="h6" fontWeight={600} color="primary.main">
                 Booking Yacht
               </Typography>
             </Stack>
-            <Typography variant="body2" color="#99b5b8">
+            <Typography variant="body2" color="text.secondary">
               Công ty TNHH Du Lịch và Dịch Vụ Booking Yacht
               <br />
               Toà nhà Delta-314, Km29 Đại học FPT, khu CNC Hoà Lạc, huyện Thạch Thất, TP. Hà Nội
@@ -72,38 +83,38 @@ export default function Footer() {
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <Typography variant="subtitle1" mb={1} fontWeight={700}>
+            <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
               Thông tin
             </Typography>
             <Stack spacing={0.5}>
-              <Link href="#" color="inherit" underline="hover">
+              <MuiLink href="/ve-chung-toi" color="inherit" underline="hover">
                 Về chúng tôi
-              </Link>
-              <Link href="#" color="inherit" underline="hover">
+              </MuiLink>
+              <MuiLink href="/dieu-khoan-va-dieu-kien" color="inherit" underline="hover">
                 Điều khoản & Điều kiện
-              </Link>
-              <Link href="#" color="inherit" underline="hover">
+              </MuiLink>
+              <MuiLink href="/chinh-sach-rieng-tu" color="inherit" underline="hover">
                 Chính sách riêng tư
-              </Link>
-              <Link href="#" color="inherit" underline="hover">
+              </MuiLink>
+              <MuiLink href="/huong-dan-su-dung" color="inherit" underline="hover">
                 Hướng dẫn sử dụng
-              </Link>
-              <Link href="#" color="inherit" underline="hover">
+              </MuiLink>
+              <MuiLink href="/hinh-thuc-thanh-toan" color="inherit" underline="hover">
                 Hình thức thanh toán
-              </Link>
-              <Link href="#" color="inherit" underline="hover">
-                Liên hệ
-              </Link>
+              </MuiLink>
+              <MuiLink href="/lien-he-tu-van" color="inherit" underline="hover">
+                Liên hệ tư vấn
+              </MuiLink>
             </Stack>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Typography variant="subtitle1" mb={1} fontWeight={700}>
+            <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
               Liên hệ
             </Typography>
-            <Typography variant="body2" color="#a8babf">
+            <Typography variant="body3" color="text.secondary">
               Hotline: 0123456789
             </Typography>
-            <Typography variant="body2" color="#a8babf">
+            <Typography variant="body2" color="text.secondary">
               Email: info@BookingYacht.com
             </Typography>
             <Box
@@ -115,15 +126,16 @@ export default function Footer() {
           </Grid>
         </Grid>
         <Box textAlign="center" mt={6} sx={{ opacity: 0.7 }}>
-          <Typography fontSize={12} color="#9eb2b6">
-            &copy; Bản quyền 2025. Bảo lưu mọi quyền. Thiết kế bởi WDP301 - Group 4.
+          <Typography fontSize={12} color="text.primary">
+            &copy; 2025 Booking Yacht. Bản quyền thuộc về Booking Yacht. Đã đăng ký bản quyền.
+            <br />
+            Thiết kế bởi WDP301 - Group 4.
           </Typography>
         </Box>
       </Box>
 
-      {/*Nút back-to-top quay lại đầu trang */}
       <Fade in={showButton}>
-        <BackToTopButton color="success" onClick={scrollToTop}>
+        <BackToTopButton color="primary" onClick={scrollToTop}>
           <ArrowUpwardIcon />
         </BackToTopButton>
       </Fade>

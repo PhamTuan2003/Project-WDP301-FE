@@ -27,15 +27,29 @@ const news = [
 
 export default function NewsList() {
   return (
-    <Box sx={{ maxWidth: 1100, mx: "auto", px: 2, py: 8 }}>
-      <Typography variant="h5" fontWeight={700} mb={2}>
+    <Box
+      sx={{
+        maxWidth: 1100,
+        mx: "auto",
+        px: 2,
+        py: 8,
+      }}
+    >
+      <Typography variant="h5" fontWeight={700} mb={2} color="text.primary">
         Hạ Long: Khám phá Sự đặc sắc và Cập nhật tin tức mới nhất
       </Typography>
       <Grid container spacing={4} mb={2}>
         {news.map((n, idx) => (
           <Grid item xs={12} sm={4} key={idx}>
             <Card
-              sx={{ borderRadius: 4, boxShadow: 1, height: "100%", display: "flex", flexDirection: "column" }}
+              sx={{
+                borderRadius: 4,
+                boxShadow: (theme) => theme.shadows[1],
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: (theme) => theme.palette.background.paper,
+              }}
             >
               <CardMedia
                 component="img"
@@ -45,9 +59,13 @@ export default function NewsList() {
                 sx={{ objectFit: "cover" }}
               />
               <CardContent sx={{ flexGrow: 1 }}>
-                {" "}
-                {/* flexGrow cho Content chiếm chỗ còn lại, để cho cái CardAction luôn ở đáy và song song */}
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ minHeight: 50 }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ minHeight: 50 }}
+                  color="text.primary"
+                >
                   {n.title}
                 </Typography>
                 <Typography
@@ -56,11 +74,11 @@ export default function NewsList() {
                   gutterBottom
                   sx={{
                     display: "-webkit-box",
-                    WebkitLineClamp: 5, // số dòng tối đa
+                    WebkitLineClamp: 5,
                     WebkitBoxOrient: "vertical",
                     overflow: "hidden",
-                    textOverflow: "ellipsis", //hiện 3 chấm
-                    minHeight: "4.5em", // giữ chỗ để không co lại (tùy fontSize)
+                    textOverflow: "ellipsis",
+                    minHeight: "4.5em",
                   }}
                 >
                   {n.desc}

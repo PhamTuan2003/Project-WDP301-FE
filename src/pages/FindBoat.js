@@ -40,14 +40,10 @@ const FindBoat = () => {
       return [];
     }
 
-    let result = cruiseData.filter(
-      (cruise) => cruise && typeof cruise === "object" && cruise.id
-    );
+    let result = cruiseData.filter((cruise) => cruise && typeof cruise === "object" && cruise.id);
 
     if (typeof searchTerm === "string" && searchTerm.trim()) {
-      result = result.filter((cruise) =>
-        cruise.title?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      result = result.filter((cruise) => cruise.title?.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
     if (Array.isArray(selectedStars) && selectedStars.length > 0) {
@@ -58,9 +54,7 @@ const FindBoat = () => {
     }
 
     if (Array.isArray(selectedDurations) && selectedDurations.length > 0) {
-      result = result.filter((cruise) =>
-        selectedDurations.includes(cruise.duration)
-      );
+      result = result.filter((cruise) => selectedDurations.includes(cruise.duration));
     }
 
     if (Array.isArray(selectedFeatures) && selectedFeatures.length > 0) {
@@ -70,24 +64,14 @@ const FindBoat = () => {
     }
 
     if (typeof selectedDeparturePoint === "string" && selectedDeparturePoint) {
-      result = result.filter(
-        (cruise) => cruise.departurePoint === selectedDeparturePoint
-      );
+      result = result.filter((cruise) => cruise.departurePoint === selectedDeparturePoint);
     }
 
-    if (
-      typeof selectedPriceRange === "string" &&
-      selectedPriceRange &&
-      selectedPriceRange !== "all"
-    ) {
-      const selectedRange = priceRanges.find(
-        (range) => range.value === selectedPriceRange
-      );
+    if (typeof selectedPriceRange === "string" && selectedPriceRange && selectedPriceRange !== "all") {
+      const selectedRange = priceRanges.find((range) => range.value === selectedPriceRange);
       if (selectedRange) {
         result = result.filter(
-          (cruise) =>
-            cruise.price >= selectedRange.min &&
-            cruise.price <= selectedRange.max
+          (cruise) => cruise.price >= selectedRange.min && cruise.price <= selectedRange.max
         );
       }
     }
@@ -125,19 +109,11 @@ const FindBoat = () => {
 
   const displayCruises =
     filteredCruises.length === 0
-      ? cruiseData.filter(
-          (cruise) => cruise && typeof cruise === "object" && cruise.id
-        )
+      ? cruiseData.filter((cruise) => cruise && typeof cruise === "object" && cruise.id)
       : filteredCruises;
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(displayCruises.length / itemsPerPage)
-  );
-  const validCurrentPage = Math.max(
-    1,
-    Math.min(Number.isInteger(currentPage) ? currentPage : 1, totalPages)
-  );
+  const totalPages = Math.max(1, Math.ceil(displayCruises.length / itemsPerPage));
+  const validCurrentPage = Math.max(1, Math.min(Number.isInteger(currentPage) ? currentPage : 1, totalPages));
 
   const indexOfLastItem = validCurrentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -145,31 +121,36 @@ const FindBoat = () => {
     .slice(indexOfFirstItem, indexOfLastItem)
     .filter((cruise) => cruise && typeof cruise === "object" && cruise.id);
 
-  const BlueIndicator = () => (
-    <Box
-      sx={{ width: "48px", height: "2px", bgcolor: "primary.main", ml: 0.5 }}
-    />
-  );
+  const BlueIndicator = () => <Box sx={{ width: "48px", height: "2px", bgcolor: "primary.main", ml: 0.5 }} />;
 
   return (
-    <div style={{ backgroundImage: "url('/images/boat-bg.webp')" }}>
+    <Box
+      sx={{
+        backgroundImage: (theme) => (theme.palette.mode === "light" ? "url('/images/boat-bg.webp')" : "none"),
+        backgroundSize: "cover", //light thì có ảnh, dark thì không
+        backgroundPosition: "center",
+        bgcolor: (theme) =>
+          theme.palette.mode === "dark" ? theme.palette.background.default : "transparent",
+        minHeight: "100vh",
+      }}
+    >
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Paper
           sx={{
             p: 3,
             mb: 3,
             borderRadius: "32px",
-            border: "1px solid #eaecf0",
-            bgcolor: "#fff",
-            boxShadow:
-              "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
+            border: "1px solid",
+            borderColor: (theme) => theme.palette.divider,
+            bgcolor: (theme) => theme.palette.background.paper,
+            boxShadow: (theme) => theme.shadows[1],
           }}
         >
           <Typography
             variant="h4"
             align="center"
             fontWeight="bold"
-            sx={{ my: 3, fontFamily: "Archivo, sans-serif" }}
+            sx={{ my: 3, fontFamily: "Archivo, sans-serif", color: "text.primary" }}
           >
             Bạn lựa chọn du thuyền Hạ Long nào?
           </Typography>
@@ -198,15 +179,16 @@ const FindBoat = () => {
             sx={{
               display: "flex",
               flexDirection: "column",
-              bgcolor: "#fff",
+              bgcolor: (theme) => theme.palette.background.paper,
               borderRadius: "32px",
               p: "5px 20px",
+              boxShadow: (theme) => theme.shadows[1],
             }}
           >
             <Typography
-              fontFamily={"Archivo, san-serif"}
+              fontFamily={"Archivo, sans-serif"}
               variant="h4"
-              color="black"
+              color="text.primary"
               fontWeight="bold"
             >
               Tìm thấy {filteredCruises.length} kết quả
@@ -228,19 +210,21 @@ const FindBoat = () => {
             size="small"
             sx={{
               minWidth: 180,
-              backgroundColor: "#fff",
+              backgroundColor: (theme) => theme.palette.background.paper,
               borderRadius: "32px",
               "& .MuiOutlinedInput-root": {
                 borderRadius: "32px",
                 height: "50px",
                 fontFamily: "Archivo, sans-serif",
                 fontWeight: 500,
-                border: "0px",
+                borderColor: (theme) => theme.palette.divider,
+                color: "text.primary",
               },
+              "& .MuiSelect-icon": { color: "text.primary" },
             }}
           >
             {sortOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
+              <MenuItem key={option.value} value={option.value} sx={{ color: "text.primary" }}>
                 {option.label}
               </MenuItem>
             ))}
@@ -260,23 +244,20 @@ const FindBoat = () => {
                   sx={{
                     mt: 2,
                     fontFamily: "Archivo, sans-serif",
-                    boxShadow: "1px 3px 5px 5px #333",
+                    bgcolor: (theme) => theme.palette.background.paper,
                     borderRadius: "32px",
                     width: "fit-content",
-                    padding: "3px 10px",
-                    backgroundColor: "#fff",
+                    padding: "3px 20px",
+                    boxShadow: (theme) => theme.shadows[1],
                     justifyContent: "center",
                     fontWeight: 500,
-                    alignCenter: "center",
+                    alignSelf: "center",
                   }}
                 >
-                  Không tìm thấy du thuyền nào. Vui lòng thử lại với các bộ lọc
-                  khác.
+                  Không tìm thấy du thuyền nào. Vui lòng thử lại với các bộ lọc khác.
                 </Typography>
               ) : (
-                currentCruises.map((cruise) => (
-                  <CruiseCard key={cruise.id} cruise={cruise} />
-                ))
+                currentCruises.map((cruise) => <CruiseCard key={cruise.id} cruise={cruise} />)
               )}
             </Stack>
             <PaginationSection
@@ -288,7 +269,7 @@ const FindBoat = () => {
           </Grid>
         </Grid>
       </Container>
-    </div>
+    </Box>
   );
 };
 

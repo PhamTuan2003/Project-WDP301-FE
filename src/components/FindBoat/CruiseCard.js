@@ -1,23 +1,11 @@
 import React from "react";
-import {
-  Card,
-  CardMedia,
-  Box,
-  Typography,
-  Stack,
-  Divider,
-  Button,
-  Chip,
-  Badge,
-} from "@mui/material";
+import { Card, CardMedia, Box, Typography, Stack, Divider, Button, Chip, Badge } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import StarOutline from "@mui/icons-material/StarOutline";
 
 // Custom HotSaleBadge (assuming it’s a styled Badge)
-const HotSaleBadge = ({ children, ...props }) => (
-  <Badge {...props}>{children}</Badge>
-);
+const HotSaleBadge = ({ children, ...props }) => <Badge {...props}>{children}</Badge>;
 
 // Custom FeatureChip (assuming it’s a styled Chip)
 const FeatureChip = (props) => (
@@ -25,7 +13,7 @@ const FeatureChip = (props) => (
     {...props}
     sx={{
       fontFamily: "Archivo, sans-serif",
-      bgcolor: "#f0f7f7",
+      bgcolor: (theme) => theme.palette.mode === 'light' ? '#f0f7f7' : '#2f3b44',
       fontWeight: 600,
       opacity: 0.8,
       ...props.sx,
@@ -57,13 +45,14 @@ const CruiseCard = ({ cruise }) => {
         display: "flex",
         flexDirection: { xs: "row", md: "row" },
         borderRadius: "32px",
-        bgcolor: "#fff",
+        bgcolor: (theme) => theme.palette.background.paper,
         width: "100%",
         alignItems: "center",
         cursor: "pointer",
         transition: "transform 0.2s",
-        border: "1px solid #eaecf0",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        border: "1px solid",
+        borderColor: (theme) => theme.palette.divider,
+        boxShadow: (theme) => theme.shadows[1],
       }}
     >
       {/* Image */}
@@ -77,12 +66,7 @@ const CruiseCard = ({ cruise }) => {
         <CardMedia
           component="img"
           height={200}
-          image={
-            image ||
-            `https://via.placeholder.com/300x200?text=${encodeURIComponent(
-              title
-            )}`
-          }
+          image={image || `https://via.placeholder.com/300x200?text=${encodeURIComponent(title)}`}
           alt={title}
           sx={{
             width: "352px",
@@ -92,8 +76,7 @@ const CruiseCard = ({ cruise }) => {
             overflow: "hidden",
             objectFit: "cover",
             maxWidth: "100%",
-            boxShadow:
-              "0 4px 6px -2px rgba(16, 24, 40, .06), 0 12px 16px -4px rgba(16, 24, 40, .1)",
+            boxShadow: (theme) => theme.shadows[1],
           }}
         />
         <HotSaleBadge
@@ -103,16 +86,16 @@ const CruiseCard = ({ cruise }) => {
             fontFamily: "Archivo, sans-serif",
             left: "28px",
             top: "28px",
-            color: "#7a2e0e",
+            color: (theme) => theme.palette.mode === 'light' ? '#7a2e0e' : '#fedf89',
             position: "absolute",
             justifyContent: "center",
             alignItems: "center",
             padding: "2px 8px 2px 6px",
-            backgroundColor: "#fedf89",
+            backgroundColor: (theme) => theme.palette.mode === 'light' ? '#fedf89' : '#7a2e0e',
             gap: "4px",
           }}
         >
-          <StarOutline sx={{ fontSize: "16px", color: "#f79009" }} />
+          <StarOutline sx={{ fontSize: "16px", color: (theme) => theme.palette.mode === 'light' ? '#f79009' : '#fedf89' }} />
           4.9 (12) đánh giá
         </HotSaleBadge>
       </Box>
@@ -143,7 +126,7 @@ const CruiseCard = ({ cruise }) => {
               width: "fit-content",
               padding: "5px 8px",
               marginBottom: "10px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+              boxShadow: (theme) => theme.shadows[1],
             }}
           >
             {departurePoint && `Du thuyền ${departurePoint}`}
@@ -152,19 +135,14 @@ const CruiseCard = ({ cruise }) => {
             fontFamily="Archivo, sans-serif"
             sx={{
               fontSize: "25px",
-              color: "#333",
+              color: 'text.primary',
               fontWeight: "700",
               lineHeight: "32px",
             }}
           >
             {title}
           </Typography>
-          <Stack
-            direction="row"
-            spacing={3}
-            alignItems="center"
-            sx={{ mb: 1.5 }}
-          >
+          <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center" }}>
               <CalendarTodayIcon
                 sx={{
@@ -173,11 +151,7 @@ const CruiseCard = ({ cruise }) => {
                   color: "text.secondary",
                 }}
               />
-              <Typography
-                fontFamily="Archivo, sans-serif"
-                variant="body2"
-                color="text.secondary"
-              >
+              <Typography fontFamily="Archivo, sans-serif" variant="body2" color="text.secondary">
                 {duration}
               </Typography>
             </Box>
@@ -189,11 +163,7 @@ const CruiseCard = ({ cruise }) => {
                   color: "text.secondary",
                 }}
               />
-              <Typography
-                fontFamily="Archivo, sans-serif"
-                variant="body2"
-                color="text.secondary"
-              >
+              <Typography fontFamily="Archivo, sans-serif" variant="body2" color="text.secondary">
                 {departurePoint}
               </Typography>
             </Box>
@@ -214,12 +184,10 @@ const CruiseCard = ({ cruise }) => {
             {features.slice(0, 5).map((feature, index) => (
               <FeatureChip key={index} label={feature} size="small" />
             ))}
-            {features.length > 5 && (
-              <FeatureChip label={`+${features.length - 5}`} size="small" />
-            )}
+            {features.length > 5 && <FeatureChip label={`+${features.length - 5}`} size="small" />}
           </Stack>
         </Box>
-        <Divider sx={{ my: 1 }} />
+        <Divider sx={{ my: 1, borderColor: (theme) => theme.palette.divider }} />
         {/* Bottom section */}
         <Box sx={{ justifyContent: "flex-end" }}>
           <Box
@@ -234,7 +202,7 @@ const CruiseCard = ({ cruise }) => {
                 fontSize: "18px",
                 lineHeight: "28px",
                 fontWeight: 700,
-                color: "#0E4F4F",
+                color: "primary.main",
               }}
               fontFamily="Archivo, sans-serif"
             >
@@ -247,9 +215,9 @@ const CruiseCard = ({ cruise }) => {
                 fontFamily: "Archivo, sans-serif",
                 height: "35px",
                 borderRadius: "32px",
-                bgcolor: "#77dada",
-                color: "#333",
-                "&:hover": { bgcolor: "#0e4f4f", color: "#fff" },
+                bgcolor: "primary.main",
+                color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
+                "&:hover": { bgcolor: "primary.dark" },
               }}
             >
               Đặt ngay

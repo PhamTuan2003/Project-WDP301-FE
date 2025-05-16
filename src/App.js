@@ -1,21 +1,58 @@
-import Footer from "./layout/Footer";
-import Header from "./layout/Header";
-import FindBoat from "./pages/FindBoat";
-import HomePage from "./pages/HomePage";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { getTheme } from './theme/theme';
+import Header from './layout/Header';
+import Footer from './layout/Footer';
+import HomePage from './pages/HomePage';
+import FindBoat from './pages/FindBoat';
+import Login from './auth/Login';
+import Register from './auth/Register';
+import AboutUs from './layout/componentsFooter/AboutUs';
+import TermsAndConditions from './layout/componentsFooter/TermsAndConditions';
+import PrivacyPolicy from './layout/componentsFooter/PrivacyPolicy';
+import UserGuide from './layout/componentsFooter/UserGuide';
+import PaymentMethods from './layout/componentsFooter/PaymentMethods';
+import ContactSection from './layout/componentsFooter/ContactSection';
 
 function App() {
+  const [mode, setMode] = useState(localStorage.getItem('themeMode') || 'light');
+
+  const toggleTheme = () => {
+    setMode((prevMode) => {
+      const newMode = prevMode === 'light' ? 'dark' : 'light';
+      localStorage.setItem('themeMode', newMode);
+      return newMode;
+    });
+  };
+
+  const theme = getTheme(mode);
+
   return (
-    <>
-      <BrowserRouter>
-        <Header />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/find-boat" element={<FindBoat />} />
-        </Routes>
-        <Footer />
-      </BrowserRouter>
-    </>
+    
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <Header toggleTheme={toggleTheme} mode={mode} />
+          <Routes>
+            <Route
+              path="/"
+              element={<HomePage />}
+            />
+            <Route path="/find-boat" element={<FindBoat />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/ve-chung-toi" element={<AboutUs />} />
+            <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
+            <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
+            <Route path="/huong-dan-su-dung" element={<UserGuide />} />
+            <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
+            <Route path="/lien-he-tu-van" element={<ContactSection />} />
+            {/* Add thêm nếu có thêm */}
+          </Routes>
+          <Footer />
+        </Router>
+      </ThemeProvider>
   );
 }
 
