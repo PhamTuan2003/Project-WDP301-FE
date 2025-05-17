@@ -1,3 +1,4 @@
+import DetailBoat from "./components/DetailBoat/DetailBoat";
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import FindBoat from "./pages/FindBoat";
@@ -12,6 +13,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/find-boat" element={<FindBoat />} />
+          <Route path="/boat-detail" element={<DetailBoat />} />
         </Routes>
         <Footer />
       </BrowserRouter>
