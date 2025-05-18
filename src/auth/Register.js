@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle, faFacebookF } from "@fortawesome/free-brands-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, TextField, Typography, Stack, Grid } from "@mui/material";
 import styled from "@emotion/styled";
+import axios from "axios";
 import "./Auth.css";
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -20,6 +21,82 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 export default function Register() {
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    fullName: "",
+    phoneNumber: "",
+    address: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    // Chuẩn hóa id để khớp với formData
+    const field =
+      id === "name"
+        ? "fullName"
+        : id === "phone_number"
+        ? "phoneNumber"
+        : id === "reg-password"
+        ? "password"
+        : id === "confirm-password"
+        ? "confirmPassword"
+        : id;
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+  // Kiểm tra định dạng email
+  const validateEmail = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    // Kiểm tra xác nhận mật khẩu
+    if (formData.password !== formData.confirmPassword) {
+      setError("Mật khẩu không trùng khớp, hãy thử lại!");
+      return;
+    }
+    // Kiểm tra định dạng email
+    if (!validateEmail(formData.email)) {
+      setError("Email không hợp lệ! Vui lòng nhập email đúng định dạng (ví dụ: example@domain.com).");
+      return;
+    }
+    // Chuẩn bị dữ liệu gửi lên API
+    const dataToSend = {
+      username: formData.username,
+      email: formData.email,
+      fullName: formData.fullName,
+      phoneNumber: formData.phoneNumber,
+      address: formData.address,
+      password: formData.password,
+    };
+
+    try {
+      const response = await axios.post("http://localhost:9999/api/v1/customers/register", dataToSend);
+      setSuccess("Đăng ký thành công!");
+
+      // Chuyển hướng về /login và reload sau 1.5 giây
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.";
+      setError(errorMessage);
+    }
+  };
+
   return (
     <Box
       className="auth-container"
@@ -69,7 +146,20 @@ export default function Register() {
           >
             Đăng ký tài khoản
           </Typography>
-          <Box component="form">
+
+          {/* Hiển thị thông báo lỗi hoặc thành công */}
+          {error && (
+            <Typography color="error" align="center" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+          )}
+          {success && (
+            <Typography color="success.main" align="center" sx={{ mb: 2 }}>
+              {success}
+            </Typography>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit}>
             <Box className="form-group" sx={{ mb: 2 }}>
               <Typography
                 component="label"
@@ -86,6 +176,8 @@ export default function Register() {
                 placeholder="Nhập tên đăng nhập"
                 variant="outlined"
                 margin="normal"
+                value={formData.username}
+                onChange={handleChange}
                 sx={{
                   mt: 1,
                   "& .MuiOutlinedInput-root": {
@@ -114,6 +206,8 @@ export default function Register() {
                   placeholder="Nhập email"
                   variant="outlined"
                   margin="normal"
+                  value={formData.email}
+                  onChange={handleChange}
                   sx={{
                     mt: 1,
                     "& .MuiOutlinedInput-root": {
@@ -141,6 +235,8 @@ export default function Register() {
                   placeholder="Nhập số điện thoại"
                   variant="outlined"
                   margin="normal"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
                   sx={{
                     mt: 1,
                     "& .MuiOutlinedInput-root": {
@@ -169,6 +265,8 @@ export default function Register() {
                 placeholder="Nhập họ và tên"
                 variant="outlined"
                 margin="normal"
+                value={formData.fullName}
+                onChange={handleChange}
                 sx={{
                   mt: 1,
                   "& .MuiOutlinedInput-root": {
@@ -196,6 +294,8 @@ export default function Register() {
                 placeholder="Nhập địa chỉ"
                 variant="outlined"
                 margin="normal"
+                value={formData.address}
+                onChange={handleChange}
                 sx={{
                   mt: 1,
                   "& .MuiOutlinedInput-root": {
@@ -224,6 +324,8 @@ export default function Register() {
                   placeholder="Nhập mật khẩu"
                   variant="outlined"
                   margin="normal"
+                  value={formData.password}
+                  onChange={handleChange}
                   sx={{
                     mt: 1,
                     "& .MuiOutlinedInput-root": {
@@ -251,6 +353,8 @@ export default function Register() {
                   placeholder="Xác nhận mật khẩu"
                   variant="outlined"
                   margin="normal"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
                   sx={{
                     mt: 1,
                     "& .MuiOutlinedInput-root": {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle, faFacebookF } from "@fortawesome/free-brands-svg-icons";
 import { Link, useNavigate } from "react-router-dom";
@@ -30,6 +30,25 @@ export default function Login() {
   const [success, setSuccess] = useState("");
   const [showTransition, setShowTransition] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+  if (showTransition) {
+    // Disable scroll
+    document.body.style.overflow = "hidden";
+    document.body.style.pointerEvents = "none"; // Ngăn tương tác luôn
+  } else {
+    // Enable scroll lại
+    document.body.style.overflow = "";
+    document.body.style.pointerEvents = "";
+  }
+
+  // Cleanup nếu component unmount
+  return () => {
+    document.body.style.overflow = "";
+    document.body.style.pointerEvents = "";
+  };
+}, [showTransition]);
+
   // Hàm xử lý thay đổi input
   const handleChange = (e) => {
     const { id, value } = e.target;
