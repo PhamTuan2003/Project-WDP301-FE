@@ -69,13 +69,13 @@ export default function Footer() {
               to="/"
               sx={{ textDecoration: "none", cursor: "pointer" }}
             >
-              <Box component="img" src="/images/logo.png" alt="Logo Booking Yacht" sx={{ height: 60 }} />
-              <Typography variant="h6" fontWeight={600} color="primary.main">
-                Booking Yacht
+              <Box component="img" src="/images/logo.png" alt="Logo 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮" sx={{ height: 60 }} />
+              <Typography variant="h4" fontWeight={600} color="primary.main">
+                𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              Công ty TNHH Du Lịch và Dịch Vụ Booking Yacht
+              Công ty TNHH Du Lịch và Dịch Vụ 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
               <br />
               Toà nhà Delta-314, Km29 Đại học FPT, khu CNC Hoà Lạc, huyện Thạch Thất, TP. Hà Nội
               <br />
@@ -115,7 +115,7 @@ export default function Footer() {
               Hotline: 0123456789
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Email: info@BookingYacht.com
+              Email: info@longwave.example
             </Typography>
             <Box
               component="img"
@@ -127,7 +127,7 @@ export default function Footer() {
         </Grid>
         <Box textAlign="center" mt={6} sx={{ opacity: 0.7 }}>
           <Typography fontSize={12} color="text.primary">
-            &copy; 2025 Booking Yacht. Bản quyền thuộc về Booking Yacht. Đã đăng ký bản quyền.
+            &copy; 2025 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Bản quyền thuộc về 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Đã đăng ký bản quyền.
             <br />
             Thiết kế bởi WDP301 - Group 4.
           </Typography>

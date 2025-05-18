@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -9,6 +9,8 @@ import {
   useMediaQuery,
   useTheme,
   Stack,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import LoginIcon from "@mui/icons-material/Login";
@@ -26,6 +28,14 @@ const menuLinks = [
 export default function Header({ toggleTheme, mode }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   return (
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 0, py: 1 }}>
@@ -38,19 +48,20 @@ export default function Header({ toggleTheme, mode }) {
             color="primary"
             fontWeight={700}
             fontFamily="'Pacifico', cursive"
-            fontSize={32}
+            fontSize={35}
             component={Link}
             to="/"
             sx={{
-              textDecoration: "none", // chính chủ, Material UI hiểu
+              textDecoration: "none",
               "&:hover": {
-                textDecoration: "none", // ngăn nó underline khi hover luôn
+                textDecoration: "none",
               },
             }}
           >
             𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
           </Typography>
         </Box>
+
         {/* Menu */}
         {!isMobile ? (
           <Stack direction="row" spacing={2} alignItems="center">
@@ -63,7 +74,7 @@ export default function Header({ toggleTheme, mode }) {
                   fontWeight: 500,
                   fontSize: 18,
                   lineHeight: "24px",
-                  textTransform: "none", // ko viết hoa toàn bộ
+                  textTransform: "none",
                   "&:hover": {
                     color: "text.secondary",
                   },
@@ -72,15 +83,41 @@ export default function Header({ toggleTheme, mode }) {
                 {link.label}
               </Button>
             ))}
-            <Typography fontSize={14} ml={1} color="text.secondary">
+            <Typography fontSize={19} color="text.secondary">
               <b>Hotline:&nbsp;</b>0123456789
-            </Typography>
+            </Typography>e
           </Stack>
         ) : (
-          <IconButton size="large" edge="end" aria-label="menu">
-            <MenuIcon />
-          </IconButton>
+          <>
+            <IconButton size="large" edge="end" aria-label="menu" onClick={handleMenuOpen}>
+              <MenuIcon />
+            </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+              {menuLinks.map((link) => (
+                <MenuItem
+                  key={link.label}
+                  onClick={handleMenuClose}
+                  component={Link}
+                  to={link.href}
+                >
+                  {link.label}
+                </MenuItem>
+              ))}
+              <MenuItem disabled>
+                <Typography fontSize={14} color="text.secondary" ml={1}>
+                  <b>Hotline:</b>&nbsp;0123456789
+                </Typography>
+              </MenuItem>
+            </Menu>
+          </>
         )}
+
         {/* Login/Register/Theme Toggle */}
         <Stack direction="row" spacing={1} ml={3}>
           <Button
