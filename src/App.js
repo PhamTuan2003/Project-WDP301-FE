@@ -15,6 +15,8 @@ import UserGuide from './layout/componentsFooter/UserGuide';
 import PaymentMethods from './layout/componentsFooter/PaymentMethods';
 import ContactSection from './layout/componentsFooter/ContactSection';
 import Enterprise from './components/Enterprise/Enterprise';
+import BlogDetail from './components/Blog/BlogDetail';
+import BlogList from './components/Blog/BlogList';
 
 function App() {
   const [mode, setMode] = useState(localStorage.getItem('themeMode') || 'light');
@@ -29,32 +31,32 @@ function App() {
 
   const theme = getTheme(mode);
 
-  return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Header toggleTheme={toggleTheme} mode={mode} />
-          <Routes>
-            <Route
-              path="/"
-              element={<HomePage />}
-            />
-            <Route path="/find-boat" element={<FindBoat />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/ve-chung-toi" element={<AboutUs />} />
-            <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
-            <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
-            <Route path="/huong-dan-su-dung" element={<UserGuide />} />
-            <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
-            <Route path="/lien-he-tu-van" element={<ContactSection />} />
-            <Route path="/doanh-nghiep" element={<Enterprise />} />
-            {/* Add thêm nếu có thêm */}
-          </Routes>
-          <Footer />
-        </Router>
-      </ThemeProvider>
-  );
+return (
+  <ThemeProvider theme={theme}>
+    <CssBaseline />
+    <Router>
+      <Header toggleTheme={toggleTheme} mode={mode} />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/find-boat" element={<FindBoat />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/ve-chung-toi" element={<AboutUs />} />
+        <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
+        <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
+        <Route path="/huong-dan-su-dung" element={<UserGuide />} />
+        <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
+        <Route path="/lien-he-tu-van" element={<ContactSection />} />
+        <Route path="/doanh-nghiep" element={<Enterprise />} />
+        <Route path="/blog" element={<BlogList />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
+        {/* Add more routes if needed */}
+      </Routes>
+      <Footer />
+    </Router>
+  </ThemeProvider>
+);
+
 }
 
 export default App;
