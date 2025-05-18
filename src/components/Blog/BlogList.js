@@ -56,7 +56,7 @@ export default function BlogList() {
                                 <CardActionArea component={Link} to={`/blog/${article.id}`}>
                                     <CardMedia
                                         component="img"
-                                        height="200"
+                                        height="300"
                                         image={article.img}
                                         alt={article.title}
                                     />

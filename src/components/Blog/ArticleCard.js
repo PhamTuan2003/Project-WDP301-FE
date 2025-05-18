@@ -22,7 +22,7 @@ export default function ArticleCard({ article }) {
           height="180"
           image={article.img}
           alt={article.title}
-          sx={{ borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}
+          sx={{ borderTopLeftRadius: '18px', borderTopRightRadius: '16px' }}
         />
         <CardContent>
           <Typography variant="subtitle1" fontWeight={600} fontSize={14}>
