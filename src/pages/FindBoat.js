@@ -126,7 +126,7 @@ const FindBoat = () => {
   return (
     <Box
       sx={{
-        backgroundImage: (theme) => (theme.palette.mode === "light" ? "url('/images/boat-bg.webp')" : "none"),
+        backgroundImage: (theme) => (theme.palette.mode === "light" ? "url('https://mixivivu.com/section-background.png')" : "none"),
         backgroundSize: "cover", //light thì có ảnh, dark thì không
         backgroundPosition: "center",
         bgcolor: (theme) =>
