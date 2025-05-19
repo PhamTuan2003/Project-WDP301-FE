@@ -1,3 +1,5 @@
+const { teal, orange } = require("@mui/material/colors");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
@@ -55,6 +57,13 @@ module.exports = {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        teal: {
+          500: "#00bcd4",
+        },
+        orange: {
+          400: "#ffa726",
+          500: "#ff9800",
         },
         pink: {
           100: "#FFE6F2",

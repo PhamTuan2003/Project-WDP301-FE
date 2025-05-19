@@ -3,6 +3,14 @@
 @tailwind utilities;
 @import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap');
 
+body {
+    font-family: "Archivo", sans-serif !important;
+    background-color: #f3f3f5 !important;
+    margin: 0 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
 .css-1sqq6so-MuiContainer-root,
 .css-kk1bwy-MuiButtonBase-root-MuiMenuItem-root {
     font-family: "Archivo", sans-serif !important;
