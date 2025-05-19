@@ -77,7 +77,7 @@ export default function CruiseList() {
               <CardMedia
                 component="img"
                 height="200"
-                image={cruise.image || "/images/default-yacht.jpg"}
+                image={cruise.image || "không có ảnh"}
                 alt={cruise.name}
                 sx={{ objectFit: "cover" }}
               />
