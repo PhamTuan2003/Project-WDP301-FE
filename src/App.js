@@ -15,6 +15,8 @@ import UserGuide from "./layout/componentsFooter/UserGuide";
 import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
 import ContactSection from "./layout/componentsFooter/ContactSection";
 import Enterprise from "./components/Enterprise/Enterprise";
+import BlogDetail from './components/Blog/BlogDetail';
+import BlogList from './components/Blog/BlogList';
 
 function App() {
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
@@ -46,6 +48,8 @@ function App() {
           <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
           <Route path="/lien-he-tu-van" element={<ContactSection />} />
           <Route path="/doanh-nghiep" element={<Enterprise />} />
+          <Route path="/blog" element={<BlogList />} />
+          <Route path="/blog/:id" element={<BlogDetail />} />
           {/* Add thêm nếu có thêm */}
         </Routes>
         <Footer />
