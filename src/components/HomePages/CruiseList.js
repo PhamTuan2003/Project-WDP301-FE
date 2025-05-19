@@ -17,7 +17,7 @@ const cruises = [
   {
     id: 1,
     name: "Heritage Bình Chuẩn Cát Bà",
-    image: "https://ext.same-assets.com/834882384/3732064722.webp",
+    image: "/images/yacht-6.jpg",
     review: 4.9,
     reviewCount: 12,
     bay: "Vịnh Hạ Long",
@@ -28,7 +28,7 @@ const cruises = [
   {
     id: 2,
     name: "Ambassador Hạ Long",
-    image: "https://ext.same-assets.com/834882384/4098236333.webp",
+    image: "/images/yacht-7.jpg",
     review: 5.0,
     reviewCount: 3,
     bay: "Vịnh Hạ Long",
@@ -39,7 +39,7 @@ const cruises = [
   {
     id: 3,
     name: "Grand Pioneers",
-    image: "https://ext.same-assets.com/834882384/2309670433.webp",
+    image: "/images/yacht-8.jpg",
     review: 5.0,
     reviewCount: 3,
     bay: "Vịnh Hạ Long",
@@ -50,7 +50,7 @@ const cruises = [
   {
     id: 4,
     name: "Capella",
-    image: "https://ext.same-assets.com/834882384/1826411894.webp",
+    image: "/images/yacht-9.jpg",
     review: 5.0,
     reviewCount: 2,
     bay: "Vịnh Hạ Long",
@@ -61,7 +61,7 @@ const cruises = [
   {
     id: 5,
     name: "Scarlet Pearl",
-    image: "https://ext.same-assets.com/834882384/736697718.webp",
+    image: "/images/yacht-10.jpg",
     review: 5.0,
     reviewCount: 3,
     bay: "Vịnh Hạ Long",
@@ -72,7 +72,7 @@ const cruises = [
   {
     id: 6,
     name: "Lyra Grandeur",
-    image: "https://ext.same-assets.com/834882384/2885976414.bin",
+    image: "/images/yacht-5.jpg",
     review: 0,
     reviewCount: 0,
     bay: "Vịnh Hạ Long",
