@@ -28,8 +28,8 @@ const FindBoat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStars, setSelectedStars] = useState([]);
   const [selectedDurations, setSelectedDurations] = useState([]);
-  const [selectedServices, setSelectedServices] = useState([]); // Dùng đúng tên services
-  const [serviceShowCount, setServiceShowCount] = useState(5); // Dùng serviceShowCount
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [serviceShowCount, setServiceShowCount] = useState(5);
   const [selectedDeparturePoint, setSelectedDeparturePoint] = useState("");
   const [selectedPriceRange, setSelectedPriceRange] = useState("");
   const [sortOption, setSortOption] = useState("");
@@ -37,8 +37,10 @@ const FindBoat = () => {
   const itemsPerPage = 5;
 
   const [uniqueDeparturePoints, setUniqueDeparturePoints] = useState([]);
-  const [availableServices, setAvailableServices] = useState([]); // Dùng đúng tên availableServices
+  const [availableServices, setAvailableServices] = useState([])
   const [availableDurations, setAvailableDurations] = useState([]);
+
+  const { currentPage: reduxCurrentPage } = useSelector((state) => state.filters || {});
 
   useEffect(() => {
     const fetchYachts = async () => {
@@ -117,6 +119,11 @@ const FindBoat = () => {
     fetchYachts();
   }, []);
 
+  // Đồng bộ currentPage từ Redux
+  useEffect(() => {
+    setCurrentPage(reduxCurrentPage);
+  }, [reduxCurrentPage]);
+
   // Frontend filtering logic
   const filteredYachts = yachts.filter((yacht) => {
     // Filter by search term (name)
@@ -170,8 +177,12 @@ const FindBoat = () => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentYachts = sortedYachts.slice(indexOfFirstItem, indexOfLastItem);
-  const startItem = sortedYachts.length === 0 ? 0 : indexOfFirstItem + 1;
-  const endItem = Math.min(indexOfLastItem, sortedYachts.length);
+
+   // Debug log
+  console.log("Current Page:", currentPage);
+  console.log("Total Pages:", totalPages);
+  console.log("Sorted Yachts:", sortedYachts);
+  console.log("Current Yachts:", currentYachts);
 
   // Reset bộ lọc
   const handleClearFilters = () => {
