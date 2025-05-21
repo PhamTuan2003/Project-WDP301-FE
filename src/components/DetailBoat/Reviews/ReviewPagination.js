@@ -5,7 +5,7 @@ const ReviewPagination = ({ currentPage, totalPages, onPageChange }) => {
   return (
     <div className="flex items-center justify-center mt-6 mb-8">
       <button
-        className="px-3 py-1 border border-gray-300 rounded-md mx-1 text-gray-600 flex items-center"
+        className="px-3 py-2 border border-gray-300 rounded-l-full  text-gray-600 flex items-center"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
@@ -15,9 +15,9 @@ const ReviewPagination = ({ currentPage, totalPages, onPageChange }) => {
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
         <button
           key={page}
-          className={`w-8 h-8 flex items-center justify-center mx-1 rounded-md ${
+          className={`w-[40px] h-[42px] flex  items-center justify-center rounded-md ${
             page === currentPage
-              ? "bg-teal-500 text-white"
+              ? "bg-gray-400 text-black"
               : "border border-gray-300 text-gray-600"
           }`}
           onClick={() => onPageChange(page)}
@@ -27,7 +27,7 @@ const ReviewPagination = ({ currentPage, totalPages, onPageChange }) => {
       ))}
 
       <button
-        className="px-3 py-1 border border-gray-300 rounded-md mx-1 text-gray-600 flex items-center"
+        className="px-3 py-2 border border-gray-300 rounded-r-full  text-gray-600 flex items-center"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >

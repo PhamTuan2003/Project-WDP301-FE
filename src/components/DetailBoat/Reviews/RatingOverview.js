@@ -4,9 +4,9 @@ import RatingBar from "./RatingBar";
 
 const RatingOverview = ({ ratingData }) => {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+    <div className="bg-white rounded-3xl border border-gray-200 p-4 mb-6">
       <div className="flex">
-        <div className="w-1/3 border-r border-gray-200 pr-6 flex flex-col items-center justify-center">
+        <div className="w-1/4 border-r border-gray-200 pr-6 flex flex-col items-center justify-center">
           <div className="text-3xl font-bold text-orange-500">
             {ratingData.average}
           </div>
@@ -14,7 +14,7 @@ const RatingOverview = ({ ratingData }) => {
             <StarRating rating={Math.round(ratingData.average)} />
           </div>
         </div>
-        <div className="w-2/3 pl-6">
+        <div className="w-3/4 pl-6">
           {ratingData.distribution
             .slice()
             .reverse()
