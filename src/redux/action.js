@@ -13,9 +13,9 @@ export const setDurationFilter = (duration) => ({
   payload: duration,
 });
 
-export const setFeatureFilter = (feature) => ({
-  type: "SET_FEATURE_FILTER",
-  payload: feature,
+export const setServiceFilter = (service) => ({ // Đổi từ setFeatureFilter
+  type: "SET_SERVICE_FILTER",
+  payload: service,
 });
 
 export const setDeparturePoint = (point) => ({
@@ -38,12 +38,27 @@ export const setCurrentPage = (page) => ({
   payload: page,
 });
 
-export const setFeatureShowCount = (count) => ({
-  type: "SET_FEATURE_SHOW_COUNT",
+export const setServiceShowCount = (count) => ({ // Đổi từ setFeatureShowCount
+  type: "SET_SERVICE_SHOW_COUNT",
   payload: count,
 });
 
 export const setNoResults = (value) => ({
   type: "SET_NO_RESULTS",
   payload: value,
+});
+
+export const setFilteredYachts = (yachts) => ({
+  type: "SET_FILTERED_YACHTS",
+  payload: yachts,
+});
+
+export const setLoading = (isLoading) => ({
+  type: "SET_LOADING",
+  payload: isLoading,
+});
+
+export const setError = (error) => ({
+  type: "SET_ERROR",
+  payload: error,
 });

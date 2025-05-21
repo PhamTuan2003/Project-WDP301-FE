@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardMedia,
@@ -13,20 +13,22 @@ import {
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import StarOutline from "@mui/icons-material/StarOutline";
+import axios from "axios";
 import { Link } from "react-router-dom";
 
-// Custom HotSaleBadge (assuming it’s a styled Badge)
+// Custom HotSaleBadge
 const HotSaleBadge = ({ children, ...props }) => (
   <Badge {...props}>{children}</Badge>
 );
 
-// Custom FeatureChip (assuming it’s a styled Chip)
+// Custom FeatureChip
 const FeatureChip = (props) => (
   <Chip
     {...props}
     sx={{
       fontFamily: "Archivo, sans-serif",
-      bgcolor: "#f0f7f7",
+      bgcolor: (theme) =>
+        theme.palette.mode === "light" ? "#f0f7f7" : "#2f3b44",
       fontWeight: 600,
       opacity: 0.8,
       ...props.sx,
@@ -35,37 +37,131 @@ const FeatureChip = (props) => (
 );
 
 const CruiseCard = ({ cruise }) => {
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [duration, setDuration] = useState("Unknown");
+  const [features, setFeatures] = useState([]);
+  const yachtId = cruise._id;
+
+  useEffect(() => {
+    const fetchAdditionalData = async () => {
+      try {
+        // 1. Lấy số sao và số lượng đánh giá từ feedbacks
+        try {
+          const feedbacksResponse = await axios.get(
+            `http://localhost:9999/api/v1/yachts/${yachtId}/feedbacks`
+          );
+          const feedbacks = Array.isArray(feedbacksResponse.data?.data)
+            ? feedbacksResponse.data.data
+            : [];
+          const avg =
+            feedbacks.length > 0
+              ? (
+                  feedbacks.reduce((sum, fb) => sum + (fb.starRating || 0), 0) /
+                  feedbacks.length
+                ).toFixed(1)
+              : 0;
+          setAvgRating(avg);
+          setReviewCount(feedbacks.length);
+        } catch (err) {
+          console.error(
+            `Lỗi khi lấy feedbacks cho yacht ${yachtId}:`,
+            err.message
+          );
+        }
+
+        // 2. Lấy thời gian từ schedules
+        try {
+          const schedulesResponse = await axios.get(
+            `http://localhost:9999/api/v1/yachts/${yachtId}/schedules`
+          );
+          const schedules = Array.isArray(schedulesResponse.data?.data)
+            ? schedulesResponse.data.data
+            : [];
+          if (schedules.length > 0 && schedules[0]?.scheduleId) {
+            const firstSchedule = schedules[0].scheduleId;
+            const startDate = new Date(firstSchedule.startDate);
+            const endDate = new Date(firstSchedule.endDate);
+            if (!isNaN(startDate) && !isNaN(endDate)) {
+              const durationDays = Math.ceil(
+                (endDate - startDate) / (1000 * 60 * 60 * 24)
+              );
+              setDuration(`${durationDays} ngày ${durationDays - 1} đêm`);
+            }
+          }
+        } catch (err) {
+          console.error(
+            `Lỗi khi lấy schedules cho yacht ${yachtId}:`,
+            err.message
+          );
+        }
+
+        // 3. Lấy tiện ích từ services
+        try {
+          const servicesResponse = await axios.get(
+            "http://localhost:9999/api/v1/yachts/services"
+          );
+          const services = Array.isArray(servicesResponse.data?.data)
+            ? servicesResponse.data.data
+            : [];
+          const yachtServices = services
+            .filter((service) => service.yachtId?._id === yachtId)
+            .map((service) => service.serviceId?.serviceName)
+            .filter(Boolean);
+          setFeatures(yachtServices);
+        } catch (err) {
+          console.error(
+            `Lỗi khi lấy services cho yacht ${yachtId}:`,
+            err.message
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Lỗi tổng quát khi lấy dữ liệu cho CruiseCard:",
+          err.message
+        );
+      }
+    };
+
+    fetchAdditionalData();
+  }, [yachtId]);
+
   // Defensive check for cruise prop
-  if (!cruise || typeof cruise !== "object" || !cruise.id) {
+  if (!cruise || typeof cruise !== "object" || !cruise._id) {
     console.error("CruiseCard: Invalid or missing cruise prop", cruise);
     return null;
   }
 
   const {
-    id,
-    title = "Unknown Cruise",
+    _id: id,
+    name = "Unknown Cruise",
     image,
-    priceDisplay = "0đ",
-    departurePoint = "Unknown",
-    duration = "Unknown",
-    features = [],
+    cheapestPrice,
+    locationId,
   } = cruise;
+
+  const priceDisplay = cheapestPrice
+    ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
+    : "Liên hệ";
+  const departurePoint = locationId?.name || "Unknown";
 
   return (
     <Link to="/boat-detail" style={{ textDecoration: "none" }}>
+      {" "}
       <Card
         key={id}
         sx={{
           display: "flex",
           flexDirection: { xs: "row", md: "row" },
           borderRadius: "32px",
-          bgcolor: "#fff",
+          bgcolor: (theme) => theme.palette.background.paper,
           width: "100%",
           alignItems: "center",
           cursor: "pointer",
           transition: "transform 0.2s",
-          border: "1px solid #eaecf0",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid",
+          borderColor: (theme) => theme.palette.divider,
+          boxShadow: (theme) => theme.shadows[1],
         }}
       >
         {/* Image */}
@@ -82,10 +178,10 @@ const CruiseCard = ({ cruise }) => {
             image={
               image ||
               `https://via.placeholder.com/300x200?text=${encodeURIComponent(
-                title
+                name
               )}`
             }
-            alt={title}
+            alt={name}
             sx={{
               width: "352px",
               height: "264px",
@@ -94,8 +190,7 @@ const CruiseCard = ({ cruise }) => {
               overflow: "hidden",
               objectFit: "cover",
               maxWidth: "100%",
-              boxShadow:
-                "0 4px 6px -2px rgba(16, 24, 40, .06), 0 12px 16px -4px rgba(16, 24, 40, .1)",
+              boxShadow: (theme) => theme.shadows[1],
             }}
           />
           <HotSaleBadge
@@ -105,17 +200,25 @@ const CruiseCard = ({ cruise }) => {
               fontFamily: "Archivo, sans-serif",
               left: "28px",
               top: "28px",
-              color: "#7a2e0e",
+              color: (theme) =>
+                theme.palette.mode === "light" ? "#7a2e0e" : "#fedf89",
               position: "absolute",
               justifyContent: "center",
               alignItems: "center",
               padding: "2px 8px 2px 6px",
-              backgroundColor: "#fedf89",
+              backgroundColor: (theme) =>
+                theme.palette.mode === "light" ? "#fedf89" : "#7a2e0e",
               gap: "4px",
             }}
           >
-            <StarOutline sx={{ fontSize: "16px", color: "#f79009" }} />
-            4.9 (12) đánh giá
+            <StarOutline
+              sx={{
+                fontSize: "16px",
+                color: (theme) =>
+                  theme.palette.mode === "light" ? "#f79009" : "#fedf89",
+              }}
+            />
+            {avgRating} ({reviewCount}) đánh giá
           </HotSaleBadge>
         </Box>
 
@@ -145,8 +248,7 @@ const CruiseCard = ({ cruise }) => {
                 width: "fit-content",
                 padding: "5px 8px",
                 marginBottom: "10px",
-                boxShadow:
-                  "0 1px 3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1)",
+                boxShadow: (theme) => theme.shadows[1],
               }}
             >
               {departurePoint && `Du thuyền ${departurePoint}`}
@@ -155,12 +257,12 @@ const CruiseCard = ({ cruise }) => {
               fontFamily="Archivo, sans-serif"
               sx={{
                 fontSize: "25px",
-                color: "#333",
+                color: "text.primary",
                 fontWeight: "700",
                 lineHeight: "32px",
               }}
             >
-              {title}
+              {name}
             </Typography>
             <Stack
               direction="row"
@@ -222,7 +324,9 @@ const CruiseCard = ({ cruise }) => {
               )}
             </Stack>
           </Box>
-          <Divider sx={{ my: 1 }} />
+          <Divider
+            sx={{ my: 1, borderColor: (theme) => theme.palette.divider }}
+          />
           {/* Bottom section */}
           <Box sx={{ justifyContent: "flex-end" }}>
             <Box
@@ -237,7 +341,7 @@ const CruiseCard = ({ cruise }) => {
                   fontSize: "18px",
                   lineHeight: "28px",
                   fontWeight: 700,
-                  color: "#0E4F4F",
+                  color: "primary.main",
                 }}
                 fontFamily="Archivo, sans-serif"
               >
@@ -250,9 +354,10 @@ const CruiseCard = ({ cruise }) => {
                   fontFamily: "Archivo, sans-serif",
                   height: "35px",
                   borderRadius: "32px",
-                  bgcolor: "#77dada",
-                  color: "#333",
-                  "&:hover": { bgcolor: "#0e4f4f", color: "#fff" },
+                  bgcolor: "primary.main",
+                  color: (theme) =>
+                    theme.palette.getContrastText(theme.palette.primary.main),
+                  "&:hover": { bgcolor: "primary.dark" },
                 }}
               >
                 Đặt ngay

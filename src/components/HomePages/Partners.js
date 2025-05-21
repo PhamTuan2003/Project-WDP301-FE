@@ -20,20 +20,54 @@ const partners = [
 
 export default function Partners() {
   return (
-    <Box sx={{ width: '100%', bgcolor: '#f8f9fa', py: 8 }}>
+    <Box
+      sx={{
+        width: '100%',
+        py: 8,
+        px: 2,
+      }}
+    >
       <Box maxWidth={1100} mx="auto" px={2}>
-        <Typography variant="h6" fontWeight={700} mb={4} align="center">
+        <Typography variant="h6" fontWeight={700} mb={4} align="center" color="text.primary">
           Đối tác cùng các Hãng Du thuyền Lớn
         </Typography>
         <Grid container spacing={3} justifyContent="center" alignItems="center">
           {partners.map((logo, idx) => (
-            <Grid key={idx} item xs={4} sm={2} md={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <Card elevation={0} sx={{ p: 1, bgcolor: 'transparent', boxShadow: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Grid
+              key={idx}
+              item
+              xs={4}
+              sm={2}
+              md={2}
+              sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            >
+              <Card
+                elevation={0}
+                sx={{
+                  p: 2,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'light' ? 'transparent' : theme.palette.background.paper,
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'light' ? 'none' : theme.shadows[1],
+                  border: (theme) =>
+                    theme.palette.mode === 'light' ? 'none' : `1px solid ${theme.palette.divider}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 2,
+                }}
+              >
                 <CardMedia
                   component="img"
                   image={logo}
                   alt={`logo-${idx}`}
-                  sx={{ width: '100%', maxWidth: 100, filter: 'grayscale(100%)', objectFit: "contain" }}
+                  sx={{
+                    width: '100%',
+                    maxWidth: 150,
+                    objectFit: 'contain',
+                    filter: (theme) =>
+                      theme.palette.mode === 'light' ? 'grayscale(100%)' : 'grayscale(50%) brightness(120%)',
+                  }}
                 />
               </Card>
             </Grid>

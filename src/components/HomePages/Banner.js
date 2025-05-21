@@ -1,33 +1,89 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Paper, Typography, Box, Button, Stack, TextField, MenuItem, useTheme } from "@mui/material";
-
-const searchOptions = {
-  cruise: ["Tất cả du thuyền", "Heritage", "Ambassador", "Grand Pioneers", "Capella"],
-  location: ["Tất cả địa điểm", "Vịnh Hạ Long", "Vịnh Lan Hạ", "Cát Bà"],
-  guest: ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"],
-};
+import axios from "axios";
 
 export default function Banner() {
   const theme = useTheme();
+  const backgroundImage = theme.palette.mode === "light" ? "/images/background.jpg" : "/images/background2.jpg";
+
+  const [searchOptions, setSearchOptions] = useState({
+    cruise: ["Tất cả du thuyền"],
+    location: ["Tất cả địa điểm"],
+    guest: ["Tất cả mọi giá"],
+  });
+  const [selectedCruise, setSelectedCruise] = useState("Tất cả du thuyền");
+  const [selectedLocation, setSelectedLocation] = useState("Tất cả địa điểm");
+  const [selectedGuest, setSelectedGuest] = useState("Tất cả mọi giá");
+  const [locationMap, setLocationMap] = useState({}); // Ánh xạ name -> _id
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const yachtsResponse = await axios.get("http://localhost:9999/api/v1/yachts", {
+          params: { limit: 10, populate: "locationId" },
+        });
+        const yachts = Array.isArray(yachtsResponse.data?.data) ? yachtsResponse.data.data : yachtsResponse.data || [];
+
+        // Danh sách du thuyền
+        const cruiseOptions = ["Tất cả du thuyền", ...new Set(yachts.map((y) => y.name))];
+
+        // Danh sách địa điểm và ánh xạ name -> _id
+        const locations = Array.from(new Set(yachts.map((y) => y.locationId?.name).filter((n) => n)));
+        const locationOptions = ["Tất cả địa điểm", ...locations];
+        const locationIdMap = {};
+        yachts.forEach((y) => {
+          if (y.locationId?.name) {
+            locationIdMap[y.locationId.name] = y.locationId._id;
+          }
+        });
+
+        // Danh sách giá
+        const guestOptions = ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"];
+
+        setSearchOptions({ cruise: cruiseOptions, location: locationOptions, guest: guestOptions });
+        setLocationMap(locationIdMap);
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu tìm kiếm:", err);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (selectedCruise !== "Tất cả du thuyền") params.append("name", selectedCruise);
+    if (selectedLocation !== "Tất cả địa điểm") {
+      const locationId = locationMap[selectedLocation];
+      if (locationId) params.append("location", locationId);
+    }
+    if (selectedGuest === "< 3 triệu") params.append("lower_defaultPrice", 3000000);
+    else if (selectedGuest === "3-5 triệu") {
+      params.append("greater_defaultPrice", 3000000);
+      params.append("lower_defaultPrice", 5000000);
+    } else if (selectedGuest === "> 5 triệu") params.append("greater_defaultPrice", 5000000);
+
+    window.location.href = `/tim-du-thuyen?${params.toString()}`;
+  };
+
   return (
     <Box
       sx={{
         width: "100%",
         minHeight: 750,
         position: "relative",
-        background: `url('/images/background.jpg') center/cover no-repeat`,
-        borderRadius: { xs: 0, md: 4 },
+        background: `url(${backgroundImage}) center/cover no-repeat`,
+        py: 10,
+        px: 2,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        mb: 4,
       }}
     >
-      {/* Search Box */}
       <Paper
         elevation={3}
         sx={{
-          py: { xs: 5, md: 3 },
+          py: { xs: 5, md: 5 },
           px: { xs: 1, md: 4 },
           borderRadius: 4,
           minWidth: { xs: "95%", md: 600 },
@@ -37,15 +93,19 @@ export default function Banner() {
           flexDirection: "column",
           alignItems: "center",
           position: "absolute",
-          bottom: { xs: -48, md: -52 },
+          bottom: { xs: -48, md: -85 },
           left: 0,
           right: 0,
+          bgcolor: (theme) => theme.palette.background.paper,
+          border: "1px solid",
+          borderColor: (theme) => theme.palette.divider,
+          boxShadow: (theme) => theme.shadows[3],
         }}
       >
-        <Typography variant="h6" fontWeight={700} align="center" color="primary">
+        <Typography variant="h6" fontWeight={700} align="center" sx={{ color: "primary.main" }}>
           Bạn lựa chọn du thuyền Hạ Long nào?
         </Typography>
-        <Typography variant="body2" color="text.secondary" align="center" mb={2}>
+        <Typography variant="body2" align="center" mb={2} sx={{ color: "text.secondary" }}>
           Hơn 100 tour du thuyền hạng sang, chất lượng tốt sẵn sàng cho bạn chọn
         </Typography>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} width="100%">
@@ -53,37 +113,92 @@ export default function Banner() {
             select
             size="small"
             fullWidth
-            defaultValue={searchOptions.cruise[0]}
+            value={selectedCruise}
+            onChange={(e) => setSelectedCruise(e.target.value)}
             label="Loại du thuyền"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "32px",
+                bgcolor: (theme) => theme.palette.background.paper,
+                "& fieldset": {
+                  borderColor: (theme) => theme.palette.divider,
+                },
+              },
+              "& .MuiInputLabel-root": { color: "text.secondary" },
+              "& .MuiInputBase-input": { color: "text.primary" },
+              "& .MuiSelect-icon": { color: "text.primary" },
+            }}
           >
             {searchOptions.cruise.map((option) => (
-              <MenuItem key={option} value={option}>
+              <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
                 {option}
               </MenuItem>
             ))}
           </TextField>
-          <TextField select size="small" fullWidth defaultValue={searchOptions.location[0]} label="Địa điểm">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            label="Địa điểm"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "32px",
+                bgcolor: (theme) => theme.palette.background.paper,
+                "& fieldset": {
+                  borderColor: (theme) => theme.palette.divider,
+                },
+              },
+              "& .MuiInputLabel-root": { color: "text.secondary" },
+              "& .MuiInputBase-input": { color: "text.primary" },
+              "& .MuiSelect-icon": { color: "text.primary" },
+            }}
+          >
             {searchOptions.location.map((option) => (
-              <MenuItem key={option} value={option}>
+              <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
                 {option}
               </MenuItem>
             ))}
           </TextField>
-          <TextField select size="small" fullWidth defaultValue={searchOptions.guest[0]} label="Mức giá">
+          <TextField
+            select
+            size="small"
+            fullWidth
+            value={selectedGuest}
+            onChange={(e) => setSelectedGuest(e.target.value)}
+            label="Mức giá"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "32px",
+                bgcolor: (theme) => theme.palette.background.paper,
+                "& fieldset": {
+                  borderColor: (theme) => theme.palette.divider,
+                },
+              },
+              "& .MuiInputLabel-root": { color: "text.secondary" },
+              "& .MuiInputBase-input": { color: "text.primary" },
+              "& .MuiSelect-icon": { color: "text.primary" },
+            }}
+          >
             {searchOptions.guest.map((option) => (
-              <MenuItem key={option} value={option}>
+              <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
                 {option}
               </MenuItem>
             ))}
           </TextField>
           <Button
             variant="contained"
-            color="primary"
             size="large"
+            onClick={handleSearch}
             sx={{
-              minWidth: { xs: "100%", sm: 120 }, // mobile full width, desktop min 120
-              width: { xs: "100%", sm: "auto" }, // fix luôn width để không vượt
-              py: 1
+              minWidth: { xs: "100%", sm: 120 },
+              width: { xs: "100%", sm: "auto" },
+              py: 1,
+              bgcolor: "primary.main",
+              color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
+              borderRadius: "32px",
+              "&:hover": { bgcolor: "primary.dark" },
             }}
           >
             Tìm kiếm
