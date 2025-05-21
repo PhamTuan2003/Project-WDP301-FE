@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardMedia, Box, Typography, Stack, Divider, Button, Chip, Badge } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import StarOutline from "@mui/icons-material/StarOutline";
+import axios from 'axios';
 
-// Custom HotSaleBadge (assuming it’s a styled Badge)
+// Custom HotSaleBadge
 const HotSaleBadge = ({ children, ...props }) => <Badge {...props}>{children}</Badge>;
 
-// Custom FeatureChip (assuming it’s a styled Chip)
+// Custom FeatureChip
 const FeatureChip = (props) => (
   <Chip
     {...props}
@@ -22,21 +23,84 @@ const FeatureChip = (props) => (
 );
 
 const CruiseCard = ({ cruise }) => {
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [duration, setDuration] = useState("Unknown");
+  const [features, setFeatures] = useState([]);
+  const yachtId = cruise._id;
+
+  useEffect(() => {
+    const fetchAdditionalData = async () => {
+      try {
+        // 1. Lấy số sao và số lượng đánh giá từ feedbacks
+        try {
+          const feedbacksResponse = await axios.get(`http://localhost:9999/api/v1/yachts/${yachtId}/feedbacks`);
+          const feedbacks = Array.isArray(feedbacksResponse.data?.data) ? feedbacksResponse.data.data : [];
+          const avg = feedbacks.length > 0
+            ? (feedbacks.reduce((sum, fb) => sum + (fb.starRating || 0), 0) / feedbacks.length).toFixed(1)
+            : 0;
+          setAvgRating(avg);
+          setReviewCount(feedbacks.length);
+        } catch (err) {
+          console.error(`Lỗi khi lấy feedbacks cho yacht ${yachtId}:`, err.message);
+        }
+
+        // 2. Lấy thời gian từ schedules
+        try {
+          const schedulesResponse = await axios.get(`http://localhost:9999/api/v1/yachts/${yachtId}/schedules`);
+          const schedules = Array.isArray(schedulesResponse.data?.data) ? schedulesResponse.data.data : [];
+          if (schedules.length > 0 && schedules[0]?.scheduleId) {
+            const firstSchedule = schedules[0].scheduleId;
+            const startDate = new Date(firstSchedule.startDate);
+            const endDate = new Date(firstSchedule.endDate);
+            if (!isNaN(startDate) && !isNaN(endDate)) {
+              const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+              setDuration(`${durationDays} ngày ${durationDays - 1} đêm`);
+            }
+          }
+        } catch (err) {
+          console.error(`Lỗi khi lấy schedules cho yacht ${yachtId}:`, err.message);
+        }
+
+        // 3. Lấy tiện ích từ services
+        try {
+          const servicesResponse = await axios.get('http://localhost:9999/api/v1/yachts/services');
+          const services = Array.isArray(servicesResponse.data?.data) ? servicesResponse.data.data : [];
+          const yachtServices = services
+            .filter((service) => service.yachtId?._id === yachtId)
+            .map((service) => service.serviceId?.serviceName)
+            .filter(Boolean);
+          setFeatures(yachtServices);
+        } catch (err) {
+          console.error(`Lỗi khi lấy services cho yacht ${yachtId}:`, err.message);
+        }
+      } catch (err) {
+        console.error('Lỗi tổng quát khi lấy dữ liệu cho CruiseCard:', err.message);
+      }
+    };
+
+    fetchAdditionalData();
+  }, [yachtId]);
+
+  
   // Defensive check for cruise prop
-  if (!cruise || typeof cruise !== "object" || !cruise.id) {
+  if (!cruise || typeof cruise !== "object" || !cruise._id) {
     console.error("CruiseCard: Invalid or missing cruise prop", cruise);
     return null;
   }
 
+
+
   const {
-    id,
-    title = "Unknown Cruise",
+    _id: id,
+    name = "Unknown Cruise",
     image,
-    priceDisplay = "0đ",
-    departurePoint = "Unknown",
-    duration = "Unknown",
-    features = [],
+    cheapestPrice,
+    locationId,
   } = cruise;
+
+  const priceDisplay = cheapestPrice ? `${cheapestPrice.toLocaleString('vi-VN')}đ` : "Liên hệ";
+  const departurePoint = locationId?.name || "Unknown";
 
   return (
     <Card
@@ -66,8 +130,8 @@ const CruiseCard = ({ cruise }) => {
         <CardMedia
           component="img"
           height={200}
-          image={image || `https://via.placeholder.com/300x200?text=${encodeURIComponent(title)}`}
-          alt={title}
+          image={image || `https://via.placeholder.com/300x200?text=${encodeURIComponent(name)}`}
+          alt={name}
           sx={{
             width: "352px",
             height: "264px",
@@ -96,7 +160,7 @@ const CruiseCard = ({ cruise }) => {
           }}
         >
           <StarOutline sx={{ fontSize: "16px", color: (theme) => theme.palette.mode === 'light' ? '#f79009' : '#fedf89' }} />
-          4.9 (12) đánh giá
+          {avgRating} ({reviewCount}) đánh giá
         </HotSaleBadge>
       </Box>
 
@@ -140,7 +204,7 @@ const CruiseCard = ({ cruise }) => {
               lineHeight: "32px",
             }}
           >
-            {title}
+            {name}
           </Typography>
           <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center" }}>

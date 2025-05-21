@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { Box, Typography, Card, CardContent, CardMedia, CardActions, Button, Grid, Chip, Stack } from "@mui/material";
-import LocationOnIcon from "@mui/icons-material/LocationOn"; // Icon Location
-import PersonIcon from "@mui/icons-material/Person"; // Icon người
-import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat"; // Icon tàu thủy
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PersonIcon from "@mui/icons-material/Person";
+import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 
 export default function CruiseList() {
   const [cruises, setCruises] = useState([]);
@@ -12,40 +12,26 @@ export default function CruiseList() {
   useEffect(() => {
     const fetchCruises = async () => {
       try {
-        const response = await axios.get("http://localhost:9999/api/v1/yachts", {
-          params: {
-            limit: 6,
-            populate: "locationId,yachtTypeId",
-          },
+        // Step 1: Lấy danh sách 6 du thuyền từ API không có cheapestPrice
+        const resBasic = await axios.get("http://localhost:9999/api/v1/yachts", {
+          params: { limit: 6 },
+        });
+        const yachtsBasic = Array.isArray(resBasic.data.data) ? resBasic.data.data : [];
+
+        // Step 2: Lấy full danh sách có cheapestPrice
+        const resWithPrice = await axios.get("http://localhost:9999/api/v1/yachts/findboat");
+        const yachtsWithPrice = Array.isArray(resWithPrice.data.data) ? resWithPrice.data.data : [];
+
+        // Step 3: Map lại để lấy giá từ findboat và gán vào yachtsBasic
+        const combinedYachts = yachtsBasic.map((yacht) => {
+          const match = yachtsWithPrice.find((y) => y._id === yacht._id);
+          return {
+            ...yacht,
+            cheapestPrice: match?.cheapestPrice || null,
+          };
         });
 
-        // Kiểm tra và lấy mảng từ response.data
-        const yachts = Array.isArray(response.data) ? response.data : response.data.data || [];
-
-        // Lấy giá rẻ nhất từ RoomType cho từng du thuyền
-        const cruisesWithPrice = await Promise.all(
-          yachts.map(async (yacht) => {
-            try {
-              const roomTypeResponse = await axios.get(`http://localhost:9999/api/v1/room-types/yacht/${yacht._id}`);
-              const roomTypes = roomTypeResponse.data;
-
-              // Tìm giá rẻ nhất
-              const cheapestPrice = roomTypes.length > 0 ? Math.min(...roomTypes.map((rt) => rt.price)) : null;
-
-              return {
-                ...yacht,
-                cheapestPrice,
-              };
-            } catch (err) {
-              console.error(`Lỗi khi lấy giá cho du thuyền ${yacht.name}:`, err);
-              return {
-                ...yacht,
-                cheapestPrice: null,
-              };
-            }
-          })
-        );
-        setCruises(cruisesWithPrice);
+        setCruises(combinedYachts);
       } catch (err) {
         console.error("Lỗi khi lấy danh sách du thuyền:", err);
       }
@@ -82,7 +68,6 @@ export default function CruiseList() {
                 sx={{ objectFit: "cover" }}
               />
               <CardContent>
-                {/* Dòng 1: Location */}
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                   <LocationOnIcon color="primary" fontSize="small" />
                   <Typography variant="caption" color="text.secondary">
@@ -90,12 +75,10 @@ export default function CruiseList() {
                   </Typography>
                 </Stack>
 
-                {/* Dòng 2: Tên du thuyền */}
                 <Typography gutterBottom variant="subtitle1" fontWeight={600} sx={{ minHeight: 36, mb: 1 }}>
                   {cruise.name}
                 </Typography>
 
-                {/* Dòng 3: Icon tàu, launch, hullBody, yachtType */}
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                   <DirectionsBoatIcon color="action" fontSize="small" />
                   <Typography variant="caption" color="text.secondary">
@@ -103,7 +86,6 @@ export default function CruiseList() {
                   </Typography>
                 </Stack>
 
-                {/* Dòng 4: Giá và sức chứa với icon người */}
                 <Stack direction="row" alignItems="center" spacing={2} mb={1}>
                   <Typography variant="h6" color="primary">
                     {cruise.cheapestPrice ? `${cruise.cheapestPrice.toLocaleString()}đ / khách` : "chưa có giá"}
@@ -115,7 +97,6 @@ export default function CruiseList() {
                     <PersonIcon color="action" fontSize="small" />
                   </Stack>
                 </Stack>
-
               </CardContent>
               <CardActions sx={{ pt: 0, justifyContent: "center" }}>
                 <Button variant="contained" color="primary" sx={{ width: "50%" }}>

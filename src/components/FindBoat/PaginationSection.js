@@ -3,18 +3,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { Box, Typography, Pagination } from "@mui/material";
 import { setCurrentPage } from "../../redux/action";
 
-const PaginationSection = ({ totalPages, filteredCruisesLength, indexOfFirstItem, indexOfLastItem }) => {
+const PaginationSection = ({ totalPages, filteredYachts, indexOfFirstItem, indexOfLastItem }) => {
   const dispatch = useDispatch();
   const { currentPage } = useSelector((state) => state.filters || {});
-
-  const startItem = filteredCruisesLength === 0 ? 0 : indexOfFirstItem + 1;
-  const endItem = Math.min(indexOfLastItem, filteredCruisesLength);
-
-  const theme = {
-  palette: {
-    divider: (theme) => (theme.palette.mode === 'light' ? '#eaecf0' : '#2f3b44'),
-  },
-};
+  
+  // Đảm bảo currentPage không vượt quá totalPages hoặc nhỏ hơn 1
+  const validPage = Math.max(1, Math.min(currentPage, totalPages));
+  
+  const startItem = filteredYachts.length === 0 ? 0 : indexOfFirstItem + 1;
+  const endItem = Math.min(indexOfLastItem, filteredYachts.length);
 
   return (
     <Box
@@ -42,22 +39,23 @@ const PaginationSection = ({ totalPages, filteredCruisesLength, indexOfFirstItem
         }}
       >
         Đang xem :{" "}
-        <p
-          style={{
+        <Box
+          component="span"
+          sx={{
             padding: "5px 10px",
-            border: `2px solid ${theme.palette.divider(theme)}`,
+            border: (theme) => `2px solid ${theme.palette.divider}`,
             borderRadius: "100%",
             margin: "0 5px",
-            color: 'text.primary',
+            color: "text.primary",
           }}
         >
           {endItem}
-        </p>{" "}
-        trong tổng số {filteredCruisesLength}
+        </Box>{" "}
+        trong tổng số {filteredYachts.length} kết quả
       </Typography>
       <Pagination
         count={totalPages}
-        page={Number.isInteger(currentPage) ? Math.max(1, currentPage) : 1}
+        page={validPage}
         onChange={(event, value) => dispatch(setCurrentPage(value))}
         color="info"
         showFirstButton
@@ -71,11 +69,12 @@ const PaginationSection = ({ totalPages, filteredCruisesLength, indexOfFirstItem
           boxShadow: (theme) => theme.shadows[1],
           borderColor: (theme) => theme.palette.divider,
           "& .MuiPaginationItem-root": {
-            color: 'text.primary',
+            color: "text.primary",
           },
         }}
       />
     </Box>
   );
 };
+
 export default PaginationSection;

@@ -1,71 +1,89 @@
-import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  Paper,
-  Typography,
-  Divider,
-  Box,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
-  Button,
-  styled,
-} from "@mui/material";
-import {
-  setStarFilter,
-  setDurationFilter,
-  setFeatureFilter,
-  setFeatureShowCount,
-  setSearchTerm,
-  setDeparturePoint,
-  setPriceRange,
-  setSortOption,
-} from "../../redux/action";
-import { cruiseData } from "../../data/cruiseData";
+import React, { useState, useEffect } from "react";
+import { Box, Button, Checkbox, Divider, FormControlLabel, FormGroup, Paper, Typography } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import axios from "axios";
 
 const FilterSectionTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
   marginBottom: theme.spacing(1),
   color: theme.palette.text.primary,
+  fontFamily: theme.typography.fontFamily,
 }));
 
-const FilterSidebar = () => {
-  const dispatch = useDispatch();
-  const {
-    selectedStars,
-    selectedDurations,
-    selectedFeatures,
-    featureShowCount,
-  } = useSelector((state) => state.filters || {});
+const FilterSidebar = ({
+  selectedStars,
+  setSelectedStars,
+  selectedDurations,
+  setSelectedDurations,
+  selectedServices,
+  setSelectedServices,
+  serviceShowCount,
+  setServiceShowCount,
+  availableServices,
+  availableDurations,
+  setCurrentPage,
+  onClearFilters,
+}) => {
+  const [enabledStars, setEnabledStars] = useState(new Set());
 
-  const availableDurations = [
-    ...new Set(cruiseData.map((cruise) => cruise.duration).filter(Boolean)),
-  ];
-  const availableFeatures = [
-    ...new Set(
-      cruiseData.flatMap((cruise) => cruise.features || []).filter(Boolean)
-    ),
-  ];
+  // Fetch dữ liệu đánh giá để xác định enabledStars
+  useEffect(() => {
+    const fetchFeedbacks = async () => {
+      try {
+        const yachtsResponse = await axios.get("http://localhost:9999/api/v1/yachts/findboat");
+        const yachts = Array.isArray(yachtsResponse.data?.data) ? yachtsResponse.data.data : [];
 
-  const handleResetFilters = () => {
-    dispatch(setSearchTerm(""));
-    dispatch(setStarFilter([]));
-    dispatch(setDurationFilter([]));
-    dispatch(setFeatureFilter([]));
-    dispatch(setDeparturePoint(""));
-    dispatch(setPriceRange(""));
-    dispatch(setSortOption(""));
-    dispatch(setFeatureShowCount(5));
+        const enabledStarsSet = new Set();
+        for (const yacht of yachts) {
+          const feedbacksResponse = await axios.get(`http://localhost:9999/api/v1/yachts/${yacht._id}/feedbacks`);
+          const feedbacks = feedbacksResponse.data?.data || [];
+          const avg =
+            feedbacks.length > 0
+              ? Math.round((feedbacks.reduce((sum, fb) => sum + (fb.starRating || 0), 0) / feedbacks.length) * 10) / 10
+              : 0;
+          const roundedStar = Math.round(avg);
+          if (roundedStar >= 2 && roundedStar <= 5) {
+            enabledStarsSet.add(roundedStar);
+          }
+        }
+        setEnabledStars(enabledStarsSet);
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu feedbacks:", err);
+      }
+    };
+
+    fetchFeedbacks();
+  }, []);
+
+  const handleStarFilter = (star) => {
+    if (enabledStars.has(star)) {
+      setSelectedStars((prev) => (prev.includes(star) ? prev.filter((item) => item !== star) : [...prev, star]));
+      setCurrentPage(1);
+    }
+  };
+
+  const handleDurationFilter = (duration) => {
+    setSelectedDurations((prev) =>
+      prev.includes(duration) ? prev.filter((item) => item !== duration) : [...prev, duration]
+    );
+    setCurrentPage(1);
+  };
+
+  const handleServiceFilter = (service) => {
+    setSelectedServices((prev) =>
+      prev.includes(service) ? prev.filter((item) => item !== service) : [...prev, service]
+    );
+    setCurrentPage(1);
   };
 
   return (
     <Paper
       sx={{
-        p: 3,
+        p: 2,
         borderRadius: "32px",
         border: "1px solid #eaecf0",
-        boxShadow:
-          "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
+        boxShadow: (theme) => theme.shadows[1],
+        bgcolor: (theme) => theme.palette.background.paper,
       }}
     >
       <Box
@@ -74,149 +92,158 @@ const FilterSidebar = () => {
           justifyContent: "space-between",
           alignItems: "center",
           mb: 2,
+          padding: "8px 0",
+          borderBottom: (theme) => `1px solid ${theme.palette.divider || "#e0e0e0"}`,
         }}
       >
         <Typography
           variant="h6"
-          fontFamily="Archivo, sans-serif"
+          fontFamily={(theme) => theme.typography.fontFamily}
           fontWeight="bold"
         >
-          Lọc kết quả
+          Lựa chọn
         </Typography>
         <Button
-          color="error"
+          variant="outlined"
+          color="secondary"
           sx={{
-            textTransform: "none",
-            fontSize: "0.875rem",
-            fontFamily: "Archivo, sans-serif",
+            fontFamily: (theme) => theme.typography.fontFamily,
+            mb: 1,
+            borderRadius: "20px",
           }}
-          onClick={handleResetFilters}
+          onClick={onClearFilters}
         >
           Xóa bộ lọc
         </Button>
       </Box>
-      <Divider sx={{ my: 1 }} />
 
-      <Box sx={{ mb: 3 }}>
-        <FilterSectionTitle
-          fontFamily="Archivo, sans-serif"
-          variant="subtitle1"
-        >
-          Xếp hạng sao
-        </FilterSectionTitle>
+      {/* Star rating filter */}
+      <Box sx={{ mb: 3, padding: "8px 0" }}>
+        <FilterSectionTitle variant="subtitle1">Xếp hạng sao</FilterSectionTitle>
         <FormGroup>
-          {[5, 4, 3].map((star) => (
+          {[5, 4, 3, 2].map((star) => (
             <FormControlLabel
               key={star}
               control={
                 <Checkbox
-                  checked={
-                    Array.isArray(selectedStars) && selectedStars.includes(star)
-                  }
-                  onChange={() => dispatch(setStarFilter(star))}
+                  disabled={!enabledStars.has(star)}
+                  checked={selectedStars.includes(star)}
+                  onChange={() => handleStarFilter(star)}
                   size="small"
-                  sx={{ opacity: 0.6 }}
+                  sx={{
+                    color: enabledStars.has(star)
+                      ? (theme) => theme.palette.primary.main
+                      : (theme) => theme.palette.text.secondary,
+                    "&.Mui-checked": {
+                      color: (theme) => theme.palette.primary.main,
+                    },
+                    opacity: enabledStars.has(star) ? 0.6 : 0.4,
+                  }}
                 />
               }
-              label={`${star} sao`}
+              label={`${star} sao${!enabledStars.has(star) ? " (hiện tại chưa có)" : ""}`}
               sx={{
                 "& .MuiFormControlLabel-label": {
                   fontSize: "0.875rem",
-                  fontFamily: "Archivo, sans-serif",
+                  fontFamily: (theme) => theme.typography.fontFamily,
                   fontWeight: 600,
+                  color: enabledStars.has(star)
+                    ? (theme) => theme.palette.text.primary
+                    : (theme) => theme.palette.text.secondary,
                 },
               }}
             />
           ))}
         </FormGroup>
       </Box>
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2, borderColor: (theme) => theme.palette.divider || "#e0e0e0" }} />{" "}
 
-      <Box sx={{ mb: 3 }}>
-        <FilterSectionTitle
-          fontFamily="Archivo, sans-serif"
-          variant="subtitle1"
-        >
-          Thời gian
-        </FilterSectionTitle>
+      {/* Duration filter */}
+      <Box sx={{ mb: 3, padding: "8px 0" }}>
+        <FilterSectionTitle variant="subtitle1">Thời gian</FilterSectionTitle>
         <FormGroup>
           {availableDurations.map((duration) => (
             <FormControlLabel
               key={duration}
               control={
                 <Checkbox
-                  checked={
-                    Array.isArray(selectedDurations) &&
-                    selectedDurations.includes(duration)
-                  }
-                  onChange={() => dispatch(setDurationFilter(duration))}
+                  checked={selectedDurations.includes(duration)}
+                  onChange={() => handleDurationFilter(duration)}
                   size="small"
-                  sx={{ opacity: 0.6 }}
+                  sx={{
+                    color: (theme) => theme.palette.primary.main,
+                    "&.Mui-checked": {
+                      color: (theme) => theme.palette.primary.main,
+                    },
+                    opacity: 0.6,
+                  }}
                 />
               }
               label={duration}
               sx={{
                 "& .MuiFormControlLabel-label": {
                   fontSize: "0.875rem",
-                  fontFamily: "Archivo, sans-serif",
+                  fontFamily: (theme) => theme.typography.fontFamily,
                   fontWeight: 600,
+                  color: (theme) => theme.palette.text.primary,
                 },
               }}
             />
           ))}
         </FormGroup>
       </Box>
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2, borderColor: (theme) => theme.palette.divider || "#e0e0e0" }} />{" "}
 
-      <Box sx={{ mb: 3 }}>
-        <FilterSectionTitle
-          fontFamily="Archivo, sans-serif"
-          variant="subtitle1"
-        >
-          Tiện ích
-        </FilterSectionTitle>
+      {/* Services filter */}
+      <Box sx={{ mb: 3, padding: "8px 0" }}>
+        <FilterSectionTitle variant="subtitle1">Dịch vụ</FilterSectionTitle>
         <FormGroup>
-          {availableFeatures.slice(0, featureShowCount).map((feature) => (
+          {availableServices.slice(0, serviceShowCount).map((service) => (
             <FormControlLabel
-              key={feature}
+              key={service}
               control={
                 <Checkbox
-                  checked={
-                    Array.isArray(selectedFeatures) &&
-                    selectedFeatures.includes(feature)
-                  }
-                  onChange={() => dispatch(setFeatureFilter(feature))}
+                  checked={selectedServices.includes(service)}
+                  onChange={() => handleServiceFilter(service)}
                   size="small"
-                  sx={{ opacity: 0.6 }}
+                  sx={{
+                    color: (theme) => theme.palette.primary.main,
+                    "&.Mui-checked": {
+                      color: (theme) => theme.palette.primary.main,
+                    },
+                    opacity: 0.6,
+                  }}
                 />
               }
-              label={feature}
+              label={service}
               sx={{
                 "& .MuiFormControlLabel-label": {
                   fontSize: "0.875rem",
-                  fontFamily: "Archivo, sans-serif",
+                  fontFamily: (theme) => theme.typography.fontFamily,
                   fontWeight: 600,
+                  color: (theme) => theme.palette.text.primary,
                 },
               }}
             />
           ))}
         </FormGroup>
-        {featureShowCount < availableFeatures.length && (
+        {serviceShowCount < availableServices.length && (
           <Button
-            color="primary"
+            variant="contained"
             sx={{
               textTransform: "none",
-              fontSize: "0.875rem",
               fontFamily: "Archivo, sans-serif",
-              mt: 2,
-              height: "30px",
+              height: "35px",
               borderRadius: "32px",
-              bgcolor: "#fff",
-              border: "1px solid #eaecf0",
-              color: "#333",
-              "&:hover": { bgcolor: "#f5f5f5" },
+              bgcolor: "primary.main",
+              color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
+              "&:hover": {
+                bgcolor: "primary.dark",
+              },
+              mt: 2,
+              fontSize: "0.875rem",
             }}
-            onClick={() => dispatch(setFeatureShowCount(featureShowCount + 5))}
+            onClick={() => setServiceShowCount((prev) => prev + 5)}
           >
             Xem thêm
           </Button>
@@ -225,4 +252,5 @@ const FilterSidebar = () => {
     </Paper>
   );
 };
+
 export default FilterSidebar;

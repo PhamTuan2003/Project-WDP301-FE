@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  Box,
-  Typography,
-  Container,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActionArea,
-  useTheme,
-} from "@mui/material";
+import { Box, Typography, Container, Grid, Card, CardMedia, CardContent, CardActionArea } from "@mui/material";
 import { Link } from "react-router-dom";
 
 const articles = [
@@ -52,8 +42,6 @@ const articles = [
 ];
 
 export default function BlogList() {
-  const theme = useTheme();
-
   return (
     <Box
       sx={{

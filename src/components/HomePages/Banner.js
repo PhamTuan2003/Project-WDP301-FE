@@ -1,15 +1,70 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Paper, Typography, Box, Button, Stack, TextField, MenuItem, useTheme } from "@mui/material";
-
-const searchOptions = {
-  cruise: ["Tất cả du thuyền", "Heritage", "Ambassador", "Grand Pioneers", "Capella"],
-  location: ["Tất cả địa điểm", "Vịnh Hạ Long", "Vịnh Lan Hạ", "Cát Bà"],
-  guest: ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"],
-};
+import axios from "axios";
 
 export default function Banner() {
   const theme = useTheme();
-  const backgroundImage = theme.palette.mode === 'light' ? '/images/background.jpg' : '/images/background2.jpg';
+  const backgroundImage = theme.palette.mode === "light" ? "/images/background.jpg" : "/images/background2.jpg";
+
+  const [searchOptions, setSearchOptions] = useState({
+    cruise: ["Tất cả du thuyền"],
+    location: ["Tất cả địa điểm"],
+    guest: ["Tất cả mọi giá"],
+  });
+  const [selectedCruise, setSelectedCruise] = useState("Tất cả du thuyền");
+  const [selectedLocation, setSelectedLocation] = useState("Tất cả địa điểm");
+  const [selectedGuest, setSelectedGuest] = useState("Tất cả mọi giá");
+  const [locationMap, setLocationMap] = useState({}); // Ánh xạ name -> _id
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const yachtsResponse = await axios.get("http://localhost:9999/api/v1/yachts", {
+          params: { limit: 10, populate: "locationId" },
+        });
+        const yachts = Array.isArray(yachtsResponse.data?.data) ? yachtsResponse.data.data : yachtsResponse.data || [];
+
+        // Danh sách du thuyền
+        const cruiseOptions = ["Tất cả du thuyền", ...new Set(yachts.map((y) => y.name))];
+
+        // Danh sách địa điểm và ánh xạ name -> _id
+        const locations = Array.from(new Set(yachts.map((y) => y.locationId?.name).filter((n) => n)));
+        const locationOptions = ["Tất cả địa điểm", ...locations];
+        const locationIdMap = {};
+        yachts.forEach((y) => {
+          if (y.locationId?.name) {
+            locationIdMap[y.locationId.name] = y.locationId._id;
+          }
+        });
+
+        // Danh sách giá
+        const guestOptions = ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"];
+
+        setSearchOptions({ cruise: cruiseOptions, location: locationOptions, guest: guestOptions });
+        setLocationMap(locationIdMap);
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu tìm kiếm:", err);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (selectedCruise !== "Tất cả du thuyền") params.append("name", selectedCruise);
+    if (selectedLocation !== "Tất cả địa điểm") {
+      const locationId = locationMap[selectedLocation];
+      if (locationId) params.append("location", locationId);
+    }
+    if (selectedGuest === "< 3 triệu") params.append("lower_defaultPrice", 3000000);
+    else if (selectedGuest === "3-5 triệu") {
+      params.append("greater_defaultPrice", 3000000);
+      params.append("lower_defaultPrice", 5000000);
+    } else if (selectedGuest === "> 5 triệu") params.append("greater_defaultPrice", 5000000);
+
+    window.location.href = `/tim-du-thuyen?${params.toString()}`;
+  };
 
   return (
     <Box
@@ -25,7 +80,6 @@ export default function Banner() {
         justifyContent: "center",
       }}
     >
-      {/* Search Box */}
       <Paper
         elevation={3}
         sx={{
@@ -59,7 +113,8 @@ export default function Banner() {
             select
             size="small"
             fullWidth
-            defaultValue={searchOptions.cruise[0]}
+            value={selectedCruise}
+            onChange={(e) => setSelectedCruise(e.target.value)}
             label="Loại du thuyền"
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -84,7 +139,8 @@ export default function Banner() {
             select
             size="small"
             fullWidth
-            defaultValue={searchOptions.location[0]}
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
             label="Địa điểm"
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -109,7 +165,8 @@ export default function Banner() {
             select
             size="small"
             fullWidth
-            defaultValue={searchOptions.guest[0]}
+            value={selectedGuest}
+            onChange={(e) => setSelectedGuest(e.target.value)}
             label="Mức giá"
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -133,6 +190,7 @@ export default function Banner() {
           <Button
             variant="contained"
             size="large"
+            onClick={handleSearch}
             sx={{
               minWidth: { xs: "100%", sm: 120 },
               width: { xs: "100%", sm: "auto" },

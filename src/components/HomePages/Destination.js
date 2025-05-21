@@ -2,9 +2,9 @@ import React from "react";
 import { Box, Typography, Card, CardContent, CardMedia, Grid, Button, CardActions } from "@mui/material";
 
 const destinations = [
-  { name: "Vịnh Hạ Long", image: "https://ext.same-assets.com/834882384/741241613.jpeg", link: "#" },
-  { name: "Vịnh Lan Hạ", image: "https://ext.same-assets.com/834882384/1976775946.jpeg", link: "#" },
-  { name: "Đảo Cát Bà", image: "https://ext.same-assets.com/834882384/2063254602.jpeg", link: "#" },
+  { name: "Vịnh Hạ Long", image: "https://ext.same-assets.com/834882384/741241613.jpeg"},
+  { name: "Vịnh Lan Hạ", image: "https://ext.same-assets.com/834882384/1976775946.jpeg" },
+  { name: "Đảo Cát Bà", image: "https://ext.same-assets.com/834882384/2063254602.jpeg" },
 ];
 
 export default function Destination() {
