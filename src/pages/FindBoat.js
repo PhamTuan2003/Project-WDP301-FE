@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Box, Container, Grid, Stack, Typography, TextField, InputAdornment, MenuItem, Paper } from "@mui/material";
 import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
 import axios from "axios";
@@ -7,11 +7,22 @@ import SearchBar from "../components/FindBoat/SearchBar";
 import FilterSidebar from "../components/FindBoat/FilterSidebar";
 import CruiseCard from "../components/FindBoat/CruiseCard";
 import PaginationSection from "../components/FindBoat/PaginationSection";
+import {
+  setSearchTerm,
+  setDeparturePoint,
+  setPriceRange,
+  setCurrentPage,
+  setSortOption,
+  setSelectedStars,
+  setSelectedDurations,
+  setSelectedServices,
+} from "../redux/action";
 
 const priceRanges = [
-  { label: "1-3 triệu", value: "1-3", min: 1000000, max: 3000000 },
+  { label: "< 3 triệu", value: "under-3", min: 0, max: 3000000 },
   { label: "3-6 triệu", value: "3-6", min: 3000000, max: 6000000 },
-  { label: "Hơn 3 triệu", value: "over-3", min: 3000000, max: Infinity },
+  { label: "> 6 triệu", value: "over-6", min: 6000000, max: Infinity },
+  { label: "Tất cả mức giá", value: "all", min: 0, max: Infinity },
 ];
 
 const sortOptions = [
@@ -21,26 +32,47 @@ const sortOptions = [
 ];
 
 const FindBoat = () => {
+  const dispatch = useDispatch();
+  const {
+    searchTerm,
+    selectedDeparturePoint,
+    selectedPriceRange,
+    currentPage,
+    selectedStars,
+    selectedDurations,
+    selectedServices,
+    sortOption,
+  } = useSelector((state) => state.filters || {});
   const [yachts, setYachts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStars, setSelectedStars] = useState([]);
-  const [selectedDurations, setSelectedDurations] = useState([]);
-  const [selectedServices, setSelectedServices] = useState([]);
+  const [uniqueDeparturePoints, setUniqueDeparturePoints] = useState([]);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [availableDurations, setAvailableDurations] = useState([]);
   const [serviceShowCount, setServiceShowCount] = useState(5);
-  const [selectedDeparturePoint, setSelectedDeparturePoint] = useState("");
-  const [selectedPriceRange, setSelectedPriceRange] = useState("");
-  const [sortOption, setSortOption] = useState("");
 
   const itemsPerPage = 5;
 
-  const [uniqueDeparturePoints, setUniqueDeparturePoints] = useState([]);
-  const [availableServices, setAvailableServices] = useState([])
-  const [availableDurations, setAvailableDurations] = useState([]);
+  // Đọc query params khi load trang
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchTermParam = params.get("searchTerm");
+    const departurePointParam = params.get("departurePoint");
+    const priceRangeParam = params.get("priceRange");
 
-  const { currentPage: reduxCurrentPage } = useSelector((state) => state.filters || {});
+    if (searchTermParam && searchTermParam !== searchTerm) {
+      dispatch(setSearchTerm(searchTermParam));
+    }
+    if (departurePointParam && departurePointParam !== selectedDeparturePoint) {
+      dispatch(setDeparturePoint(departurePointParam));
+    }
+    if (priceRangeParam && priceRangeParam !== selectedPriceRange) {
+      dispatch(setPriceRange(priceRangeParam));
+    }
+    if (searchTermParam || departurePointParam || priceRangeParam) {
+      dispatch(setCurrentPage(1));
+    }
+  }, [dispatch, searchTerm, selectedDeparturePoint, selectedPriceRange]);
 
   useEffect(() => {
     const fetchYachts = async () => {
@@ -119,24 +151,27 @@ const FindBoat = () => {
     fetchYachts();
   }, []);
 
-  // Đồng bộ currentPage từ Redux
-  useEffect(() => {
-    setCurrentPage(reduxCurrentPage);
-  }, [reduxCurrentPage]);
-
   // Frontend filtering logic
   const filteredYachts = yachts.filter((yacht) => {
     // Filter by search term (name)
-    const matchesSearchTerm = yacht.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearchTerm =
+      !searchTerm || searchTerm === "Tất cả du thuyền" || yacht.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Filter by departure point (locationId.name)
-    const matchesDeparturePoint = !selectedDeparturePoint || yacht.locationId?.name === selectedDeparturePoint;
+    const matchesDeparturePoint =
+      !selectedDeparturePoint ||
+      selectedDeparturePoint === "Tất cả địa điểm" ||
+      yacht.locationId?.name === selectedDeparturePoint;
 
     // Filter by price range (cheapestPrice)
     const cheapestPrice = yacht.cheapestPrice || 0;
-    const priceRange = priceRanges.find((r) => r.value === selectedPriceRange);
-    const matchesPriceRange =
-      !selectedPriceRange || (cheapestPrice >= (priceRange?.min || 0) && cheapestPrice < (priceRange?.max || Infinity));
+    const matchesPriceRange = (() => {
+      if (!selectedPriceRange || selectedPriceRange === "Tất cả mức giá") return true;
+      if (selectedPriceRange === "< 3 triệu") return cheapestPrice >= 0 && cheapestPrice <= 3000000;
+      if (selectedPriceRange === "3-6 triệu") return cheapestPrice >= 3000000 && cheapestPrice <= 6000000;
+      if (selectedPriceRange === "> 6 triệu") return cheapestPrice > 6000000;
+      return true;
+    })();
 
     // Filter by stars (starRating)
     const matchesStars = selectedStars.length === 0 || selectedStars.includes(Math.round(yacht.starRating));
@@ -178,7 +213,11 @@ const FindBoat = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentYachts = sortedYachts.slice(indexOfFirstItem, indexOfLastItem);
 
-   // Debug log
+  // Debug log
+  console.log("Search Term:", searchTerm);
+  console.log("Selected Departure Point:", selectedDeparturePoint);
+  console.log("Selected Price Range:", selectedPriceRange);
+  console.log("Selected Durations:", selectedDurations);
   console.log("Current Page:", currentPage);
   console.log("Total Pages:", totalPages);
   console.log("Sorted Yachts:", sortedYachts);
@@ -186,13 +225,13 @@ const FindBoat = () => {
 
   // Reset bộ lọc
   const handleClearFilters = () => {
-    setSearchTerm("");
-    setSelectedStars([]);
-    setSelectedDurations([]);
-    setSelectedServices([]);
-    setSelectedDeparturePoint("");
-    setSelectedPriceRange("");
-    setCurrentPage(1);
+    dispatch(setSearchTerm("Tất cả du thuyền"));
+    dispatch(setDeparturePoint("Tất cả địa điểm"));
+    dispatch(setPriceRange("Tất cả mức giá"));
+    dispatch(setSelectedStars([]));
+    dispatch(setSelectedDurations([]));
+    dispatch(setSelectedServices([]));
+    dispatch(setCurrentPage(1));
   };
 
   return (
@@ -225,15 +264,9 @@ const FindBoat = () => {
           Hơn 100 tour du thuyền hạng sang giá tốt đang chờ bạn
         </Typography>
         <SearchBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedDeparturePoint={selectedDeparturePoint}
-          setSelectedDeparturePoint={setSelectedDeparturePoint}
-          selectedPriceRange={selectedPriceRange}
-          setSelectedPriceRange={setSelectedPriceRange}
           uniqueDeparturePoints={uniqueDeparturePoints}
           priceRanges={priceRanges}
-          setCurrentPage={setCurrentPage}
+          setCurrentPage={(page) => dispatch(setCurrentPage(page))}
         />
       </Paper>
 
@@ -279,7 +312,7 @@ const FindBoat = () => {
         <TextField
           select
           value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
+          onChange={(e) => dispatch(setSortOption(e.target.value))}
           SelectProps={{ displayEmpty: true }}
           InputProps={{
             startAdornment: (
@@ -315,17 +348,11 @@ const FindBoat = () => {
         {/* FilterSidebar */}
         <Grid item xs={12} md={3}>
           <FilterSidebar
-            selectedStars={selectedStars}
-            setSelectedStars={setSelectedStars}
-            selectedDurations={selectedDurations}
-            setSelectedDurations={setSelectedDurations}
-            selectedServices={selectedServices}
-            setSelectedServices={setSelectedServices}
-            serviceShowCount={serviceShowCount}
-            setServiceShowCount={setServiceShowCount}
             availableServices={availableServices}
             availableDurations={availableDurations}
-            setCurrentPage={setCurrentPage}
+            serviceShowCount={serviceShowCount}
+            setServiceShowCount={setServiceShowCount}
+            setCurrentPage={(page) => dispatch(setCurrentPage(page))}
             onClearFilters={handleClearFilters}
           />
         </Grid>

@@ -15,9 +15,9 @@ import UserGuide from "./layout/componentsFooter/UserGuide";
 import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
 import ContactSection from "./layout/componentsFooter/ContactSection";
 import Enterprise from "./components/Enterprise/Enterprise";
-import BlogDetail from './components/Blog/BlogDetail';
-import BlogList from './components/Blog/BlogList';
-
+import BlogDetail from "./components/Blog/BlogDetail";
+import BlogList from "./components/Blog/BlogList";
+import DetailBoat from "./components/DetailBoat/DetailBoat";
 function App() {
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
 
@@ -39,6 +39,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/find-boat" element={<FindBoat />} />
+          <Route path="/boat-detail" element={<DetailBoat />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/ve-chung-toi" element={<AboutUs />} />

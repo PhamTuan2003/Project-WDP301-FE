@@ -1,12 +1,12 @@
 const initialState = {
-  searchTerm: "",
+  searchTerm: "Tất cả du thuyền",
+  selectedDeparturePoint: "Tất cả địa điểm",
+  selectedPriceRange: "Tất cả mức giá",
+  currentPage: 1,
+  sortOption: "",
   selectedStars: [],
   selectedDurations: [],
   selectedServices: [], // Đổi từ selectedFeatures
-  selectedDeparturePoint: "",
-  selectedPriceRange: "",
-  sortOption: "",
-  currentPage: 1,
   serviceShowCount: 5, // Đổi từ featureShowCount
   noResults: false,
   filteredYachts: [], // Thêm state để lưu kết quả lọc
@@ -64,6 +64,12 @@ const filtersReducer = (state = initialState, action) => {
       return { ...state, loading: action.payload };
     case "SET_ERROR": // Thêm xử lý cho error
       return { ...state, error: action.payload };
+      case "SET_SELECTED_STARS":
+      return { ...state, selectedStars: action.payload };
+    case "SET_SELECTED_DURATIONS":
+      return { ...state, selectedDurations: action.payload };
+    case "SET_SELECTED_SERVICES":
+      return { ...state, selectedServices: action.payload };
     default:
       return state;
   }
