@@ -3,6 +3,7 @@
 @tailwind utilities;
 @import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap');
 
+
 html {
     font-family: "Archivo", serif;
 }
@@ -776,5 +777,3 @@ p.md {
     background-color: #f3f3f5 !important;
     color: #4a4a4a !important;
 }
-
-/* ------------------------------- */

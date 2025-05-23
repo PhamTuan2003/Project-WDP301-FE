@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { Paper, Typography, Box, Button, Stack, TextField, MenuItem, useTheme } from "@mui/material";
 import axios from "axios";
+import { setSearchTerm, setDeparturePoint, setPriceRange, setCurrentPage } from "../../redux/action";
 
 export default function Banner() {
+  const dispatch = useDispatch();
   const theme = useTheme();
   const backgroundImage = theme.palette.mode === "light" ? "/images/background.jpg" : "/images/background2.jpg";
 
   const [searchOptions, setSearchOptions] = useState({
     cruise: ["Tất cả du thuyền"],
     location: ["Tất cả địa điểm"],
-    guest: ["Tất cả mọi giá"],
+    price: ["Tất cả mức giá"],
   });
   const [selectedCruise, setSelectedCruise] = useState("Tất cả du thuyền");
   const [selectedLocation, setSelectedLocation] = useState("Tất cả địa điểm");
-  const [selectedGuest, setSelectedGuest] = useState("Tất cả mọi giá");
-  const [locationMap, setLocationMap] = useState({}); // Ánh xạ name -> _id
+  const [selectedPrice, setSelectedPrice] = useState("Tất cả mức giá");
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -27,21 +29,13 @@ export default function Banner() {
         // Danh sách du thuyền
         const cruiseOptions = ["Tất cả du thuyền", ...new Set(yachts.map((y) => y.name))];
 
-        // Danh sách địa điểm và ánh xạ name -> _id
-        const locations = Array.from(new Set(yachts.map((y) => y.locationId?.name).filter((n) => n)));
-        const locationOptions = ["Tất cả địa điểm", ...locations];
-        const locationIdMap = {};
-        yachts.forEach((y) => {
-          if (y.locationId?.name) {
-            locationIdMap[y.locationId.name] = y.locationId._id;
-          }
-        });
+        // Danh sách địa điểm
+        const locationOptions = ["Tất cả địa điểm", ...new Set(yachts.map((y) => y.locationId?.name).filter((n) => n))];
 
-        // Danh sách giá
-        const guestOptions = ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"];
+        // Danh sách giá (đồng bộ với SearchBar.js)
+        const priceOptions = ["Tất cả mức giá", "< 3 triệu", "3-6 triệu", "> 6 triệu"];
 
-        setSearchOptions({ cruise: cruiseOptions, location: locationOptions, guest: guestOptions });
-        setLocationMap(locationIdMap);
+        setSearchOptions({ cruise: cruiseOptions, location: locationOptions, price: priceOptions });
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu tìm kiếm:", err);
       }
@@ -51,19 +45,13 @@ export default function Banner() {
   }, []);
 
   const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (selectedCruise !== "Tất cả du thuyền") params.append("name", selectedCruise);
-    if (selectedLocation !== "Tất cả địa điểm") {
-      const locationId = locationMap[selectedLocation];
-      if (locationId) params.append("location", locationId);
-    }
-    if (selectedGuest === "< 3 triệu") params.append("lower_defaultPrice", 3000000);
-    else if (selectedGuest === "3-5 triệu") {
-      params.append("greater_defaultPrice", 3000000);
-      params.append("lower_defaultPrice", 5000000);
-    } else if (selectedGuest === "> 5 triệu") params.append("greater_defaultPrice", 5000000);
-
-    window.location.href = `/tim-du-thuyen?${params.toString()}`;
+    // Dispatch Redux actions
+    dispatch(setSearchTerm(selectedCruise));
+    dispatch(setDeparturePoint(selectedLocation));
+    dispatch(setPriceRange(selectedPrice));
+    dispatch(setCurrentPage(1));
+    // Chuyển hướng đến /find-boat? (không kèm query params), giảm UX người dùng là chắc chắn:))
+    window.location.href = "/find-boat";
   };
 
   return (
@@ -165,8 +153,8 @@ export default function Banner() {
             select
             size="small"
             fullWidth
-            value={selectedGuest}
-            onChange={(e) => setSelectedGuest(e.target.value)}
+            value={selectedPrice}
+            onChange={(e) => setSelectedPrice(e.target.value)}
             label="Mức giá"
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -181,7 +169,7 @@ export default function Banner() {
               "& .MuiSelect-icon": { color: "text.primary" },
             }}
           >
-            {searchOptions.guest.map((option) => (
+            {searchOptions.price.map((option) => (
               <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
                 {option}
               </MenuItem>

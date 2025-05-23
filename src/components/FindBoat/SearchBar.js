@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Grid, TextField, InputAdornment, Stack, Button, MenuItem, Typography, Box } from "@mui/material";
+import { Grid, TextField, InputAdornment, Stack, Button, MenuItem } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import PinDrop from "@mui/icons-material/PinDrop";
 import MonetizationOnOutlined from "@mui/icons-material/MonetizationOnOutlined";
 import axios from "axios";
-import { setSearchTerm, setDeparturePoint, setPriceRange, setFilteredYachts } from "../../redux/action";
+import { setSearchTerm, setDeparturePoint, setPriceRange } from "../../redux/action";
 
-const SearchBar = () => {
+const SearchBar = ({ uniqueDeparturePoints, priceRanges, setCurrentPage }) => {
   const dispatch = useDispatch();
   const { searchTerm, selectedDeparturePoint, selectedPriceRange } = useSelector((state) => state.filters || {});
   const [searchOptions, setSearchOptions] = useState({
@@ -15,9 +15,6 @@ const SearchBar = () => {
     location: ["Tất cả địa điểm"],
     price: ["Tất cả mức giá"],
   });
-  const [locationMap, setLocationMap] = useState({});
-  const [yachts, setYachts] = useState([]); // Danh sách du thuyền từ API
-  const [filteredYachts, setFilteredYachtsLocal] = useState([]); // Kết quả lọc realtime
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -25,27 +22,13 @@ const SearchBar = () => {
         const yachtsResponse = await axios.get("http://localhost:9999/api/v1/yachts", {
           params: { limit: 10, populate: "locationId" },
         });
-        const yachtsData = Array.isArray(yachtsResponse.data?.data) ? yachtsResponse.data.data : yachtsResponse.data || [];
-        setYachts(yachtsData);
+        const yachtsData = Array.isArray(yachtsResponse.data?.data) ? yachtsResponse.data.data : [];
 
-        // Danh sách du thuyền
         const cruiseOptions = ["Tất cả du thuyền", ...new Set(yachtsData.map((y) => y.name))];
-
-        // Danh sách địa điểm và ánh xạ name -> _id
-        const locations = Array.from(new Set(yachtsData.map((y) => y.locationId?.name).filter((n) => n)));
-        const locationOptions = ["Tất cả địa điểm", ...locations];
-        const locationIdMap = {};
-        yachtsData.forEach((y) => {
-          if (y.locationId?.name) {
-            locationIdMap[y.locationId.name] = y.locationId._id;
-          }
-        });
-
-        // Danh sách giá
-        const priceOptions = ["Tất cả mức giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"];
+        const locationOptions = ["Tất cả địa điểm", ...new Set(yachtsData.map((y) => y.locationId?.name).filter(Boolean))];
+        const priceOptions = ["Tất cả mức giá", "< 3 triệu", "3-6 triệu", "> 6 triệu"];
 
         setSearchOptions({ cruise: cruiseOptions, location: locationOptions, price: priceOptions });
-        setLocationMap(locationIdMap);
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu tìm kiếm:", err);
       }
@@ -54,34 +37,11 @@ const SearchBar = () => {
     fetchOptions();
   }, []);
 
-  // Lọc realtime khi thay đổi searchTerm, selectedDeparturePoint, selectedPriceRange
-  useEffect(() => {
-    const filtered = yachts.filter((yacht) => {
-      const matchesSearchTerm =
-        searchTerm === "Tất cả du thuyền" || yacht.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDeparturePoint =
-        selectedDeparturePoint === "Tất cả địa điểm" || yacht.locationId?.name === selectedDeparturePoint;
-      const matchesPriceRange = (() => {
-        if (selectedPriceRange === "Tất cả mức giá") return true;
-        const price = yacht.cheapestPrice || 0;
-        if (selectedPriceRange === "< 3 triệu") return price < 3000000;
-        if (selectedPriceRange === "3-5 triệu") return price >= 3000000 && price <= 5000000;
-        if (selectedPriceRange === "> 5 triệu") return price > 5000000;
-        return true;
-      })();
-
-      return matchesSearchTerm && matchesDeparturePoint && matchesPriceRange;
-    });
-    setFilteredYachtsLocal(filtered);
-    dispatch(setFilteredYachts(filtered)); // Đồng bộ với Redux
-  }, [searchTerm, selectedDeparturePoint, selectedPriceRange, yachts, dispatch]);
-
   const handleSearch = () => {
-    // Trigger để đồng bộ hoặc làm gì đó bổ sung (nếu cần)
-    dispatch(setSearchTerm(searchTerm));
-    dispatch(setDeparturePoint(selectedDeparturePoint));
-    dispatch(setPriceRange(selectedPriceRange));
-    // Kết quả đã được cập nhật realtime trong useEffect
+    dispatch(setSearchTerm(searchTerm || "Tất cả du thuyền"));
+    dispatch(setDeparturePoint(selectedDeparturePoint || "Tất cả địa điểm"));
+    dispatch(setPriceRange(selectedPriceRange || "Tất cả mức giá"));
+    setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
   };
 
   return (
@@ -143,8 +103,8 @@ const SearchBar = () => {
           >
             {searchOptions.location.map((option) => (
               <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
-                {option}
-              </MenuItem>
+              {option}
+            </MenuItem>
             ))}
           </TextField>
           <TextField
@@ -191,25 +151,6 @@ const SearchBar = () => {
             Tìm kiếm
           </Button>
         </Stack>
-      </Grid>
-      {/* Preview kết quả realtime */}
-      <Grid item xs={12}>
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle1" color="text.primary">
-            Kết quả ({filteredYachts.length} du thuyền):
-          </Typography>
-          {filteredYachts.length > 0 ? (
-            filteredYachts.map((yacht) => (
-              <Typography key={yacht._id} variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                {yacht.name} - {yacht.locationId?.name || "Không rõ địa điểm"} - {yacht.cheapestPrice || "N/A"} VNĐ
-              </Typography>
-            ))
-          ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-              Không tìm thấy du thuyền nào.
-            </Typography>
-          )}
-        </Box>
       </Grid>
     </Grid>
   );

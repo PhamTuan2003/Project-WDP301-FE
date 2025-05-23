@@ -62,3 +62,17 @@ export const setError = (error) => ({
   type: "SET_ERROR",
   payload: error,
 });
+export const setSelectedStars = (stars) => ({
+  type: "SET_SELECTED_STARS",
+  payload: stars,
+});
+
+export const setSelectedDurations = (durations) => ({
+  type: "SET_SELECTED_DURATIONS",
+  payload: durations,
+});
+
+export const setSelectedServices = (services) => ({
+  type: "SET_SELECTED_SERVICES",
+  payload: services,
+});
