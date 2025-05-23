@@ -277,7 +277,6 @@ function DetailBoat() {
                   Giới thiệu về du thuyền
                 </p>
                 <p className="my-2">{yacht.description}</p>
-                <img src={yacht.image} alt={yacht.name} className="my-4" />
                 <p className="my-2">
                   Du thuyền {yacht.name} có thiết kế tinh tế với thân vỏ làm từ{" "}
                   {yacht.hullBody}. Hành trình khám phá {yacht.itinerary} mang

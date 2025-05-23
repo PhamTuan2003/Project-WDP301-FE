@@ -17,18 +17,16 @@ function ImageCarousel({ yachtId }) {
     const fetchImages = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:9999/api/v1/yachts/findboat/${yachtId}`
+          `http://localhost:9999/api/v1/yachtImages/yacht/${yachtId}`
         );
-        // Access images from res.data.data.image
-        const images = response.data.data.image || [];
+        const images = response.data.data || [];
         if (images.length > 0) {
-          // For 1 or more images, use all images
-          setMainImages(
-            images.map((url, idx) => ({
-              src: url,
-              alt: `Yacht image ${idx + 1}`,
-            }))
-          );
+          // Map the imageUrl array to the required format
+          const imageList = images.map((url, idx) => ({
+            src: url,
+            alt: `Yacht image ${idx + 1}`,
+          }));
+          setMainImages(imageList);
           setThumbnails(images);
         } else {
           // Use fallback images if no images are returned
@@ -78,7 +76,7 @@ function ImageCarousel({ yachtId }) {
 
   return (
     <div className="w-full mt-10 overflow-hidden">
-      <div className="flex px-6 ">
+      <div className="flex px-6">
         <div className="w-1/6 relative flex items-center justify-center">
           <img
             src={
