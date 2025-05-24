@@ -10,49 +10,14 @@ import RoomSelector from "../components/DetailBoat/RoomSelector";
 import BoatInfo from "../components/DetailBoat/BoatInfo";
 import ReviewSection from "../components/DetailBoat/ReviewSection";
 import { Image } from "react-bootstrap";
+import { ArrowRight, BadgeInfo, X } from "lucide-react";
 
 function DetailBoat() {
   const { id } = useParams(); // Get the yacht ID from the URL
   const [yacht, setYacht] = useState(null); // State to store fetched yacht data
   const [activeTab, setActiveTab] = useState(0);
-  const [rooms, setRooms] = useState([
-    {
-      id: 1,
-      name: "Phòng Delta Suite",
-      image: "./images/yacht-10.jpg",
-      area: "33",
-      beds: 2,
-      price: 4150000,
-      quantity: 0,
-    },
-    {
-      id: 2,
-      name: "Phòng Ocean Suite",
-      image: "./images/yacht-10.jpg",
-      area: "33",
-      beds: 2,
-      price: 4370000,
-      quantity: 0,
-    },
-    {
-      id: 3,
-      name: "Phòng Captain Suite",
-      image: "./images/yacht-10.jpg",
-      area: "35",
-      beds: 2,
-      price: 4620000,
-      quantity: 0,
-    },
-    {
-      id: 4,
-      name: "Phòng Regal Suite",
-      image: "./images/yacht-10.jpg",
-      area: "45",
-      beds: 2,
-      price: 4870000,
-      quantity: 0,
-    },
-  ]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
 
   const sectionRefs = useRef({
     features: null,
@@ -82,24 +47,41 @@ function DetailBoat() {
     fetchYacht();
   }, [id]);
 
-  const handleDecrement = (id) => {
-    setRooms(
-      rooms.map((room) =>
-        room.id === id
-          ? { ...room, quantity: Math.max(0, room.quantity - 1) }
-          : room
-      )
-    );
-  };
+  // Fetch reviews to calculate average rating and total reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:9999/api/v1/yachts/${id}/feedbacks`
+        );
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const reviews = response.data.data;
+          setTotalReviews(reviews.length);
+          const avgRating =
+            reviews.length > 0
+              ? (
+                  reviews.reduce((sum, review) => sum + review.starRating, 0) /
+                  reviews.length
+                ).toFixed(1)
+              : 0;
 
-  const handleIncrement = (id) => {
-    setRooms(
-      rooms.map((room) =>
-        room.id === id ? { ...room, quantity: room.quantity + 1 } : room
-      )
-    );
-  };
+          setAverageRating(avgRating);
+          setTotalReviews(reviews.length);
+        } else {
+          setTotalReviews(0);
+          setAverageRating(0);
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        setTotalReviews(0);
+        setAverageRating(0);
+      }
+    };
 
+    fetchReviews();
+  }, [id]);
+
+  // Handle booking
   const handleBookNow = () => {
     Swal.fire({
       title: "Đặt hàng thành công!",
@@ -108,11 +90,6 @@ function DetailBoat() {
       confirmButtonText: "OK",
     });
   };
-
-  const totalAmount = rooms.reduce(
-    (total, room) => total + room.price * room.quantity,
-    0
-  );
 
   // Update active tab based on scroll position
   useEffect(() => {
@@ -144,7 +121,7 @@ function DetailBoat() {
   }, []);
 
   if (!yacht) {
-    return <div>Loading...</div>; // Display loading state while fetching data
+    return <div>Loading...</div>;
   }
 
   return (
@@ -156,16 +133,20 @@ function DetailBoat() {
             aria-label="breadcrumb"
             className="flex gap-3"
           >
-            <Link to="/" className="flex items-center hover:text-black">
+            <Link to="/" className="flex items-center hover:text-cyan-500">
               <HouseFill size={25} className="mr-2" />
             </Link>
             <Link
               to="/find-boat"
-              className="flex items-center hover:text-gray-900"
+              className="flex items-center hover:text-cyan-500 !font-archivo"
+              color="text.secondary"
             >
               Tìm du thuyền
             </Link>
-            <Typography className="text-teal-800 hover:text-cyan-400">
+            <Typography
+              color="text.primary"
+              className="!font-archivo hover:text-cyan-500"
+            >
               {yacht.name}
             </Typography>
           </Breadcrumbs>
@@ -174,7 +155,12 @@ function DetailBoat() {
       <Container className="py-10 font-archivo">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="md:w-8/12">
-            <h1 className="text-4xl font-bold text-gray-900">{yacht.name}</h1>
+            <h1
+              className="text-4xl font-bold light:text-gray-900"
+              color="text.primary"
+            >
+              {yacht.name}
+            </h1>
             <div className="flex items-center gap-2 my-5">
               <span className="bg-yellow-200 text-sm font-medium text-orange-800 rounded-2xl px-3 py-1 flex items-center">
                 <svg
@@ -183,31 +169,35 @@ function DetailBoat() {
                 >
                   <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                 </svg>
-                4.9 (12) đánh giá
+                {averageRating} ({totalReviews}) đánh giá
               </span>
               <Link
                 to="#"
                 className="flex text-sm items-center bg-gray-100 text-gray-700 rounded-2xl px-3 py-1"
               >
                 <span>{yacht.IdCompanys.address}</span>
-                <span className="text-teal-400 underline pl-2">
+                <span className="light:text-teal-400 dark:text-teal-600 underline pl-2">
                   Xem bản đồ và lịch trình
                 </span>
               </Link>
             </div>
-            <Image src="./images/heading-border.webp" className="my-4" />
+            <Image src="../icons/heading-border.webp" className="my-4" />
           </div>
           <div className="md:w-4/12 flex flex-col">
-            <p className="text-4xl font-bold text-teal-800">
+            <p className="text-4xl font-bold light:text-teal-800 dark:text-teal-400">
               3,850,000 đ/khách
             </p>
           </div>
         </div>
       </Container>
-      <ImageCarousel yachtId={id} /> {/* Pass yachtId to ImageCarousel */}
+      <ImageCarousel yachtId={id} />
       <Container className="py-20">
-        <div className="sticky top-24 z-10 bg-white">
-          <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        <div className="sticky top-24 z-10 rounded-3xl">
+          <Tabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            totalReviews={totalReviews}
+          />
         </div>
         <div className="flex flex-col md:flex-row mt-10 gap-6">
           <div className="md:w-8/12">
@@ -216,16 +206,16 @@ function DetailBoat() {
               className="scroll-mt-32"
               ref={(el) => (sectionRefs.current.features = el)}
             >
-              <h2 className="text-4xl font-bold text-gray-900">
+              <h2 className="text-4xl font-bold light:text-gray-900 dark:text.primary">
                 Đặc điểm nổi bật
               </h2>
               <img
-                src="./images/heading-border.webp"
+                src="../icons/heading-border.webp"
                 alt="Divider"
                 className="my-6"
               />
               <div className="flex gap-2 items-center my-10">
-                <img src="./icons/Wine.svg" alt="Wine icon" />
+                <img src="../icons/Wine.svg" alt="Wine icon" />
                 <p className="text-md font-medium">Quầy bar</p>
               </div>
               <div className="space-y-6">
@@ -252,13 +242,7 @@ function DetailBoat() {
               className="mt-16 scroll-mt-32"
               ref={(el) => (sectionRefs.current.rooms = el)}
             >
-              <RoomSelector
-                rooms={rooms}
-                handleDecrement={handleDecrement}
-                handleIncrement={handleIncrement}
-                totalAmount={totalAmount}
-                handleBookNow={handleBookNow}
-              />
+              <RoomSelector yachtId={id} handleBookNow={handleBookNow} />
             </div>
 
             <div
@@ -266,17 +250,27 @@ function DetailBoat() {
               className="mt-16 scroll-mt-32"
               ref={(el) => (sectionRefs.current.introduction = el)}
             >
-              <h2 className="text-4xl font-bold text-gray-900">Giới thiệu</h2>
+              <h2 className="text-4xl font-bold light:text-gray-900 dark:text.primary">
+                Giới thiệu
+              </h2>
               <img
-                src="./images/heading-border.webp"
+                src="../icons/heading-border.webp"
                 alt="Divider"
                 className="my-6"
               />
               <div className="text-base">
-                <p className="text-2xl font-bold my-4">
+                <p className="text-3xl font-bold my-4">
                   Giới thiệu về du thuyền
                 </p>
+                <Image
+                  src="../images/yacht-2.jpg"
+                  className="rounded-3xl mb-4"
+                />
                 <p className="my-2">{yacht.description}</p>
+                <Image
+                  src="../images/yacht-3.jpg"
+                  className="rounded-3xl w-full mb-4"
+                />
                 <p className="my-2">
                   Du thuyền {yacht.name} có thiết kế tinh tế với thân vỏ làm từ{" "}
                   {yacht.hullBody}. Hành trình khám phá {yacht.itinerary} mang
@@ -290,11 +284,11 @@ function DetailBoat() {
               className="mt-16 scroll-mt-32"
               ref={(el) => (sectionRefs.current.regulations = el)}
             >
-              <h2 className="text-4xl font-bold text-gray-900">
+              <h2 className="text-4xl font-bold light:light:text-gray-900">
                 Quy định chung và lưu ý
               </h2>
               <img
-                src="./images/heading-border.webp"
+                src="../icons/heading-border.webp"
                 alt="Divider"
                 className="my-6"
               />
@@ -302,100 +296,50 @@ function DetailBoat() {
                 Bạn có thể xem Quy định chung và lưu ý:{" "}
                 <Link
                   to="#"
-                  className="flex items-center gap-2 text-teal-800 hover:text-teal-400"
+                  className="flex items-center text-teal-800 hover:text-teal-400"
                 >
-                  Tại đây{" "}
-                  <svg
-                    className="w-5 h-5"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path
-                      d="M5 12h14M12 5l7 7-7 7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
+                  Tại đây <ArrowRight size={20} />
                 </Link>
               </p>
             </div>
 
             <div id="faq" className="mt-16 scroll-mt-32">
-              <h2 className="text-4xl font-bold text-gray-900">
+              <h2 className="text-4xl font-bold light:text-gray-900">
                 Câu hỏi thường gặp
               </h2>
               <img
-                src="./images/heading-border.webp"
+                src="../icons/heading-border.webp"
                 alt="Divider"
                 className="my-6"
               />
-              <p className="flex items-center gap-2 text-base font-medium">
+              <p className="flex items-center  text-base font-medium">
                 Bạn có thể xem Câu hỏi thường gặp:{" "}
                 <Link
                   to="#"
-                  className="flex items-center gap-2 text-teal-800 hover:text-teal-400"
+                  className="flex items-center text-teal-800 hover:text-teal-400"
                 >
-                  Tại đây{" "}
-                  <svg
-                    className="w-5 h-5"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path
-                      d="M5 12h14M12 5l7 7-7 7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
+                  Tại đây <ArrowRight size={20} />
                 </Link>
               </p>
             </div>
 
             <div id="map" className="mt-16 scroll-mt-32">
-              <h2 className="text-4xl font-bold text-gray-900">
+              <h2 className="text-4xl font-bold light:text-gray-900">
                 Bản đồ và lịch trình
               </h2>
               <img
-                src="./images/heading-border.webp"
+                src="../icons/heading-border.webp"
                 alt="Divider"
                 className="my-6"
               />
               <div className="space-y-4">
                 <div className="relative bg-gray-100 text-gray-700 p-4 rounded-2xl shadow-sm border border-gray-300">
                   <div className="absolute top-2 right-2 cursor-pointer">
-                    <svg
-                      className="w-6 h-6"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path
-                        d="M6 18L18 6M6 6l12 12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
+                    <X />
                   </div>
                   <div className="flex">
-                    <svg
-                      className="w-6 h-6 mr-2"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="none"
-                      />
-                      <path
-                        d="M12 16h.01M12 12h.01M12 8h.01"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                    <div>
+                    <BadgeInfo size={20} />
+                    <div className="font-medium">
                       <p className="text-sm font-medium">Thông tin cần biết:</p>
                       <ul className="list-disc pl-5 text-sm space-y-1">
                         <li>
@@ -436,10 +380,10 @@ function DetailBoat() {
               className="mt-16 scroll-mt-32"
               ref={(el) => (sectionRefs.current.reviews = el)}
             >
-              <ReviewSection />
+              <ReviewSection yachtId={id} />
             </div>
           </div>
-          <BoatInfo yacht={yacht} /> {/* Pass yacht data to BoatInfo */}
+          <BoatInfo yacht={yacht} />
         </div>
       </Container>
     </div>

@@ -152,12 +152,13 @@ const CruiseCard = ({ cruise }) => {
           display: "flex",
           flexDirection: { xs: "row", md: "row" },
           borderRadius: "32px",
-          bgcolor: (theme) => theme.palette.background.paper,
+
           width: "100%",
           alignItems: "center",
           cursor: "pointer",
           transition: "transform 0.2s",
           border: "1px solid",
+          bgcolor: (theme) => theme.palette.background.paper,
           borderColor: (theme) => theme.palette.divider,
           boxShadow: (theme) => theme.shadows[1],
         }}
