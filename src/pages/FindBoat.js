@@ -291,6 +291,7 @@ const FindBoat = () => {
           mb: 3,
           borderRadius: "32px",
           border: "1px solid",
+          fontFamily: (theme) => theme.typography.fontFamily,
           borderColor: (theme) => theme.palette.divider,
           bgcolor: (theme) => theme.palette.background.paper,
           boxShadow: (theme) => theme.shadows[1],
@@ -348,6 +349,7 @@ const FindBoat = () => {
               color: "text.primary",
               fontWeight: "bold",
             }}
+            fontFamily={"Archivo, sans-serif"}
           >
             Tìm thấy {sortedYachts.length} kết quả
           </Typography>
