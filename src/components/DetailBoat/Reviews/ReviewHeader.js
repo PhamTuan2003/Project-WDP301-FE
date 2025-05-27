@@ -45,8 +45,7 @@ const ReviewHeader = ({ totalReviews, isAuthenticated }) => {
 
   // Lấy customer info từ Redux hoặc fallback về localStorage
   const currentCustomer = customer || getCustomerFromStorage();
-  const isLoggedIn = !!currentCustomer?.accountId; // Kiểm tra login bằng accountId
-  const canReview = !!currentCustomer?.customerId; // Kiểm tra có thể đánh giá bằng customerId
+
   return (
     <div className="flex items-center justify-between mb-4">
       <p className="font-bold light:text-gray-900 text-4xl">

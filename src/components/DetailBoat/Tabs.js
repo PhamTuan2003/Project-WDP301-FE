@@ -4,10 +4,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { setActiveTab } from "../../redux/action";
 
 function Tabs() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch({});
   const activeTab = useSelector((state) => state.ui.activeTab);
-  const totalReviews = useSelector((state) => state.reviews.totalReviews);
-
+  const totalReviews = useSelector(
+    (state) => state.reviews.ratingData?.total || 0
+  );
   const tabs = [
     { label: "Đặc điểm", id: "features" },
     { label: "Phòng & giá", id: "rooms" },
@@ -45,8 +46,8 @@ function Tabs() {
         >
           <span>{tab.label}</span>
           {tab.label === "Đánh giá" && totalReviews > 0 && (
-            <span className="ml-1 bg-gray-100 rounded px-1 text-xs">
-              {totalReviews}
+            <span className="ml-1 bg-gray-100 rounded-lg px-1 text-xs">
+              ({totalReviews})
             </span>
           )}
         </button>

@@ -19,6 +19,49 @@ const yachtReducer = (state = yachtInitialState, action) => {
       return state;
   }
 };
+// src/redux/reducer.js
+const initialState = {
+  yacht: {
+    currentYacht: null,
+    loading: false,
+    error: null,
+  },
+  reviews: {
+    ratingData: { total: 0, average: 0 },
+  },
+  ui: {
+    windows: { showRegulationsWindow: false, showFaqWindow: false },
+    activeTab: 0,
+  },
+  services: {
+    data: [],
+    loading: false,
+    error: null,
+  },
+};
+
+const servicerReducer = (state = initialState, action) => {
+  switch (action.type) {
+    case "FETCH_SERVICES_REQUEST":
+      return {
+        ...state,
+        services: { ...state.services, loading: true, error: null },
+      };
+    case "FETCH_SERVICES_SUCCESS":
+      return {
+        ...state,
+        services: { ...state.services, data: action.payload, loading: false },
+      };
+    case "FETCH_SERVICES_FAILURE":
+      return {
+        ...state,
+        services: { ...state.services, error: action.payload, loading: false },
+      };
+    // ... other cases for yacht, reviews, ui, etc.
+    default:
+      return state;
+  }
+};
 
 // === IMAGE REDUCER ===
 const imageInitialState = {
@@ -589,6 +632,7 @@ export {
   consultationReducer,
   reviewFormReducer,
   authReducer,
+  servicerReducer,
 };
 
 export default filtersReducer;

@@ -10,6 +10,7 @@ import {
   consultationReducer,
   authReducer,
   reviewFormReducer,
+  servicerReducer,
 } from "./reducers";
 
 const rootReducer = combineReducers({
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
   consultation: consultationReducer,
   reviewForm: reviewFormReducer,
   auth: authReducer,
+  servicer: servicerReducer,
 });
 
 const store = createStore(

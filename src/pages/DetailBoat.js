@@ -20,13 +20,17 @@ import {
   closeFaqWindow,
   setActiveTab,
 } from "../redux/action";
-import { fetchYachtById } from "../redux/asyncActions";
+import { fetchServices, fetchYachtById } from "../redux/asyncActions";
 
 function DetailBoat() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { currentYacht, loading, error } = useSelector((state) => state.yacht);
-  const { totalReviews, ratingData } = useSelector((state) => state.reviews);
+  const { ratingData } = useSelector((state) => state.reviews);
+  const { data: services } = useSelector((state) => state.services);
+  const totalReviews = useSelector(
+    (state) => state.reviews.ratingData?.total || 0
+  );
   const {
     windows: { showRegulationsWindow, showFaqWindow },
   } = useSelector((state) => state.ui);
@@ -42,8 +46,65 @@ function DetailBoat() {
   useEffect(() => {
     dispatch(fetchYachtById(id));
     dispatch(fetchReviews(id));
+    dispatch(fetchServices(id)); // Updated to pass yachtId
   }, [dispatch, id]);
-
+  const serviceIcons = {
+    "Wi-Fi": (
+      <svg
+        className="w-6 h-6 text-teal-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M12 21l-9-9c3.3-3.3 8.7-3.3 12 0s8.7 3.3 12 0l-9 9z" />
+      </svg>
+    ),
+    Pool: (
+      <svg
+        className="w-6 h-6 text-teal-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+      </svg>
+    ),
+    Spa: (
+      <svg
+        className="w-6 h-6 text-teal-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M12 4c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8z" />
+      </svg>
+    ),
+    Gym: (
+      <svg
+        className="w-6 h-6 text-teal-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M20 6h-3v3h-2V6h-3V4h3V1h2v3h3v2z" />
+      </svg>
+    ),
+    Restaurant: (
+      <svg
+        className="w-6 h-6 text-teal-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+      </svg>
+    ),
+    Bar: (
+      <svg
+        className="w-6 h-6 text-teal-400"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M7 2h10v2H7zM5 6h14v2H5z" />
+      </svg>
+    ),
+    // Add more mappings as needed
+  };
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -96,6 +157,11 @@ function DetailBoat() {
   if (error) {
     return <div className="text-red-500">{error}</div>;
   }
+
+  const formatPrice = currentYacht.price
+    ? currentYacht.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+      "đ / khách"
+    : "Chưa có giá";
 
   return (
     <div className="font-archivo">
@@ -159,14 +225,14 @@ function DetailBoat() {
           </div>
           <div className="md:w-4/12 flex flex-col">
             <p className="text-4xl font-bold light:text-teal-800 dark:text-teal-400">
-              3,850,000 đ/khách
+              {formatPrice}
             </p>
           </div>
         </div>
       </Container>
       <ImageCarousel yachtId={id} />
       <Container className="py-20">
-        <div className="sticky top-24 z-10 rounded-3xl">
+        <div className="sticky top-[83px] z-10 rounded-3xl">
           <Tabs />
         </div>
         <div className="flex flex-col md:flex-row mt-10 gap-6">
@@ -185,6 +251,25 @@ function DetailBoat() {
                 className="my-6"
               />
               <div className="space-y-6">
+                {services.slice(0, 6).map((service) => (
+                  <div key={service.id} className="flex items-center gap-3">
+                    {serviceIcons[service.name] || (
+                      <svg
+                        className="w-6 h-6 text-teal-400"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M20 6L9 17l-5-5"
+                          strokeWidth="2"
+                          stroke="currentColor"
+                          fill="none"
+                        />
+                      </svg>
+                    )}
+                    <p className="text-base">{service.name}</p>
+                  </div>
+                ))}
                 <div className="flex items-center gap-3">
                   <svg
                     className="w-6 h-6 text-teal-400"

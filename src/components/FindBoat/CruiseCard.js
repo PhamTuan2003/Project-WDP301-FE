@@ -11,8 +11,7 @@ import {
   Chip,
   Badge,
 } from "@mui/material";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 import StarOutline from "@mui/icons-material/StarOutline";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -94,7 +93,6 @@ const CruiseCard = ({ cruise }) => {
           ); // Fallback placeholder image
         }
       } catch (err) {
-        console.error(`Error fetching images for yacht ${yachtId}:`, err);
         setFirstImage(
           `https://via.placeholder.com/300x200?text=${encodeURIComponent(
             cruise.name
@@ -118,31 +116,20 @@ const CruiseCard = ({ cruise }) => {
     _id: id,
     name = "Unknown Cruise",
     cheapestPrice,
-    locationId,
-    durations = [],
+    price,
+    launch,
+    hullBody,
+    yachtTypeId,
     services = [],
   } = cruise;
 
-  const priceDisplay = cheapestPrice
-    ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
-    : "Liên hệ";
-  const departurePoint = locationId?.name || "Unknown";
-
-  // Tìm lịch trình khớp với selectedDurations
-  const matchedDuration =
-    selectedDurations.length > 0
-      ? durations.find((d) => selectedDurations.includes(d))
-      : durations[0];
-  const durationDisplay =
-    matchedDuration || (durations.length > 0 ? durations[0] : "Liên hệ");
-
-  // Debug log
-  console.log(`CruiseCard ${name}:`, {
-    services,
-    durations,
-    selectedDurations,
-    durationDisplay,
-  });
+  // Price display logic: prefer cheapestPrice, fallback to price, then "Liên hệ"
+  const priceDisplay =
+    cheapestPrice !== undefined && cheapestPrice !== null
+      ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
+      : price !== undefined && price !== null
+      ? `${price.toLocaleString("vi-VN")}đ`
+      : "Liên hệ";
 
   return (
     <Link to={`/boat-detail/${yachtId}`} style={{ textDecoration: "none" }}>
@@ -152,7 +139,6 @@ const CruiseCard = ({ cruise }) => {
           display: "flex",
           flexDirection: { xs: "row", md: "row" },
           borderRadius: "32px",
-
           width: "100%",
           alignItems: "center",
           cursor: "pointer",
@@ -245,7 +231,7 @@ const CruiseCard = ({ cruise }) => {
                 boxShadow: (theme) => theme.shadows[1],
               }}
             >
-              {departurePoint && `Du thuyền ${departurePoint}`}
+              Du thuyền {name}
             </Typography>
             <Typography
               fontFamily="Archivo, sans-serif"
@@ -265,7 +251,7 @@ const CruiseCard = ({ cruise }) => {
               sx={{ mb: 1.5 }}
             >
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <CalendarTodayIcon
+                <DirectionsBoatIcon
                   sx={{
                     fontSize: "1rem",
                     mr: 0.5,
@@ -277,23 +263,9 @@ const CruiseCard = ({ cruise }) => {
                   variant="body2"
                   color="text.secondary"
                 >
-                  {durationDisplay}
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <LocationOnIcon
-                  sx={{
-                    fontSize: "1rem",
-                    mr: 0.5,
-                    color: "text.secondary",
-                  }}
-                />
-                <Typography
-                  fontFamily="Archivo, sans-serif"
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  {departurePoint}
+                  Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
+                  {hullBody || "Không xác định"} -{" "}
+                  {yachtTypeId?.name || "Không xác định"}
                 </Typography>
               </Box>
             </Stack>
