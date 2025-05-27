@@ -1,81 +1,38 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
+import { Box } from "@mui/material";
 import ReviewHeader from "./Reviews/ReviewHeader";
 import ReviewList from "./Reviews/ReviewList";
 import ReviewForm from "./Reviews/ReviewForm";
 import ReviewPagination from "./Reviews/ReviewPagination";
 import RatingOverview from "./Reviews/RatingOverview";
 import { Image } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import { Box } from "@mui/material";
+import { setReviewSearchTerm, setReviewCurrentPage } from "../../redux/action";
+import { fetchReviews } from "../../redux/asyncActions";
 
 export default function ReviewSection({ yachtId }) {
-  const [reviews, setReviews] = useState([]);
-  const [ratingData, setRatingData] = useState({
-    total: 0,
-    average: 0,
-    distribution: [],
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [customer, setCustomer] = useState(null);
-
-  useEffect(() => {
-    const storedCustomer = localStorage.getItem("customer");
-    console.log("Stored customer from localStorage:", storedCustomer); // Debug
-    if (storedCustomer) {
-      try {
-        const parsedCustomer = JSON.parse(storedCustomer);
-        console.log("Parsed customer:", parsedCustomer); // Debug
-        setCustomer(parsedCustomer);
-      } catch (err) {
-        console.error("Error parsing customer from localStorage:", err);
-        setError("Không thể đọc thông tin khách hàng từ localStorage");
-      }
-    } else {
-      console.log("No customer found in localStorage");
-    }
-  }, []);
-
-  const fetchReviews = async (page = 1, searchTerm = "") => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.get(
-        `http://localhost:9999/api/v1/feedback`,
-        {
-          params: { yachtId, page, limit: 5, search: searchTerm },
-        }
-      );
-
-      if (response.data.success) {
-        setReviews(response.data.data.reviews);
-        setRatingData(response.data.data.ratingData);
-        setCurrentPage(response.data.data.currentPage);
-        setTotalPages(response.data.data.totalPages);
-      } else {
-        setError("Failed to load reviews");
-      }
-    } catch (err) {
-      setError("Error fetching reviews");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const dispatch = useDispatch();
+  const {
+    reviews,
+    ratingData,
+    currentPage,
+    totalPages,
+    searchTerm,
+    loading,
+    error,
+  } = useSelector((state) => state.reviews);
+  const { isAuthenticated, customer } = useSelector((state) => state.auth);
 
   useEffect(() => {
     if (yachtId) {
-      fetchReviews(currentPage, search);
+      dispatch(fetchReviews(yachtId, currentPage, searchTerm));
     }
-  }, [yachtId, currentPage, search]);
+  }, [dispatch, yachtId, currentPage, searchTerm]);
 
-  const handleSearch = (searchTerm) => {
-    setSearch(searchTerm);
-    setCurrentPage(1);
+  const handleSearch = (term) => {
+    dispatch(setReviewSearchTerm(term));
+    dispatch(setReviewCurrentPage(1)); // Reset to page 1 on new search
   };
 
   return (
@@ -83,7 +40,7 @@ export default function ReviewSection({ yachtId }) {
       <ReviewHeader
         totalReviews={ratingData.total}
         onSearch={handleSearch}
-        isAuthenticated={!!customer}
+        isAuthenticated={isAuthenticated}
       />
       <Image src="../icons/heading-border.webp" className="pt-5" />
       <div className="border-gray-300 mb-6 pt-4">
@@ -93,7 +50,7 @@ export default function ReviewSection({ yachtId }) {
         <ReviewList reviews={reviews} />
         <div className="flex items-center justify-between">
           <Box
-            className="text-sm "
+            className="text-sm"
             sx={{ color: (theme) => theme.palette.text.secondary }}
           >
             Đang xem:{" "}
@@ -105,15 +62,17 @@ export default function ReviewSection({ yachtId }) {
           <ReviewPagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={(page) => dispatch(setReviewCurrentPage(page))}
           />
         </div>
         <hr className="p-2" />
-        {customer ? (
+        {isAuthenticated ? (
           <ReviewForm
             yachtId={yachtId}
             customer={customer}
-            onSubmitSuccess={() => fetchReviews(1, search)}
+            onSubmitSuccess={() =>
+              dispatch(fetchReviews(yachtId, 1, searchTerm))
+            }
           />
         ) : (
           <div className="text-center text-gray-600 py-4">

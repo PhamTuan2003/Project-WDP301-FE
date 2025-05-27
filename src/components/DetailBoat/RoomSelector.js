@@ -1,233 +1,72 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { User, Minus, Plus, X } from "lucide-react";
 import { Box, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import RoomModal from "./RoomModal";
-import CharterBoatModal from "./Booking/CharterBoatModal ";
+import CharterBoatModal from "./Booking/CharterBoatModal";
 import BookingRoomModal from "./Booking/BookingRoomModal";
+import {
+  incrementRoomQuantity,
+  decrementRoomQuantity,
+  setSelectedSchedule,
+  setSelectedMaxPeople,
+  clearSelection,
+  openRoomModal,
+  closeRoomModal,
+  openBookingModal,
+  closeBookingModal,
+  openCharterModal,
+  closeCharterModal,
+} from "../../redux/action";
+import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
 
-function RoomSelector({
-  yachtId,
-  handleDecrement,
-  handleIncrement,
-  yachtData = {},
-  // Dữ liệu du thuyền nếu cần thiết
-}) {
-  const [rooms, setRooms] = useState([]);
-  const [schedules, setSchedules] = useState([]);
-  const [selectedSchedule, setSelectedSchedule] = useState("");
-  const [maxPeopleOptions, setMaxPeopleOptions] = useState([]);
-  const [selectedMaxPeople, setSelectedMaxPeople] = useState("all");
-  const [loadingRooms, setLoadingRooms] = useState(false);
-  const [loadingSchedules, setLoadingSchedules] = useState(false);
-  const [error, setError] = useState(null);
-  // Thêm state cho modal
-  const [showModal, setShowModal] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  // Thêm state cho modal
-  const [showBookingModal, setShowBookingModal] = useState(false);
+function RoomSelector({ yachtId, yachtData = {} }) {
+  const dispatch = useDispatch();
 
-  // State cho modal "Thuê trọn tàu" (không có tổng tiền)
-  const [showCharterModal, setShowCharterModal] = useState(false);
+  // Select state from Redux store
+  const {
+    rooms,
+    schedules,
+    selectedSchedule,
+    selectedMaxPeople,
+    maxPeopleOptions,
+    loading,
+    error,
+  } = useSelector((state) => state.booking);
+  const {
+    showRoomModal,
+    showBookingModal,
+    showCharterModal,
+    selectedRoomForModal,
+  } = useSelector((state) => state.ui.modals);
 
-  // Handler cho button "Đặt ngay" từ RoomSelector
-  const handleBookNow = () => {
-    const selectedRooms = rooms.filter((room) => room.quantity > 0);
-
-    setShowBookingModal(true);
-  };
-
-  // Handler cho button "Thuê trọn tàu"
-  const handleCharterBoat = () => {
-    setShowCharterModal(true);
-  };
-
-  // Handlers đóng modal
-  const closeBookingModal = () => {
-    setShowBookingModal(false);
-  };
-
-  const closeCharterModal = () => {
-    setShowCharterModal(false);
-  };
-
-  const getSelectedRooms = () => {
-    return rooms.filter((room) => room.quantity > 0);
-  };
-
-  // Hàm mở modal
-  const openRoomModal = (room) => {
-    // Tìm room với quantity hiện tại từ state
-    const currentRoom = rooms.find((r) => r.id === room.id) || room;
-    setSelectedRoom(currentRoom);
-    setShowModal(true);
-  };
-  useEffect(() => {
-    if (selectedRoom && rooms.length > 0) {
-      const updatedRoom = rooms.find((room) => room.id === selectedRoom.id);
-      if (updatedRoom) {
-        setSelectedRoom(updatedRoom);
-      }
-    }
-  }, [rooms, selectedRoom]);
-
-  // Hàm đóng modal
-  const closeRoomModal = () => {
-    setShowModal(false);
-    setSelectedRoom(null);
-  };
-
-  // Fetch schedules based on yachtId
-  const fetchSchedules = async (id) => {
-    try {
-      setLoadingSchedules(true);
-      setError(null);
-      const response = await axios.get(
-        `http://localhost:9999/api/v1/yachts/${id}/schedules`
-      );
-      if (response.data.success) {
-        const schedulesData = response.data.data.map((ys) => {
-          const startDate = new Date(ys.scheduleId.startDate);
-          const endDate = new Date(ys.scheduleId.endDate);
-
-          // Tính số ngày giữa startDate và endDate
-          const durationDays = Math.ceil(
-            (endDate - startDate) / (1000 * 60 * 60 * 24)
-          );
-
-          // Tạo text hiển thị
-          const durationText = `${durationDays} ngày ${durationDays - 1} đêm`;
-
-          return {
-            _id: ys.scheduleId._id,
-            startDate: ys.scheduleId.startDate,
-            endDate: ys.scheduleId.endDate,
-            durationText: durationText, // Thêm trường này
-          };
-        });
-        setSchedules(schedulesData);
-      } else {
-        setError("Không tìm thấy lịch trình cho du thuyền này");
-      }
-    } catch (err) {
-      setError("Lỗi khi tải lịch trình");
-      console.error(err);
-    } finally {
-      setLoadingSchedules(false);
-    }
-  };
-
-  const fetchRooms = async (yachtId, scheduleId) => {
-    try {
-      setLoadingRooms(true);
-      setError(null);
-      const response = await axios.get("http://localhost:9999/api/v1/rooms", {
-        params: { yachtId, scheduleId },
-      });
-
-      if (response.data.success) {
-        const fetchedRooms = response.data.data.rooms.map((room) => ({
-          ...room,
-          id: room.id || room._id,
-          quantity: 0,
-          beds: room.max_people,
-          image: room.avatar,
-          price: room.price || 0,
-        }));
-        setRooms(fetchedRooms);
-
-        const uniqueMaxPeople = [
-          ...new Set(fetchedRooms.map((room) => room.beds)),
-        ].sort((a, b) => a - b);
-        setMaxPeopleOptions(uniqueMaxPeople);
-      } else {
-        setError("Không tìm thấy phòng cho du thuyền và lịch trình này");
-      }
-    } catch (err) {
-      setError("Lỗi khi tải phòng");
-      console.error(err);
-    } finally {
-      setLoadingRooms(false);
-    }
-  };
-
+  // Fetch rooms and schedules when yachtId or selectedSchedule changes
   useEffect(() => {
     if (yachtId) {
-      fetchSchedules(yachtId);
+      dispatch(fetchRoomsAndSchedules(yachtId, selectedSchedule));
     } else {
-      setSchedules([]);
-      setRooms([]);
-      setSelectedSchedule("");
-      setSelectedMaxPeople("all");
-      setMaxPeopleOptions([]);
+      dispatch(clearSelection());
     }
-  }, [yachtId]);
+  }, [yachtId, selectedSchedule, dispatch]);
 
-  useEffect(() => {
-    if (yachtId && selectedSchedule) {
-      fetchRooms(yachtId, selectedSchedule);
-    } else {
-      setRooms([]);
-      setMaxPeopleOptions([]);
-      setSelectedMaxPeople("all");
-    }
-  }, [yachtId, selectedSchedule]);
-
-  const localHandleDecrement = (roomId) => {
-    setRooms((prevRooms) =>
-      prevRooms.map((room) =>
-        room.id === roomId && room.quantity > 0
-          ? { ...room, quantity: room.quantity - 1 }
-          : room
-      )
-    );
-
-    // Cập nhật selectedRoom nếu đang mở modal
-    if (
-      selectedRoom &&
-      selectedRoom.id === roomId &&
-      selectedRoom.quantity > 0
-    ) {
-      setSelectedRoom((prev) => ({ ...prev, quantity: prev.quantity - 1 }));
-    }
-
-    if (handleDecrement) handleDecrement(roomId);
+  // Handlers for buttons
+  const handleBookNow = () => {
+    dispatch(openBookingModal());
   };
 
-  const localHandleIncrement = (roomId) => {
-    setRooms((prevRooms) =>
-      prevRooms.map((room) =>
-        room.id === roomId ? { ...room, quantity: room.quantity + 1 } : room
-      )
-    );
-
-    // Cập nhật selectedRoom nếu đang mở modal
-    if (selectedRoom && selectedRoom.id === roomId) {
-      setSelectedRoom((prev) => ({ ...prev, quantity: prev.quantity + 1 }));
-    }
-
-    if (handleIncrement) handleIncrement(roomId);
+  const handleCharterBoat = () => {
+    dispatch(openCharterModal());
   };
 
-  // Clear all selections (schedule, max people, and room quantities)
   const handleClearSelection = () => {
-    setRooms(rooms.map((room) => ({ ...room, quantity: 0 })));
-    setSelectedSchedule("");
-    setSelectedMaxPeople("all");
+    dispatch(clearSelection());
+    dispatch(setSelectedSchedule(""));
+    dispatch(setSelectedMaxPeople("all"));
   };
 
-  // Check if clear button should be shown
-  const showClearButton =
-    selectedSchedule && rooms.some((room) => room.quantity > 0);
-
-  // Modified handleBookNow to include scheduleId
-  const onBookNow = () => {
-    if (handleBookNow) {
-      handleBookNow({
-        scheduleId: selectedSchedule,
-        rooms: rooms.filter((room) => room.quantity > 0),
-      });
-    }
+  // Handler for opening room modal
+  const handleOpenRoomModal = (room) => {
+    dispatch(openRoomModal(room));
   };
 
   // Filter rooms based on selectedMaxPeople
@@ -235,6 +74,15 @@ function RoomSelector({
     selectedMaxPeople === "all"
       ? rooms
       : rooms.filter((room) => room.beds === parseInt(selectedMaxPeople));
+
+  // Get selected rooms for BookingRoomModal
+  const getSelectedRooms = () => {
+    return rooms.filter((room) => room.quantity > 0);
+  };
+
+  // Check if clear button should be shown
+  const showClearButton =
+    selectedSchedule && rooms.some((room) => room.quantity > 0);
 
   return (
     <div>
@@ -273,9 +121,9 @@ function RoomSelector({
           <InputLabel>Chọn lịch trình</InputLabel>
           <Select
             value={selectedSchedule}
-            onChange={(e) => setSelectedSchedule(e.target.value)}
+            onChange={(e) => dispatch(setSelectedSchedule(e.target.value))}
             label="Chọn lịch trình"
-            disabled={loadingSchedules || schedules.length === 0}
+            disabled={loading || schedules.length === 0}
             sx={{
               bgcolor: (theme) => theme.palette.background.paper,
               borderColor: (theme) => theme.palette.divider,
@@ -297,9 +145,9 @@ function RoomSelector({
             <InputLabel>Số người tối đa</InputLabel>
             <Select
               value={selectedMaxPeople}
-              onChange={(e) => setSelectedMaxPeople(e.target.value)}
+              onChange={(e) => dispatch(setSelectedMaxPeople(e.target.value))}
               label="Số người tối đa"
-              disabled={loadingRooms || !rooms.length}
+              disabled={loading || !rooms.length}
               sx={{
                 bgcolor: (theme) => theme.palette.background.paper,
                 borderColor: (theme) => theme.palette.divider,
@@ -317,16 +165,16 @@ function RoomSelector({
           </FormControl>
         )}
 
-        {loadingSchedules && <div>Đang tải lịch trình...</div>}
+        {loading && <div>Đang tải dữ liệu...</div>}
         {error && <div className="text-red-500">{error}</div>}
-        {!loadingSchedules && !error && schedules.length === 0 && yachtId && (
+        {!loading && !error && schedules.length === 0 && yachtId && (
           <div>Không tìm thấy lịch trình cho Yacht ID này</div>
         )}
 
         {selectedSchedule && (
           <>
-            {loadingRooms && <div>Đang tải phòng...</div>}
-            {!loadingRooms && !error && filteredRooms.length === 0 && (
+            {loading && <div>Đang tải phòng...</div>}
+            {!loading && !error && filteredRooms.length === 0 && (
               <div>Không tìm thấy phòng phù hợp với lựa chọn này</div>
             )}
             {filteredRooms.length > 0 && (
@@ -354,11 +202,10 @@ function RoomSelector({
                         <div className="ml-3 flex flex-col items-start gap-2">
                           <h3
                             className="font-bold text-base underline cursor-pointer"
-                            onClick={() => openRoomModal(room)}
+                            onClick={() => handleOpenRoomModal(room)}
                           >
                             {room.name}
                           </h3>
-
                           <div className="flex items-center text-gray-500 gap-4 text-sm">
                             <span className="flex items-center mr-4">
                               <svg
@@ -397,7 +244,9 @@ function RoomSelector({
                           }}
                         >
                           <button
-                            onClick={() => localHandleDecrement(room.id)}
+                            onClick={() =>
+                              dispatch(decrementRoomQuantity(room.id))
+                            }
                             className="w-8 h-8 rounded-md flex items-center justify-center"
                           >
                             <Minus size={16} />
@@ -406,7 +255,9 @@ function RoomSelector({
                             {room.quantity}
                           </span>
                           <button
-                            onClick={() => localHandleIncrement(room.id)}
+                            onClick={() =>
+                              dispatch(incrementRoomQuantity(room.id))
+                            }
                             className="w-8 h-8 rounded-md flex items-center justify-center"
                           >
                             <Plus size={16} />
@@ -422,7 +273,7 @@ function RoomSelector({
                       Tổng tiền:
                     </p>
                     <p className="text-xl text-teal-600 font-bold">
-                      {filteredRooms
+                      {rooms
                         .reduce(
                           (sum, room) => sum + room.price * room.quantity,
                           0
@@ -438,7 +289,6 @@ function RoomSelector({
                     >
                       Thuê trọn tàu
                     </button>
-
                     <button
                       onClick={handleBookNow}
                       className="bg-teal-400 border border-teal-400 text-teal-800 font-semibold rounded-full px-4 py-2 flex items-center hover:bg-teal-800 hover:text-white"
@@ -464,20 +314,20 @@ function RoomSelector({
         )}
       </Box>
       <RoomModal
-        show={showModal}
-        room={selectedRoom}
-        onClose={closeRoomModal}
-        onIncrement={localHandleIncrement}
-        onDecrement={localHandleDecrement}
+        show={showRoomModal}
+        room={selectedRoomForModal}
+        onClose={() => dispatch(closeRoomModal())}
+        onIncrement={(roomId) => dispatch(incrementRoomQuantity(roomId))}
+        onDecrement={(roomId) => dispatch(decrementRoomQuantity(roomId))}
       />
       <CharterBoatModal
         show={showCharterModal}
-        onClose={closeCharterModal}
+        onClose={() => dispatch(closeCharterModal())}
         yachtData={yachtData}
       />
       <BookingRoomModal
         show={showBookingModal}
-        onClose={closeBookingModal}
+        onClose={() => dispatch(closeBookingModal())}
         selectedRooms={getSelectedRooms()}
         yachtData={yachtData}
       />

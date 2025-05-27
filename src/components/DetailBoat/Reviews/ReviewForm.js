@@ -1,95 +1,142 @@
-import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Send } from "lucide-react";
-import axios from "axios";
 import Swal from "sweetalert2";
 import StarRating from "./StarRating";
 import { Box, TextField } from "@mui/material";
+import { setUserRating, setReviewDescription } from "../../../redux/action";
+import { validateReviewForm } from "../../../redux/validation";
+import { submitReview } from "../../../redux/asyncActions";
 
-const ReviewForm = ({ yachtId, customer, onSubmitSuccess }) => {
-  const [userRating, setUserRating] = useState(0);
-  const [fullName] = useState(customer?.fullName || "");
-  const [description, setDescription] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const customerId = customer?.id;
+const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
+  const dispatch = useDispatch();
+  const { userRating, description, isSubmitting, error } = useSelector(
+    (state) => state.reviewForm
+  );
+  const customer = useSelector((state) => state.auth.customer);
+
+  const getCustomerFromStorage = () => {
+    try {
+      const customerData = localStorage.getItem("customer");
+      if (customerData) {
+        const parsed = JSON.parse(customerData);
+        return parsed;
+      }
+    } catch (error) {
+      console.error("Error getting customer from storage:", error);
+    }
+    return null;
+  };
+
+  const currentCustomer = customer || getCustomerFromStorage();
+  const fullName = currentCustomer?.fullName || "";
+  const customerId = currentCustomer?.id;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Debug: Log all values
-    console.log("Submitting review with:", {
-      userRating,
-      fullName,
-      description,
-      customerId,
-      yachtId,
-    });
-
-    // Validation
-    let errorMessage = "";
-    if (userRating < 1 || userRating > 5) {
-      errorMessage += "Vui lòng chọn số sao từ 1 đến 5. ";
-    }
-    if (!fullName) errorMessage += "Họ và tên không được để trống. ";
-    if (!description) errorMessage += "Nhận xét không được để trống. ";
-    if (!customerId) errorMessage += "ID khách hàng không hợp lệ. ";
-    if (!yachtId) errorMessage += "ID du thuyền không hợp lệ. ";
-
-    if (errorMessage) {
+    if (!customerId) {
       Swal.fire({
         title: "Lỗi!",
-        text: errorMessage,
+        text: "Không tìm thấy thông tin khách hàng.",
         icon: "error",
-        confirmButtonText: "OK",
       });
-      setIsSubmitting(false);
       return;
     }
 
+    if (!userRating || userRating < 1 || userRating > 5) {
+      Swal.fire({
+        title: "Lỗi!",
+        text: "Vui lòng chọn số sao từ 1-5.",
+        icon: "error",
+      });
+      return;
+    }
+
+    if (!description || !description.trim()) {
+      Swal.fire({
+        title: "Lỗi!",
+        text: "Vui lòng nhập nội dung đánh giá.",
+        icon: "error",
+      });
+      return;
+    }
+
+    if (!yachtId) {
+      Swal.fire({
+        title: "Lỗi!",
+        text: "Không tìm thấy thông tin du thuyền.",
+        icon: "error",
+      });
+      return;
+    }
+
+    const reviewData = {
+      starRating: userRating,
+      description: description.trim(),
+      customerId,
+      yachtId,
+    };
+
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Không tìm thấy token xác thực.");
-      }
+      const result = await dispatch(submitReview(reviewData));
 
-      const response = await axios.post(
-        "http://localhost:9999/api/v1/feedback",
-        {
-          starRating: userRating,
-          description,
-          customerId,
-          yachtId,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.data.success) {
+      if (result.success) {
         Swal.fire({
           title: "Thành công!",
           text: "Đánh giá của bạn đã được gửi.",
           icon: "success",
-          confirmButtonText: "OK",
         });
-        setUserRating(0);
-        setDescription("");
-        onSubmitSuccess();
+
+        // Reset form
+        dispatch(setUserRating(0));
+        dispatch(setReviewDescription(""));
+
+        if (onSubmitSuccess) {
+          onSubmitSuccess();
+        }
+      } else {
+        Swal.fire({
+          title: "Lỗi!",
+          text: result.message || "Không thể gửi đánh giá.",
+          icon: "error",
+        });
       }
-    } catch (error) {
-      console.error("Error submitting review:", error);
+    } catch (err) {
       Swal.fire({
         title: "Lỗi!",
-        text:
-          error.response?.data?.message ||
-          "Không thể gửi đánh giá, vui lòng thử lại.",
+        text: "Đã xảy ra lỗi khi gửi đánh giá.",
         icon: "error",
-        confirmButtonText: "OK",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
+
+  // Kiểm tra xem có thể đánh giá không
+  if (!customerId) {
+    return (
+      <div className="review-form-disabled">
+        <p>Vui lòng đăng nhập để viết đánh giá.</p>
+
+        {/* Debug info */}
+        <div
+          style={{
+            fontSize: "12px",
+            color: "#666",
+            marginTop: "10px",
+            padding: "10px",
+            backgroundColor: "#f5f5f5",
+          }}
+        >
+          <strong>Debug:</strong>
+          <br />
+          Customer: {customer ? "Redux có data" : "Redux null"}
+          <br />
+          LocalStorage: {getCustomerFromStorage() ? "Có data" : "Null"}
+          <br />
+          CustomerID: {customerId || "null"}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="my-5">
@@ -108,8 +155,12 @@ const ReviewForm = ({ yachtId, customer, onSubmitSuccess }) => {
             boxShadow: (theme) => theme.shadows[1],
           }}
         >
-          <div className="mr-2 ">Chất lượng:</div>
-          <StarRating rating={userRating} size="lg" onClick={setUserRating} />
+          <div className="mr-2">Chất lượng:</div>
+          <StarRating
+            rating={userRating}
+            size="lg"
+            onClick={(rating) => dispatch(setUserRating(rating))}
+          />
         </Box>
         <TextField
           label="Họ và tên *"
@@ -142,14 +193,16 @@ const ReviewForm = ({ yachtId, customer, onSubmitSuccess }) => {
           label="Đánh giá của bạn *"
           placeholder="Nhập đánh giá của bạn"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => dispatch(setReviewDescription(e.target.value))}
           className="w-full border border-gray-300 text-sm"
           multiline
           rows={5}
           required
-          error={description === ""}
+          error={description === "" || !!error}
           helperText={
-            description === ""
+            error
+              ? error
+              : description === ""
               ? "Vui lòng nhập nhận xét"
               : "Bạn phải nhập đánh giá"
           }

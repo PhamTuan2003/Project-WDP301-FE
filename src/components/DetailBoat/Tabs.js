@@ -1,7 +1,13 @@
 import { Box } from "@mui/material";
 import React from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setActiveTab } from "../../redux/action";
 
-function Tabs({ activeTab, setActiveTab, totalReviews }) {
+function Tabs() {
+  const dispatch = useDispatch();
+  const activeTab = useSelector((state) => state.ui.activeTab);
+  const totalReviews = useSelector((state) => state.reviews.totalReviews);
+
   const tabs = [
     { label: "Đặc điểm", id: "features" },
     { label: "Phòng & giá", id: "rooms" },
@@ -11,7 +17,7 @@ function Tabs({ activeTab, setActiveTab, totalReviews }) {
   ];
 
   const handleTabClick = (index, id) => {
-    setActiveTab(index);
+    dispatch(setActiveTab(index));
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -31,10 +37,10 @@ function Tabs({ activeTab, setActiveTab, totalReviews }) {
         <button
           key={index}
           onClick={() => handleTabClick(index, tab.id)}
-          className={`flex items-center px-2 py-2 text-sm mx-2 transition-all duration-200 ${
+          className={`flex items-center px-2 py-1 text-sm mx-2 transition-all duration-200 ${
             activeTab === index
-              ? "text-gray-700 bg-gray-50 border shadow-lg "
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border hover:shadow "
+              ? "text-gray-700 bg-gray-50 border shadow-lg"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border hover:shadow"
           }`}
         >
           <span>{tab.label}</span>

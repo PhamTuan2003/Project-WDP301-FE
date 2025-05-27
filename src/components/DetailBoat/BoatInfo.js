@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import {
   FaAnchor,
   FaBed,
@@ -7,18 +8,24 @@ import {
   FaBuilding,
 } from "react-icons/fa";
 
-function BoatInfo({ yacht }) {
+function BoatInfo() {
+  const yacht = useSelector((state) => state.yacht.currentYacht);
+
+  if (!yacht) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="md:w-4/12">
-      <div className="mx-auto border shadow-md rounded-3xl light:bg-gray-100  p-6 relative overflow-hidden">
+      <div className="mx-auto border shadow-md rounded-3xl light:bg-gray-100 p-6 relative overflow-hidden">
         <h3 className="text-xl font-bold text-center !font-archivo light:text-gray-800 dark:text.primary mb-6">
           Thông tin du thuyền
         </h3>
         <div className="space-y-2">
-          <div className="grid grid-cols-2 items-center ">
+          <div className="grid grid-cols-2 items-center">
             <div className="flex items-center gap-2">
-              <FaAnchor className="light:text-gray-600  " size={22} />
-              <p className="font-normal light:text-gray-600  text-base">
+              <FaAnchor className="light:text-gray-600" size={22} />
+              <p className="font-normal light:text-gray-600 text-base">
                 Hạ thủy
               </p>
             </div>
@@ -26,20 +33,17 @@ function BoatInfo({ yacht }) {
               {yacht.launch}
             </p>
           </div>
-          <div className="grid grid-cols-2 items-center ">
+          <div className="grid grid-cols-2 items-center">
             <div className="flex items-center gap-2">
-              <FaBed className="light:text-gray-600 " size={22} />
-              <p className="font-normal light:text-gray-600  text-base">
-                Cabin
-              </p>
+              <FaBed className="light:text-gray-600" size={22} />
+              <p className="font-normal light:text-gray-600 text-base">Cabin</p>
             </div>
-            <p className="light:text-gray-900 font-medium text-base">20</p>{" "}
-            {/* Static or update via API if available */}
+            <p className="light:text-gray-900 font-medium text-base">20</p>
           </div>
-          <div className="grid grid-cols-2 items-center ">
+          <div className="grid grid-cols-2 items-center">
             <div className="flex items-center gap-2">
-              <FaShip className="light:text-gray-600 " size={22} />
-              <p className="font-normal light:text-gray-600  text-base">
+              <FaShip className="light:text-gray-600" size={22} />
+              <p className="font-normal light:text-gray-600 text-base">
                 Thân vỏ
               </p>
             </div>
@@ -47,10 +51,10 @@ function BoatInfo({ yacht }) {
               {yacht.hullBody}
             </p>
           </div>
-          <div className="grid grid-cols-2 items-center ">
+          <div className="grid grid-cols-2 items-center">
             <div className="flex items-center gap-2">
-              <FaMapMarkerAlt className="light:text-gray-600 " size={22} />
-              <p className="font-normal light:text-gray-600  text-base">
+              <FaMapMarkerAlt className="light:text-gray-600" size={22} />
+              <p className="font-normal light:text-gray-600 text-base">
                 Hành trình
               </p>
             </div>
@@ -58,10 +62,10 @@ function BoatInfo({ yacht }) {
               {yacht.itinerary}
             </p>
           </div>
-          <div className="grid grid-cols-2 items-center ">
+          <div className="grid grid-cols-2 items-center">
             <div className="flex items-center gap-2">
-              <FaBuilding className="light:text-gray-600 " size={22} />
-              <p className="font-normal light:text-gray-600  text-base">
+              <FaBuilding className="light:text-gray-600" size={22} />
+              <p className="font-normal light:text-gray-600 text-base">
                 Điều hành
               </p>
             </div>

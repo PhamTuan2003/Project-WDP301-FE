@@ -5,101 +5,55 @@ import { Box, TextField } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
 import {
-  updateBookingForm,
-  setBookingErrors,
-  closeBookingModal,
-} from "../../../redux/action";
-import { validateBookingForm, formatPrice } from "../../../redux/validation";
-import {
-  submitRoomBooking,
+  updateCharterForm,
+  setCharterErrors,
   requestConsultation,
-} from "../../../redux/asyncActions";
+  submitCharterBooking,
+  closeCharterModal,
+} from "../../../redux/action";
+import { validateBookingForm } from "../../../redux/validation";
 
-const BookingRoomModal = ({ show, yachtData }) => {
+const CharterBoatModal = ({ show, yachtData }) => {
   const dispatch = useDispatch();
-  const { bookingForm, bookingErrors, rooms, totalPrice } = useSelector(
-    (state) => state.booking
-  );
+  const { charterForm, charterErrors } = useSelector((state) => state.booking);
 
   const handleInputChange = (field, value) => {
-    dispatch(updateBookingForm(field, value));
+    dispatch(updateCharterForm(field, value));
   };
 
-  const handleConsultation = async () => {
-    const validation = validateBookingForm(bookingForm);
-    if (!validation.isValid) {
-      dispatch(setBookingErrors(validation.errors));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi!",
-        text: "Vui lòng kiểm tra lại thông tin nhập.",
-        confirmButtonText: "OK",
+  const handleConsultation = () => {
+    const validation = validateBookingForm(charterForm);
+    dispatch(setCharterErrors(validation.errors));
+    if (validation.isValid) {
+      dispatch(requestConsultation(charterForm)).then((result) => {
+        if (result.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Đăng ký tư vấn thành công!",
+            text: "Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.",
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        }
       });
-      return;
-    }
-
-    const consultationData = {
-      ...bookingForm,
-      checkInDate: new Date(
-        bookingForm.checkInDate.split("/").reverse().join("-")
-      ).toISOString(),
-      selectedRooms: rooms.filter((r) => r.quantity > 0),
-      totalPrice,
-      yachtId: yachtData._id,
-    };
-
-    const result = await dispatch(requestConsultation(consultationData));
-    if (result.success) {
-      Swal.fire({
-        icon: "success",
-        title: "Đăng ký tư vấn thành công!",
-        text: "Chúng tôi sẽ liên hệ với bạn để tư vấn chi tiết về booking.",
-        showConfirmButton: false,
-        timer: 2000,
-      });
-      dispatch(closeBookingModal());
     }
   };
 
-  const handleBookNow = async () => {
-    const validation = validateBookingForm(bookingForm);
-    if (!validation.isValid) {
-      dispatch(setBookingErrors(validation.errors));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi!",
-        text: "Vui lòng kiểm tra lại thông tin nhập.",
-        confirmButtonText: "OK",
+  const handleBookNow = () => {
+    const validation = validateBookingForm(charterForm);
+    dispatch(setCharterErrors(validation.errors));
+    if (validation.isValid) {
+      dispatch(submitCharterBooking(charterForm)).then((result) => {
+        if (result.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Đặt thuê trọn tàu thành công!",
+            text: "Cảm ơn bạn đã đặt dịch vụ. Chúng tôi sẽ xác nhận đặt chỗ sớm nhất.",
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        }
       });
-      return;
-    }
-
-    const bookingData = {
-      ...bookingForm,
-      checkInDate: new Date(
-        bookingForm.checkInDate.split("/").reverse().join("-")
-      ).toISOString(),
-      selectedRooms: rooms.filter((r) => r.quantity > 0),
-      totalPrice,
-      yachtId: yachtData._id,
-    };
-
-    const result = await dispatch(submitRoomBooking(bookingData));
-    if (result.success) {
-      Swal.fire({
-        icon: "success",
-        title: "Đặt phòng thành công!",
-        html: `
-          <div>
-            <p>Cảm ơn bạn đã đặt phòng du thuyền.</p>
-            <p><strong>Tổng tiền: ${formatPrice(totalPrice)}</strong></p>
-            <p>Chúng tôi sẽ xác nhận đặt chỗ trong vòng 24h.</p>
-          </div>
-        `,
-        showConfirmButton: false,
-        timer: 3000,
-      });
-      dispatch(closeBookingModal());
     }
   };
 
@@ -116,9 +70,9 @@ const BookingRoomModal = ({ show, yachtData }) => {
         }}
       >
         <div className="flex justify-between items-center p-3 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Đặt phòng</h2>
+          <h2 className="text-xl font-bold text-gray-800">Thuê trọn tàu</h2>
           <button
-            onClick={() => dispatch(closeBookingModal())}
+            onClick={() => dispatch(closeCharterModal())}
             className="text-gray-500 hover:text-gray-700 transition-colors"
           >
             <X size={24} />
@@ -131,25 +85,20 @@ const BookingRoomModal = ({ show, yachtData }) => {
               label="Ngày nhận phòng"
               type="date"
               value={
-                bookingForm.checkInDate
-                  ? bookingForm.checkInDate.split("/").reverse().join("-")
+                charterForm.checkInDate
+                  ? charterForm.checkInDate.split("/").reverse().join("-")
                   : ""
               }
               onChange={(e) => {
                 const val = e.target.value;
-                const formatted = val
-                  ? new Date(val).toLocaleDateString("vi-VN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })
-                  : "";
+                const formatted =
+                  val && val.includes("-")
+                    ? val.split("-").reverse().join("/")
+                    : val;
                 handleInputChange("checkInDate", formatted);
               }}
               InputLabelProps={{ shrink: true }}
               variant="outlined"
-              error={!!bookingErrors.checkInDate}
-              helperText={bookingErrors.checkInDate}
               sx={{
                 fontFamily: "Archivo, sans-serif",
                 "& .MuiOutlinedInput-root": {
@@ -170,10 +119,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
           <TextField
             fullWidth
             label="Họ và tên"
-            value={bookingForm.fullName}
+            value={charterForm.fullName}
             onChange={(e) => handleInputChange("fullName", e.target.value)}
-            error={!!bookingErrors.fullName}
-            helperText={bookingErrors.fullName}
+            error={!!charterErrors.fullName}
+            helperText={charterErrors.fullName}
             required
             variant="outlined"
             sx={{
@@ -193,10 +142,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
           <TextField
             fullWidth
             label="Số điện thoại"
-            value={bookingForm.phoneNumber}
+            value={charterForm.phoneNumber}
             onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-            error={!!bookingErrors.phoneNumber}
-            helperText={bookingErrors.phoneNumber}
+            error={!!charterErrors.phoneNumber}
+            helperText={charterErrors.phoneNumber}
             required
             variant="outlined"
             sx={{
@@ -218,10 +167,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
             fullWidth
             label="Địa chỉ email"
             type="email"
-            value={bookingForm.email}
+            value={charterForm.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
-            error={!!bookingErrors.email}
-            helperText={bookingErrors.email}
+            error={!!charterErrors.email}
+            helperText={charterErrors.email}
             required
             variant="outlined"
             sx={{
@@ -245,7 +194,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
             placeholder="Nhập yêu cầu của bạn"
             multiline
             rows={4}
-            value={bookingForm.requirements}
+            value={charterForm.requirements}
             onChange={(e) => handleInputChange("requirements", e.target.value)}
             variant="outlined"
             sx={{
@@ -263,31 +212,23 @@ const BookingRoomModal = ({ show, yachtData }) => {
               },
             }}
           />
-          <div className="flex items-center pt-4 border-t">
-            <div className="flex w-1/3 items-center">
-              <span className="text-lg font-bold text-gray-800">Tổng tiền</span>
-              <span className="ml-2 text-xl font-bold text-teal-600">
-                {formatPrice(totalPrice)}
-              </span>
-            </div>
-            <div className="flex w-2/3 justify-end space-x-3 pt-2">
-              <button
-                onClick={handleConsultation}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
-              >
-                <p className="flex items-center mx-auto justify-center gap-2">
-                  Đăng ký tư vấn
-                </p>
-              </button>
-              <button
-                onClick={handleBookNow}
-                className="flex-1 py-3 px-4 bg-teal-400 text-white rounded-3xl hover:bg-teal-500 font-medium transition-colors"
-              >
-                <p className="flex items-center mx-auto justify-center gap-2">
-                  Đặt ngay <ArrowRight />
-                </p>
-              </button>
-            </div>
+          <div className="flex justify-end space-x-3 pt-2">
+            <button
+              onClick={handleConsultation}
+              className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
+            >
+              <p className="flex items-center mx-auto justify-center gap-2">
+                Đăng ký tư vấn
+              </p>
+            </button>
+            <button
+              onClick={handleBookNow}
+              className="flex-1 py-3 px-4 bg-teal-400 text-white rounded-3xl hover:bg-teal-500 font-medium transition-colors"
+            >
+              <p className="flex items-center mx-auto justify-center gap-2">
+                Đặt ngay <ArrowRight />
+              </p>
+            </button>
           </div>
         </div>
       </Box>
@@ -295,4 +236,4 @@ const BookingRoomModal = ({ show, yachtData }) => {
   );
 };
 
-export default BookingRoomModal;
+export default CharterBoatModal;

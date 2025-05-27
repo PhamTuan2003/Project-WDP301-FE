@@ -1,26 +1,35 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Breadcrumbs, Container, Typography } from "@mui/material";
 import { HouseFill } from "react-bootstrap-icons";
 import Swal from "sweetalert2";
-import axios from "axios";
+import { useSelector, useDispatch } from "react-redux";
 import ImageCarousel from "../components/DetailBoat/ImageCarousel";
 import Tabs from "../components/DetailBoat/Tabs";
 import RoomSelector from "../components/DetailBoat/RoomSelector";
 import BoatInfo from "../components/DetailBoat/BoatInfo";
 import ReviewSection from "../components/DetailBoat/ReviewSection";
 import { Image } from "react-bootstrap";
-import { ArrowRight, BadgeInfo, X } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import NewWindow from "react-new-window";
+import {
+  fetchReviews,
+  openRegulationsWindow,
+  closeRegulationsWindow,
+  openFaqWindow,
+  closeFaqWindow,
+  setActiveTab,
+} from "../redux/action";
+import { fetchYachtById } from "../redux/asyncActions";
 
 function DetailBoat() {
-  const { id } = useParams(); // Get the yacht ID from the URL
-  const [yacht, setYacht] = useState(null); // State to store fetched yacht data
-  const [activeTab, setActiveTab] = useState(0);
-  const [averageRating, setAverageRating] = useState(0);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [showWindow, setShowWindow] = useState(false);
-  const [showWindow2, setShowWindow2] = useState(false);
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const { currentYacht, loading, error } = useSelector((state) => state.yacht);
+  const { totalReviews, ratingData } = useSelector((state) => state.reviews);
+  const {
+    windows: { showRegulationsWindow, showFaqWindow },
+  } = useSelector((state) => state.ui);
 
   const sectionRefs = useRef({
     features: null,
@@ -30,71 +39,11 @@ function DetailBoat() {
     reviews: null,
   });
 
-  // Fetch yacht data
   useEffect(() => {
-    const fetchYacht = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:9999/api/v1/yachts/findboat/${id}`
-        );
-        if (response.data.success) {
-          setYacht(response.data.data);
-        } else {
-          console.error("Failed to fetch yacht data");
-        }
-      } catch (error) {
-        console.error("Error fetching yacht:", error);
-      }
-    };
+    dispatch(fetchYachtById(id));
+    dispatch(fetchReviews(id));
+  }, [dispatch, id]);
 
-    fetchYacht();
-  }, [id]);
-
-  // Fetch reviews to calculate average rating and total reviews
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:9999/api/v1/yachts/${id}/feedbacks`
-        );
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const reviews = response.data.data;
-          setTotalReviews(reviews.length);
-          const avgRating =
-            reviews.length > 0
-              ? (
-                  reviews.reduce((sum, review) => sum + review.starRating, 0) /
-                  reviews.length
-                ).toFixed(1)
-              : 0;
-
-          setAverageRating(avgRating);
-          setTotalReviews(reviews.length);
-        } else {
-          setTotalReviews(0);
-          setAverageRating(0);
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-        setTotalReviews(0);
-        setAverageRating(0);
-      }
-    };
-
-    fetchReviews();
-  }, [id]);
-
-  // Handle booking
-  const handleBookNow = () => {
-    Swal.fire({
-      title: "Đặt hàng thành công!",
-      text: "Cảm ơn bạn đã đặt hàng với chúng tôi!",
-      icon: "success",
-      confirmButtonText: "OK",
-    });
-  };
-
-  // Update active tab based on scroll position
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -104,7 +53,7 @@ function DetailBoat() {
               entry.target.id
             );
             if (index !== -1) {
-              setActiveTab(index);
+              dispatch(setActiveTab(index));
             }
           }
         });
@@ -121,13 +70,17 @@ function DetailBoat() {
         if (ref) observer.unobserve(ref);
       });
     };
-  }, []);
+  }, [dispatch]);
 
-  if (!yacht) {
-    return <div>Loading...</div>;
-  }
+  const handleBookNow = () => {
+    Swal.fire({
+      title: "Đặt hàng thành công!",
+      text: "Cảm ơn bạn đã đặt hàng với chúng tôi!",
+      icon: "success",
+      confirmButtonText: "OK",
+    });
+  };
 
-  // Scroll to map section when clicking the link
   const handleScrollToMap = (e) => {
     e.preventDefault();
     const mapSection = document.getElementById("map");
@@ -135,6 +88,14 @@ function DetailBoat() {
       mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  if (loading || !currentYacht) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
 
   return (
     <div className="font-archivo">
@@ -159,7 +120,7 @@ function DetailBoat() {
               color="text.primary"
               className="!font-archivo hover:text-cyan-500"
             >
-              {yacht.name}
+              {currentYacht.name}
             </Typography>
           </Breadcrumbs>
         </Container>
@@ -171,7 +132,7 @@ function DetailBoat() {
               className="text-4xl font-bold light:text-gray-900"
               color="text.primary"
             >
-              {yacht.name}
+              {currentYacht.name}
             </h1>
             <div className="flex items-center gap-2 my-5">
               <span className="bg-yellow-200 text-sm font-medium text-orange-800 rounded-2xl px-3 py-1 flex items-center">
@@ -181,14 +142,14 @@ function DetailBoat() {
                 >
                   <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                 </svg>
-                {averageRating} ({totalReviews}) đánh giá
+                {ratingData?.average} ({totalReviews}) đánh giá
               </span>
               <Link
                 to="#"
                 onClick={handleScrollToMap}
                 className="flex text-sm items-center bg-gray-100 text-gray-700 rounded-2xl px-3 py-1"
               >
-                <span>{yacht.IdCompanys.address}</span>
+                <span>{currentYacht.IdCompanys.address}</span>
                 <span className="light:text-teal-400 dark:text-teal-600 underline pl-2">
                   Xem bản đồ và lịch trình
                 </span>
@@ -206,11 +167,7 @@ function DetailBoat() {
       <ImageCarousel yachtId={id} />
       <Container className="py-20">
         <div className="sticky top-24 z-10 rounded-3xl">
-          <Tabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            totalReviews={totalReviews}
-          />
+          <Tabs />
         </div>
         <div className="flex flex-col md:flex-row mt-10 gap-6">
           <div className="md:w-8/12">
@@ -227,10 +184,6 @@ function DetailBoat() {
                 alt="Divider"
                 className="my-6"
               />
-              {/* <div className="flex gap-2 items-center my-10">
-                <img src="../icons/Wine.svg" alt="Wine icon" />
-                <p className="text-md font-medium">Quầy bar</p>
-              </div> */}
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <svg
@@ -245,19 +198,17 @@ function DetailBoat() {
                       fill="none"
                     />
                   </svg>
-                  <p className="text-base">{yacht.description}</p>
+                  <p className="text-base">{currentYacht.description}</p>
                 </div>
               </div>
             </div>
-
             <div
               id="rooms"
               className="mt-16 scroll-mt-32"
               ref={(el) => (sectionRefs.current.rooms = el)}
             >
-              <RoomSelector yachtId={id} handleBookNow={handleBookNow} />
+              <RoomSelector yachtId={id} yachtData={currentYacht} />
             </div>
-
             <div
               id="introduction"
               className="mt-16 scroll-mt-32"
@@ -279,19 +230,19 @@ function DetailBoat() {
                   src="../images/yacht-2.jpg"
                   className="rounded-3xl mb-4"
                 />
-                <p className="my-2">{yacht.description}</p>
+                <p className="my-2">{currentYacht.description}</p>
                 <Image
                   src="../images/yacht-3.jpg"
                   className="rounded-3xl w-full mb-4"
                 />
                 <p className="my-2">
-                  Du thuyền {yacht.name} có thiết kế tinh tế với thân vỏ làm từ{" "}
-                  {yacht.hullBody}. Hành trình khám phá {yacht.itinerary} mang
-                  đến trải nghiệm độc đáo giữa lòng {yacht.locationId.name}.
+                  Du thuyền {currentYacht.name} có thiết kế tinh tế với thân vỏ
+                  làm từ {currentYacht.hullBody}. Hành trình khám phá{" "}
+                  {currentYacht.itinerary} mang đến trải nghiệm độc đáo giữa
+                  lòng {currentYacht.locationId.name}.
                 </p>
               </div>
             </div>
-
             <div
               id="regulations"
               className="mt-16 scroll-mt-32"
@@ -309,14 +260,14 @@ function DetailBoat() {
                 Bạn có thể xem Quy định chung và lưu ý:{" "}
                 <Link
                   to="#"
-                  onClick={() => setShowWindow(true)}
+                  onClick={() => dispatch(openRegulationsWindow())}
                   className="flex items-center text-teal-800 hover:text-teal-400"
                 >
                   Tại đây <ArrowRight size={20} />
                 </Link>
-                {showWindow && (
+                {showRegulationsWindow && (
                   <NewWindow
-                    onUnload={() => setShowWindow(false)}
+                    onUnload={() => dispatch(closeRegulationsWindow())}
                     title="Quy định chung và lưu ý"
                     features={{ width: 800, height: 600 }}
                   >
@@ -327,21 +278,19 @@ function DetailBoat() {
                         </h2>
                         <img src="../icons/heading-border.webp" alt="Divider" />
                       </div>
-
                       <div className="space-y-4 font-archivo">
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
+                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
                           <h3 className="font-semibold">
                             Thời gian nhận phòng:
                           </h3>
                           <p>
                             Giờ nhận phòng từ 12h15-12h30. Nếu quý khách không
-                            sủ dụng dịch vụ xe đưa đón của tàu và tự di chuyển,
+                            sử dụng dịch vụ xe đưa đón của tàu và tự di chuyển,
                             vui lòng có mặt tại bến tàu muộn nhất là 11h45 để
                             làm thủ tục trước khi lên tàu.
                           </p>
                         </div>
-
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
+                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
                           <h3 className="font-semibold">Thời gian trả phòng</h3>
                           <p>
                             Giờ trả phòng từ 9h30-10h30 tùy thuộc vào lịch trình
@@ -349,7 +298,7 @@ function DetailBoat() {
                             vụ bữa trưa trên tàu trước khi tàu cập bến.
                           </p>
                         </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
+                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
                           <h3 className="font-semibold">
                             Giá phòng đã bao gồm
                           </h3>
@@ -369,7 +318,7 @@ function DetailBoat() {
                             </li>
                           </ul>
                         </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
+                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
                           <h3 className="font-semibold">Huỷ đặt phòng</h3>
                           <p>
                             Những mức giá tốt trên đây đều có điều kiện chung là
@@ -383,102 +332,8 @@ function DetailBoat() {
                   </NewWindow>
                 )}
               </p>
-            </div>
-
-            <div id="faq" className="mt-16 scroll-mt-32">
-              <h2 className="text-4xl font-bold light:text-gray-900">
-                Câu hỏi thường gặp
-              </h2>
-              <img
-                src="../icons/heading-border.webp"
-                alt="Divider"
-                className="my-6"
-              />
-              <p className="flex items-center  text-base font-medium">
-                Bạn có thể xem Câu hỏi thường gặp:{" "}
-                <Link
-                  to="#"
-                  onClick={() => setShowWindow2(true)}
-                  className="flex items-center text-teal-800 hover:text-teal-400"
-                >
-                  Tại đây <ArrowRight size={20} />
-                </Link>
-                {showWindow2 && (
-                  <NewWindow
-                    onUnload={() => setShowWindow2(false)}
-                    title=" Câu hỏi thường gặp"
-                    features={{ width: 800, height: 600 }}
-                  >
-                    <div className="p-6">
-                      <div className="flex flex-col gap-3 font-archivo justify-between items-start mb-4">
-                        <h2 className="text-3xl font-bold">
-                          Câu hỏi thường gặp
-                        </h2>
-                        <img src="../icons/heading-border.webp" alt="Divider" />
-                      </div>
-
-                      <div className="space-y-4 font-archivo">
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
-                          <h3 className="font-semibold">
-                            Thời gian nhận phòng:
-                          </h3>
-                          <p>
-                            Giờ nhận phòng từ 12h15-12h30. Nếu quý khách không
-                            sủ dụng dịch vụ xe đưa đón của tàu và tự di chuyển,
-                            vui lòng có mặt tại bến tàu muộn nhất là 11h45 để
-                            làm thủ tục trước khi lên tàu.
-                          </p>
-                        </div>
-
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
-                          <h3 className="font-semibold">Thời gian trả phòng</h3>
-                          <p>
-                            Giờ trả phòng từ 9h30-10h30 tùy thuộc vào lịch trình
-                            của tàu. Sau khi trả phòng, quý khách sẽ được phục
-                            vụ bữa trưa trên tàu trước khi tàu cập bến.
-                          </p>
-                        </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
-                          <h3 className="font-semibold">
-                            Giá phòng đã bao gồm
-                          </h3>
-                          <ul className="list-disc list-inside">
-                            <li>Hướng dẫn viên trên tàu</li>
-                            <li>
-                              Các bữa ăn theo tiêu chuẩn (01 bữa trưa, 01 bữa
-                              tối, 01 bữa sáng, 1 bữa trưa nhẹ)
-                            </li>
-                            <li>
-                              Lớp học nấu ăn, Bơi lội (nếu thời tiết cho phép),
-                              xem phim, câu mực, xem tivi vệ tinh
-                            </li>
-                            <li>Phòng tập gym trên tàu</li>
-                            <li>
-                              Vé tham quan các điểm trong lịch trình (nếu có)
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl ">
-                          <h3 className="font-semibold">Huỷ đặt phòng</h3>
-                          <p>
-                            Những mức giá tốt trên đây đều có điều kiện chung là
-                            không được hoàn/hủy và được phép đổi ngày. Quý khách
-                            vui lòng liên hệ với chúng tôi để nhận được sự hỗ
-                            trợ tốt nhất.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </NewWindow>
-                )}
-              </p>
-            </div>
-
-            <div
-              id="map"
-              className="mt-16 scroll-mt-32"
-              ref={(el) => (sectionRefs.current.map = el)}
-            >
+            </div>{" "}
+            <div id="map" className="mt-16 scroll-mt-32">
               <h2 className="text-4xl font-bold light:text-gray-900">
                 Bản đồ và lịch trình
               </h2>
@@ -487,49 +342,18 @@ function DetailBoat() {
                 alt="Divider"
                 className="my-6"
               />
-              <div className="space-y-4">
-                <div className="relative bg-gray-100 text-gray-700 p-4 rounded-2xl shadow-sm border border-gray-300">
-                  <div className="absolute top-2 right-2 cursor-pointer">
-                    <X />
-                  </div>
-                  <div className="flex">
-                    <BadgeInfo size={20} />
-                    <div className="font-medium">
-                      <p className="text-sm font-medium">Thông tin cần biết:</p>
-                      <ul className="list-disc pl-5 text-sm space-y-1">
-                        <li>
-                          Du thuyền {yacht.name} xuất phát từ{" "}
-                          {yacht.IdCompanys.address}
-                        </li>
-                        <li>
-                          Bạn có thể xem chi tiết lịch trình 2 ngày 1 đêm.{" "}
-                          <Link
-                            to="https://docs.google.com/document/d/1mEUXbaHQZmmjGfAuyuYHpRQimyt0y0YJRWjLZnvCa7U/edit?usp=sharing"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-teal-800 underline"
-                          >
-                            tại đây
-                          </Link>
-                          .
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+              <div className="relative w-full h-96 bg-gray-200 rounded-3xl overflow-hidden">
                 <iframe
-                  title="google-map"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.019216683743!2d-122.41941568468132!3d37.77492977975966!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085808f5a3d7d7d%3A0x7b7b7b7b7b7b7b7b!2sSan%20Francisco%2C%20CA%2C%20USA!5e0!3m2!1sen!2s!4v1634567890123!5m2!1sen!2s"
                   width="100%"
-                  height="332"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
                   loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="border-0 rounded-3xl"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3726.7436108855272!2d106.98803167489945!3d20.922632380700293!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314a5ec6c1fba745%3A0xd8c824609119f9db!2zQ-G6o25nIHTDoHUga2jDoWNoIFF14buRYyB04bq_IFR14bqnbiBDaMOidQ!5e0!3m2!1svi!2s!4v1695975094490!5m2!1svi!2s"
-                />
+                  title="Map"
+                ></iframe>
               </div>
             </div>
-
             <div
               id="reviews"
               className="mt-16 scroll-mt-32"
@@ -538,9 +362,49 @@ function DetailBoat() {
               <ReviewSection yachtId={id} />
             </div>
           </div>
-          <BoatInfo yacht={yacht} />
+          <BoatInfo />
         </div>
       </Container>
+      {showFaqWindow && (
+        <NewWindow
+          onUnload={() => dispatch(closeFaqWindow())}
+          title="Câu hỏi thường gặp"
+          features={{ width: 800, height: 600 }}
+        >
+          <div className="p-6">
+            <div className="flex flex-col gap-3 font-archivo justify-between items-start mb-4">
+              <h2 className="text-3xl font-bold">Câu hỏi thường gặp</h2>
+              <img src="../icons/heading-border.webp" alt="Divider" />
+            </div>
+            <div className="space-y-4 font-archivo">
+              <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
+                <h3 className="font-semibold">Thời gian nhận phòng:</h3>
+                <p>
+                  Giờ nhận phòng từ 12h15-12h30. Nếu quý khách không sử dụng
+                  dịch vụ xe đưa đón của tàu và tự di chuyển, vui lòng có mặt
+                  tại bến tàu muộn nhất là 11h45 để làm thủ tục trước khi lên
+                  tàu.
+                </p>
+              </div>
+              <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
+                <h3 className="font-semibold">Thời gian trả phòng</h3>
+                <p>
+                  Giờ trả phòng từ 9h30-10h30 tùy thuộc vào lịch trình của tàu.
+                  Sau khi trả phòng, quý khách sẽ được phục vụ bữa trưa trên tàu
+                  trước khi tàu cập bến.
+                </p>
+              </div>
+              <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
+                <h3 className="font-semibold">Chính sách hủy phòng</h3>
+                <p>
+                  Đặt phòng không được hoàn/hủy nhưng có thể đổi ngày nếu thông
+                  báo trước ít nhất 7 ngày. Vui lòng liên hệ để được hỗ trợ.
+                </p>
+              </div>
+            </div>
+          </div>
+        </NewWindow>
+      )}
     </div>
   );
 }

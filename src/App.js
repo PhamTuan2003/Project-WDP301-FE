@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { getTheme } from "./theme/theme";
@@ -18,10 +18,17 @@ import Enterprise from "./components/Enterprise/Enterprise";
 import BlogDetail from "./components/Blog/BlogDetail";
 import BlogList from "./components/Blog/BlogList";
 import DetailBoat from "./pages/DetailBoat";
+import { useDispatch } from "react-redux";
+import { initializeAuth } from "./redux/asyncActions";
 function App() {
   const [mode, setMode] = useState(
     localStorage.getItem("themeMode") || "light"
   );
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initializeAuth());
+  }, [dispatch]);
 
   const toggleTheme = () => {
     setMode((prevMode) => {
