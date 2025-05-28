@@ -2,7 +2,15 @@ import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle, faFacebookF } from "@fortawesome/free-brands-svg-icons";
 import { Link, useNavigate } from "react-router-dom";
-import { Box, Button, TextField, Typography, Checkbox, FormControlLabel, Stack } from "@mui/material";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  Stack,
+} from "@mui/material";
 import styled from "@emotion/styled";
 import axios from "axios";
 import "./Auth.css";
@@ -32,22 +40,22 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-  if (showTransition) {
-    // Disable scroll
-    document.body.style.overflow = "hidden";
-    document.body.style.pointerEvents = "none"; // Ngăn tương tác luôn
-  } else {
-    // Enable scroll lại
-    document.body.style.overflow = "";
-    document.body.style.pointerEvents = "";
-  }
+    if (showTransition) {
+      // Disable scroll
+      document.body.style.overflow = "hidden";
+      document.body.style.pointerEvents = "none"; // Ngăn tương tác luôn
+    } else {
+      // Enable scroll lại
+      document.body.style.overflow = "";
+      document.body.style.pointerEvents = "";
+    }
 
-  // Cleanup nếu component unmount
-  return () => {
-    document.body.style.overflow = "";
-    document.body.style.pointerEvents = "";
-  };
-}, [showTransition]);
+    // Cleanup nếu component unmount
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.pointerEvents = "";
+    };
+  }, [showTransition]);
 
   // Hàm xử lý thay đổi input
   const handleChange = (e) => {
@@ -64,7 +72,11 @@ export default function Login() {
     setSuccess("");
 
     try {
-      const response = await axios.post("http://localhost:9999/api/v1/customers/login", formData);
+      const response = await axios.post(
+        "http://localhost:9999/api/v1/customers/login",
+        formData
+      );
+      console.log("Login API response:", response.data); // Debug
 
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("customer", JSON.stringify(response.data.customer));
@@ -75,7 +87,8 @@ export default function Login() {
         window.location.reload();
       }, 1500);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.";
+      const errorMessage =
+        err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.";
       setError(errorMessage);
     }
   };
@@ -155,8 +168,11 @@ export default function Login() {
           className="auth-form"
           sx={{
             bgcolor: (theme) =>
-              theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.1)" : "rgba(27, 36, 42, 0.7)",
-            backdropFilter: (theme) => (theme.palette.mode === "light" ? "blur(60px)" : "blur(5px)"),
+              theme.palette.mode === "light"
+                ? "rgba(255, 255, 255, 0.1)"
+                : "rgba(27, 36, 42, 0.7)",
+            backdropFilter: (theme) =>
+              theme.palette.mode === "light" ? "blur(60px)" : "blur(5px)",
             borderRadius: 3,
             p: 3,
             width: 500,
@@ -166,7 +182,9 @@ export default function Login() {
             "&:hover": {
               boxShadow: (theme) =>
                 `0 12px 48px ${
-                  theme.palette.mode === "light" ? "rgba(129, 127, 127, 0.5)" : "rgba(0, 0, 0, 0.7)"
+                  theme.palette.mode === "light"
+                    ? "rgba(129, 127, 127, 0.5)"
+                    : "rgba(0, 0, 0, 0.7)"
                 }`,
             },
           }}
@@ -217,9 +235,13 @@ export default function Login() {
                   "& .MuiOutlinedInput-root": {
                     background: "rgba(255, 255, 255, 0.2)",
                     "& input": { color: "white" },
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255, 255, 255, 0.3)" },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(255, 255, 255, 0.3)",
+                    },
                   },
-                  "& .MuiInputBase-input::placeholder": { color: "rgba(255, 255, 255, 0.7)" },
+                  "& .MuiInputBase-input::placeholder": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                  },
                 }}
               />
             </Box>
@@ -246,20 +268,32 @@ export default function Login() {
                   "& .MuiOutlinedInput-root": {
                     background: "rgba(255, 255, 255, 0.2)",
                     "& input": { color: "white" },
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255, 255, 255, 0.3)" },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(255, 255, 255, 0.3)",
+                    },
                   },
-                  "& .MuiInputBase-input::placeholder": { color: "rgba(255, 255, 255, 0.7)" },
+                  "& .MuiInputBase-input::placeholder": {
+                    color: "rgba(255, 255, 255, 0.7)",
+                  },
                 }}
               />
             </Box>
             <Box
               className="form-options"
-              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", my: 2 }}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                my: 2,
+              }}
             >
               <FormControlLabel
                 control={<Checkbox color="primary" />}
                 label="Ghi nhớ đăng nhập"
-                sx={{ color: "text.secondary", "& .MuiTypography-root": { fontSize: "0.9rem" } }}
+                sx={{
+                  color: "text.secondary",
+                  "& .MuiTypography-root": { fontSize: "0.9rem" },
+                }}
               />
               <Typography
                 component="a"
@@ -277,7 +311,11 @@ export default function Login() {
             <StyledButton type="submit">Đăng nhập</StyledButton>
           </Box>
           <Box className="social-login" sx={{ mt: 3 }}>
-            <Typography align="center" color="text.secondary" sx={{ mb: 2, fontSize: "0.9rem" }}>
+            <Typography
+              align="center"
+              color="text.secondary"
+              sx={{ mb: 2, fontSize: "0.9rem" }}
+            >
               Hoặc đăng nhập bằng
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
@@ -292,7 +330,11 @@ export default function Login() {
                   "&:hover": { bgcolor: "#c1352b" },
                 }}
               >
-                <FontAwesomeIcon icon={faGoogle} className="icon" style={{ marginRight: "8px" }} />
+                <FontAwesomeIcon
+                  icon={faGoogle}
+                  className="icon"
+                  style={{ marginRight: "8px" }}
+                />
                 Google
               </Button>
               <Button
@@ -306,7 +348,11 @@ export default function Login() {
                   "&:hover": { bgcolor: "#365899" },
                 }}
               >
-                <FontAwesomeIcon icon={faFacebookF} className="icon" style={{ marginRight: "8px" }} />
+                <FontAwesomeIcon
+                  icon={faFacebookF}
+                  className="icon"
+                  style={{ marginRight: "8px" }}
+                />
                 Facebook
               </Button>
             </Stack>
@@ -319,7 +365,10 @@ export default function Login() {
             sx={{ fontSize: "0.9rem" }}
           >
             Bạn chưa có tài khoản?{" "}
-            <Link to="/register" style={{ color: "#68bfb5", textDecoration: "none" }}>
+            <Link
+              to="/register"
+              style={{ color: "#68bfb5", textDecoration: "none" }}
+            >
               Đăng ký
             </Link>
           </Typography>
