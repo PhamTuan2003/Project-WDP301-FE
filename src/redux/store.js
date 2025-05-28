@@ -23,7 +23,7 @@ const rootReducer = combineReducers({
   consultation: consultationReducer,
   reviewForm: reviewFormReducer,
   auth: authReducer,
-  servicer: servicerReducer,
+  services: servicerReducer,
 });
 
 const store = createStore(

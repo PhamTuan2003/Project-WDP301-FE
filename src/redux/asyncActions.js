@@ -27,12 +27,38 @@ import {
 export const fetchYachtById = (yachtId) => async (dispatch) => {
   dispatch(fetchYachtRequest());
   try {
-    const response = await axios.get(
-      `http://localhost:9999/api/v1/yachts/findboat/${yachtId}`
-    );
-    dispatch(fetchYachtSuccess(response.data.data));
+    const [yachtResponse, servicesResponse] = await Promise.all([
+      axios.get(`http://localhost:9999/api/v1/yachts/findboat/${yachtId}`),
+      axios.get(`http://localhost:9999/api/v1/yachts/${yachtId}/services`),
+    ]);
+    const yachtData = {
+      ...yachtResponse.data.data,
+      services: Array.isArray(servicesResponse.data?.data)
+        ? servicesResponse.data.data
+        : [],
+    };
+    dispatch(fetchYachtSuccess(yachtData));
   } catch (error) {
     dispatch(fetchYachtFailure(error.message));
+  }
+};
+
+//=== SERVICE ASYNC ACTIONS ===
+export const fetchServices = (yachtId) => async (dispatch) => {
+  try {
+    dispatch({ type: "FETCH_SERVICES_REQUEST" });
+    const response = await axios.get(
+      `http://localhost:9999/api/v1/yachts/${yachtId}/services`
+    );
+    console.log("fetchServices response:", response.data); // Debug log
+    const servicesData = Array.isArray(response.data?.data)
+      ? response.data.data
+      : [];
+    console.log("Processed services data:", servicesData); // Debug log
+    dispatch({ type: "FETCH_SERVICES_SUCCESS", payload: servicesData });
+  } catch (error) {
+    console.error("fetchServices error:", error); // Debug log
+    dispatch({ type: "FETCH_SERVICES_FAILURE", payload: error.message });
   }
 };
 
@@ -83,20 +109,8 @@ export const fetchRoomsAndSchedules =
       dispatch(fetchRoomsFailure(error.message));
     }
   };
-export const fetchServices = (yachtId) => async (dispatch) => {
-  try {
-    dispatch({ type: "FETCH_SERVICES_REQUEST" });
-    const response = await axios.get(
-      `http://localhost:9999/api/v1/yachts/${yachtId}/services`
-    );
-    const servicesData = Array.isArray(response.data?.data)
-      ? response.data.data
-      : [];
-    dispatch({ type: "FETCH_SERVICES_SUCCESS", payload: servicesData });
-  } catch (error) {
-    dispatch({ type: "FETCH_SERVICES_FAILURE", payload: error.message });
-  }
-};
+
+//=== CONSULTATION ASYNC ACTIONS ===
 export const submitRoomBooking = (bookingData) => async (dispatch) => {
   dispatch(setSubmitting(true));
   try {

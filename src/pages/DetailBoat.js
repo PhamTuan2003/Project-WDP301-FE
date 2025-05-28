@@ -10,7 +10,7 @@ import RoomSelector from "../components/DetailBoat/RoomSelector";
 import BoatInfo from "../components/DetailBoat/BoatInfo";
 import ReviewSection from "../components/DetailBoat/ReviewSection";
 import { Image } from "react-bootstrap";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CircleCheckBig } from "lucide-react";
 import NewWindow from "react-new-window";
 import {
   fetchReviews,
@@ -27,7 +27,8 @@ function DetailBoat() {
   const dispatch = useDispatch();
   const { currentYacht, loading, error } = useSelector((state) => state.yacht);
   const { ratingData } = useSelector((state) => state.reviews);
-  const { data: services } = useSelector((state) => state.services);
+  const servicesState = useSelector((state) => state.services) || {};
+  const services = servicesState.data || [];
   const totalReviews = useSelector(
     (state) => state.reviews.ratingData?.total || 0
   );
@@ -48,63 +49,7 @@ function DetailBoat() {
     dispatch(fetchReviews(id));
     dispatch(fetchServices(id)); // Updated to pass yachtId
   }, [dispatch, id]);
-  const serviceIcons = {
-    "Wi-Fi": (
-      <svg
-        className="w-6 h-6 text-teal-400"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M12 21l-9-9c3.3-3.3 8.7-3.3 12 0s8.7 3.3 12 0l-9 9z" />
-      </svg>
-    ),
-    Pool: (
-      <svg
-        className="w-6 h-6 text-teal-400"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-      </svg>
-    ),
-    Spa: (
-      <svg
-        className="w-6 h-6 text-teal-400"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M12 4c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8z" />
-      </svg>
-    ),
-    Gym: (
-      <svg
-        className="w-6 h-6 text-teal-400"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M20 6h-3v3h-2V6h-3V4h3V1h2v3h3v2z" />
-      </svg>
-    ),
-    Restaurant: (
-      <svg
-        className="w-6 h-6 text-teal-400"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-      </svg>
-    ),
-    Bar: (
-      <svg
-        className="w-6 h-6 text-teal-400"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-      >
-        <path d="M7 2h10v2H7zM5 6h14v2H5z" />
-      </svg>
-    ),
-    // Add more mappings as needed
-  };
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -133,14 +78,14 @@ function DetailBoat() {
     };
   }, [dispatch]);
 
-  const handleBookNow = () => {
-    Swal.fire({
-      title: "Đặt hàng thành công!",
-      text: "Cảm ơn bạn đã đặt hàng với chúng tôi!",
-      icon: "success",
-      confirmButtonText: "OK",
-    });
-  };
+  // const handleBookNow = () => {
+  //   Swal.fire({
+  //     title: "Đặt hàng thành công!",
+  //     text: "Cảm ơn bạn đã đặt hàng với chúng tôi!",
+  //     icon: "success",
+  //     confirmButtonText: "OK",
+  //   });
+  // };
 
   const handleScrollToMap = (e) => {
     e.preventDefault();
@@ -251,25 +196,19 @@ function DetailBoat() {
                 className="my-6"
               />
               <div className="space-y-6">
-                {services.slice(0, 6).map((service) => (
-                  <div key={service.id} className="flex items-center gap-3">
-                    {serviceIcons[service.name] || (
-                      <svg
-                        className="w-6 h-6 text-teal-400"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                  {services.slice(0, 6).map((service, idx) => (
+                    <div key={service._id} className="flex items-center gap-3">
+                      <CircleCheckBig size={20} color="#04efef" />
+                      <p
+                        className="text-base"
+                        style={{ fontSize: "16px", color: "#457467" }}
                       >
-                        <path
-                          d="M20 6L9 17l-5-5"
-                          strokeWidth="2"
-                          stroke="currentColor"
-                          fill="none"
-                        />
-                      </svg>
-                    )}
-                    <p className="text-base">{service.name}</p>
-                  </div>
-                ))}
+                        {service.serviceId?.serviceName || "Unnamed Service"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
                 <div className="flex items-center gap-3">
                   <svg
                     className="w-6 h-6 text-teal-400"

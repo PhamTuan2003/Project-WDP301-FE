@@ -19,50 +19,26 @@ const yachtReducer = (state = yachtInitialState, action) => {
       return state;
   }
 };
-// src/redux/reducer.js
-const initialState = {
-  yacht: {
-    currentYacht: null,
-    loading: false,
-    error: null,
-  },
-  reviews: {
-    ratingData: { total: 0, average: 0 },
-  },
-  ui: {
-    windows: { showRegulationsWindow: false, showFaqWindow: false },
-    activeTab: 0,
-  },
-  services: {
-    data: [],
-    loading: false,
-    error: null,
-  },
+
+//=== SERVICES REDUCER ===
+const servicesInitialState = {
+  data: [],
+  loading: false,
+  error: null,
 };
 
-const servicerReducer = (state = initialState, action) => {
+const servicerReducer = (state = servicesInitialState, action) => {
   switch (action.type) {
     case "FETCH_SERVICES_REQUEST":
-      return {
-        ...state,
-        services: { ...state.services, loading: true, error: null },
-      };
+      return { ...state, loading: true, error: null };
     case "FETCH_SERVICES_SUCCESS":
-      return {
-        ...state,
-        services: { ...state.services, data: action.payload, loading: false },
-      };
+      return { ...state, data: action.payload, loading: false };
     case "FETCH_SERVICES_FAILURE":
-      return {
-        ...state,
-        services: { ...state.services, error: action.payload, loading: false },
-      };
-    // ... other cases for yacht, reviews, ui, etc.
+      return { ...state, error: action.payload, loading: false };
     default:
       return state;
   }
 };
-
 // === IMAGE REDUCER ===
 const imageInitialState = {
   images: [{ src: "./images/yacht-8.jpg", alt: "Default Yacht Image" }],
