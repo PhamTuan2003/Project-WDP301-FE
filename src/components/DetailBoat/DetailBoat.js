@@ -92,7 +92,7 @@ function DetailBoat() {
 
   // Thumbnail images at the bottom
   const thumbnails = [
-    "./images/ambassador/ambassador-cruise1.webp",
+    "./images/ambassador/ambassador-cruise1.jpg",
     "./images/yacht-10.jpg",
     "./images/yacht-10.jpg",
   ];
@@ -214,7 +214,7 @@ function DetailBoat() {
               </Row>
               <Row>
                 <Col>
-                  <Image src={"./images/heading-border.webp"} />
+                  <Image src={"./images/border.jpg"} />
                 </Col>
               </Row>
             </Col>
@@ -340,7 +340,7 @@ function DetailBoat() {
                 <p className="font-bold text-gray-900 text-4xl ">
                   Đặc điểm nổi bật
                 </p>
-                <Image src={"./images/heading-border.webp"} className="pt-6 " />
+                <Image src={"./images/border.jpg"} className="pt-6 " />
                 <Col className="flex gap-2 py-10 items-center">
                   <Image src={"./icons/Wine.svg"} />
                   <p className="text-md font-medium">Quầy bar </p>
@@ -376,12 +376,12 @@ function DetailBoat() {
                     Các loại phòng & giá
                   </p>
                   <Image
-                    src={"./images/heading-border.webp"}
+                    src={"./images/border.jpg"}
                     className="py-6 "
                   />
                   <div
                     className=" gap-10 flex flex-col rounded-3xl p-8 bg-repeat"
-                    style={{ backgroundImage: "url('/images/boat-bg.webp')" }}
+                    style={{ backgroundImage: "url('/images/boat-bg.jpg')" }}
                   >
                     <Col className="flex justify-end">
                       <Button className="!font-archivo hover:!bg-gray-400 hover:!shadow-2xl shadow-md !capitalize !gap-3 !rounded-full !p-[10px_16px] !whitespace-nowrap border !text-gray-800 !bg-gradient-to-t !from-slate-50 !to-slate-300 ">
@@ -495,7 +495,7 @@ function DetailBoat() {
                     Giới thiệu
                   </p>
                   <Image
-                    src={"./images/heading-border.webp"}
+                    src={"./images/border.jpg"}
                     className="pt-6 "
                   />
                   <div className="text-base">
@@ -509,7 +509,7 @@ function DetailBoat() {
                       nhất để khám phá vẻ đẹp của di sản kỳ quan thiên nhiên thế
                       giới vịnh Hạ.
                     </p>
-                    <Image src="./images/ambassador/ambassador-cruise1.webp" />
+                    <Image src="./images/ambassador/ambassador-cruise1.jpg" />
                     <p className="my-1 text-left break-words">
                       Du thuyền Ambassador có 5 tầng, được đóng mới với chiều
                       dài lên tới 86m, chiều rộng 13.9m và cao 13m. Với 2 tầng
@@ -525,7 +525,7 @@ function DetailBoat() {
                     Quy định chung và lưu ý{" "}
                   </p>
                   <Image
-                    src={"./images/heading-border.webp"}
+                    src={"./images/border.jpg"}
                     className="pt-6 "
                   />
                   <p className="flex items-center gap-2 text-base font-medium">
@@ -543,7 +543,7 @@ function DetailBoat() {
                     Câu hỏi thường gặp
                   </p>
                   <Image
-                    src={"./images/heading-border.webp"}
+                    src={"./images/border.jpg"}
                     className="pt-6 "
                   />
                   <p className="flex items-center gap-2 text-base font-medium">
@@ -561,7 +561,7 @@ function DetailBoat() {
                     Bản đồ và lịch trình
                   </p>
                   <Image
-                    src={"./images/heading-border.webp"}
+                    src={"./images/border.jpg"}
                     className="pt-6 "
                   />
                   <div className="gap-4 mt-5 flex flex-col">
