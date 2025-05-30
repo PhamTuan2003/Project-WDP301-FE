@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { User, Minus, Plus, X } from "lucide-react";
 import { Box, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import RoomModal from "./RoomModal";
-import CharterBoatModal from "./Booking/CharterBoatModal";
+
 import BookingRoomModal from "./Booking/BookingRoomModal";
 import {
   incrementRoomQuantity,
@@ -15,8 +15,6 @@ import {
   closeRoomModal,
   openBookingModal,
   closeBookingModal,
-  openCharterModal,
-  closeCharterModal,
 } from "../../redux/action";
 import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
 
@@ -33,12 +31,9 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     loading,
     error,
   } = useSelector((state) => state.booking);
-  const {
-    showRoomModal,
-    showBookingModal,
-    showCharterModal,
-    selectedRoomForModal,
-  } = useSelector((state) => state.ui.modals);
+  const { showRoomModal, showBookingModal, selectedRoomForModal } = useSelector(
+    (state) => state.ui.modals
+  );
 
   // Fetch rooms and schedules when yachtId or selectedSchedule changes
   useEffect(() => {
@@ -52,10 +47,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   // Handlers for buttons
   const handleBookNow = () => {
     dispatch(openBookingModal());
-  };
-
-  const handleCharterBoat = () => {
-    dispatch(openCharterModal());
   };
 
   const handleClearSelection = () => {
@@ -284,12 +275,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                   </div>
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={handleCharterBoat}
-                      className="bg-white border border-teal-400 text-teal-800 font-semibold rounded-full px-4 py-2 flex items-center hover:bg-teal-800 hover:text-white"
-                    >
-                      Thuê trọn tàu
-                    </button>
-                    <button
                       onClick={handleBookNow}
                       className="bg-teal-400 border border-teal-400 text-teal-800 font-semibold rounded-full px-4 py-2 flex items-center hover:bg-teal-800 hover:text-white"
                     >
@@ -320,11 +305,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         onIncrement={(roomId) => dispatch(incrementRoomQuantity(roomId))}
         onDecrement={(roomId) => dispatch(decrementRoomQuantity(roomId))}
       />
-      <CharterBoatModal
-        show={showCharterModal}
-        onClose={() => dispatch(closeCharterModal())}
-        yachtData={yachtData}
-      />
+
       <BookingRoomModal
         show={showBookingModal}
         onClose={() => dispatch(closeBookingModal())}

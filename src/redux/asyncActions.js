@@ -21,7 +21,9 @@ import {
   requestConsultationFailure,
   setSubmitting,
   setAuthenticated,
+  closeBookingModal,
 } from "./action";
+import { formatPrice } from "./validation";
 
 // === YACHT ASYNC ACTIONS ===
 export const fetchYachtById = (yachtId) => async (dispatch) => {
@@ -111,74 +113,92 @@ export const fetchRoomsAndSchedules =
   };
 
 //=== CONSULTATION ASYNC ACTIONS ===
-export const submitRoomBooking = (bookingData) => async (dispatch) => {
-  dispatch(setSubmitting(true));
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
-    const response = await axios.post(
-      "http://localhost:9999/api/v1/bookings/rooms",
-      bookingData,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+export const submitRoomBooking =
+  (bookingData) => async (dispatch, getState) => {
+    dispatch(setSubmitting(true));
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Không tìm thấy token xác thực.");
       }
-    );
-    if (response.data.success) {
-      dispatch(setSubmitting(false));
-      return { success: true, data: response.data };
-    } else {
-      throw new Error(response.data.message || "Đặt phòng thất bại.");
-    }
-  } catch (error) {
-    dispatch(setSubmitting(false));
-    const errorMessage =
-      error.response?.data?.message || error.message || "Đặt phòng thất bại.";
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi!",
-      text: errorMessage,
-      confirmButtonText: "OK",
-    });
-    return { success: false, error: errorMessage };
-  }
-};
 
-export const submitCharterBooking = (bookingData) => async (dispatch) => {
-  dispatch(setSubmitting(true));
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
-    const response = await axios.post(
-      "http://localhost:9999/api/v1/bookings/charter",
-      bookingData,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+      // Lấy thông tin từ state
+      const state = getState();
+      const { selectedSchedule } = state.booking;
+
+      // Chuẩn bị data theo format backend expect
+      const requestData = {
+        checkInDate: bookingData.checkInDate,
+        selectedRooms: bookingData.selectedRooms.map((room) => ({
+          id: room.id || room._id,
+          name: room.name,
+          quantity: room.quantity,
+          price: room.price,
+        })),
+        totalPrice: bookingData.totalPrice,
+        yachtId: bookingData.yachtId,
+        scheduleId: selectedSchedule,
+        fullName: bookingData.fullName,
+        phoneNumber: bookingData.phoneNumber,
+        email: bookingData.email,
+        requirements: bookingData.requirements || "",
+        guestCount: bookingData.guestCount,
+      };
+
+      const response = await axios.post(
+        "http://localhost:9999/api/v1/bookings/rooms",
+        requestData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        dispatch(setSubmitting(false));
+
+        // Hiển thị thông báo thành công
+        Swal.fire({
+          icon: "success",
+          title: "Đặt phòng thành công!",
+          html: `
+          <p>Cảm ơn bạn đã đặt phòng du thuyền.</p>
+          <p><strong>Mã booking: ${response.data.data.bookingId}</strong></p>
+          <p><strong>Tổng tiền: ${formatPrice(
+            response.data.data.totalAmount
+          )}</strong></p>
+          <p>Chúng tôi sẽ xác nhận đặt chỗ trong vòng 24h.</p>
+        `,
+          showConfirmButton: true,
+          confirmButtonText: "Xem chi tiết booking",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Chuyển đến trang chi tiết booking/thanh toán
+            window.location.href = `/booking-detail/${response.data.data.bookingId}`;
+          }
+        });
+
+        dispatch(closeBookingModal());
+        return { success: true, data: response.data.data };
+      } else {
+        throw new Error(response.data.message || "Đặt phòng thất bại.");
       }
-    );
-    if (response.data.success) {
+    } catch (error) {
       dispatch(setSubmitting(false));
-      return { success: true, data: response.data };
-    } else {
-      throw new Error(response.data.message || "Đặt tàu thất bại.");
-    }
-  } catch (error) {
-    dispatch(setSubmitting(false));
-    const errorMessage =
-      error.response?.data?.message || error.message || "Đặt tàu thất bại.";
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi!",
-      text: errorMessage,
-      confirmButtonText: "OK",
-    });
-    return { success: false, error: errorMessage };
-  }
-};
+      const errorMessage =
+        error.response?.data?.message || error.message || "Đặt phòng thất bại.";
 
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi đặt phòng!",
+        text: errorMessage,
+        confirmButtonText: "Thử lại",
+      });
+
+      return { success: false, error: errorMessage };
+    }
+  };
+
+// Cập nhật endpoint trong requestConsultation
 export const requestConsultation = (consultationData) => async (dispatch) => {
   dispatch(requestConsultationRequest());
   try {
@@ -186,13 +206,15 @@ export const requestConsultation = (consultationData) => async (dispatch) => {
     if (!token) {
       throw new Error("Không tìm thấy token xác thực.");
     }
+
     const response = await axios.post(
-      "http://localhost:9999/api/v1/consultation",
+      "http://localhost:9999/api/v1/bookings/consultation", // Đổi từ consultation thành bookings/consultation
       consultationData,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
+
     if (response.data.success) {
       dispatch(requestConsultationSuccess());
       return { success: true, data: response.data };
@@ -205,11 +227,82 @@ export const requestConsultation = (consultationData) => async (dispatch) => {
       error.response?.data?.message ||
       error.message ||
       "Yêu cầu tư vấn thất bại.";
+
     Swal.fire({
       icon: "error",
       title: "Lỗi!",
       text: errorMessage,
       confirmButtonText: "OK",
+    });
+
+    return { success: false, error: errorMessage };
+  }
+};
+
+// Thêm actions mới cho customer bookings
+export const fetchCustomerBookings = () => async (dispatch) => {
+  dispatch({ type: "FETCH_CUSTOMER_BOOKINGS_REQUEST" });
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Không tìm thấy token xác thực.");
+    }
+
+    const response = await axios.get(
+      "http://localhost:9999/api/v1/bookings/my-bookings",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (response.data.success) {
+      dispatch({
+        type: "FETCH_CUSTOMER_BOOKINGS_SUCCESS",
+        payload: response.data.data,
+      });
+      return { success: true, data: response.data.data };
+    } else {
+      throw new Error(response.data.message || "Lỗi lấy danh sách booking");
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
+    dispatch({
+      type: "FETCH_CUSTOMER_BOOKINGS_FAILURE",
+      payload: errorMessage,
+    });
+    return { success: false, error: errorMessage };
+  }
+};
+
+export const fetchBookingDetail = (bookingId) => async (dispatch) => {
+  dispatch({ type: "FETCH_BOOKING_DETAIL_REQUEST" });
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Không tìm thấy token xác thực.");
+    }
+
+    const response = await axios.get(
+      `http://localhost:9999/api/v1/bookings/${bookingId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (response.data.success) {
+      dispatch({
+        type: "FETCH_BOOKING_DETAIL_SUCCESS",
+        payload: response.data.data,
+      });
+      return { success: true, data: response.data.data };
+    } else {
+      throw new Error(response.data.message || "Lỗi lấy chi tiết booking");
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
+    dispatch({
+      type: "FETCH_BOOKING_DETAIL_FAILURE",
+      payload: errorMessage,
     });
     return { success: false, error: errorMessage };
   }

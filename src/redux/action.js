@@ -1,5 +1,4 @@
 // === FILTERS ACTIONS (Giữ nguyên) ===
-
 export const setSearchTerm = (term) => ({
   type: "SET_SEARCH_TERM",
   payload: term,
@@ -80,8 +79,7 @@ export const setSelectedServices = (services) => ({
   payload: services,
 });
 
-// === YACHT ACTIONS (Thêm mới) ===
-
+// === YACHT ACTIONS ===
 export const fetchYachtRequest = () => ({
   type: "FETCH_YACHT_REQUEST",
 });
@@ -100,8 +98,7 @@ export const clearYacht = () => ({
   type: "CLEAR_YACHT",
 });
 
-// === IMAGE ACTIONS (Thêm mới) ===
-
+// === IMAGE ACTIONS ===
 export const fetchImagesRequest = () => ({
   type: "FETCH_IMAGES_REQUEST",
 });
@@ -134,8 +131,7 @@ export const setImageHovering = (isHovering) => ({
   payload: isHovering,
 });
 
-// === UI ACTIONS (Thêm mới) ===
-
+// === UI ACTIONS ===
 export const setActiveTab = (tabIndex) => ({
   type: "SET_ACTIVE_TAB",
   payload: tabIndex,
@@ -158,16 +154,7 @@ export const closeBookingModal = () => ({
   type: "CLOSE_BOOKING_MODAL",
 });
 
-export const openCharterModal = () => ({
-  type: "OPEN_CHARTER_MODAL",
-});
-
-export const closeCharterModal = () => ({
-  type: "CLOSE_CHARTER_MODAL",
-});
-
-// === BOOKING ACTIONS (Thêm mới) ===
-
+// === BOOKING ACTIONS (Loại bỏ charter-related actions) ===
 export const fetchRoomsRequest = () => ({
   type: "FETCH_ROOMS_REQUEST",
 });
@@ -226,11 +213,6 @@ export const setMaxPeopleOptions = (options) => ({
   payload: options,
 });
 
-export const updateCharterForm = (field, value) => ({
-  type: "UPDATE_CHARTER_FORM",
-  payload: { field, value },
-});
-
 export const setGuestCounterOpen = (isOpen) => ({
   type: "SET_GUEST_COUNTER_OPEN",
   payload: isOpen,
@@ -254,8 +236,7 @@ export const resetForms = () => ({
   type: "RESET_FORMS",
 });
 
-// === REVIEW ACTIONS (Thêm mới) ===
-
+// === REVIEW ACTIONS ===
 export const fetchReviewsRequest = () => ({
   type: "FETCH_REVIEWS_REQUEST",
 });
@@ -285,20 +266,14 @@ export const setBookingErrors = (errors) => ({
   payload: errors,
 });
 
-export const setCharterErrors = (errors) => ({
-  type: "SET_CHARTER_ERRORS",
-  payload: errors,
-});
+// Loại bỏ setCharterErrors
 
 export const requestConsultation = (consultationData) => ({
   type: "REQUEST_CONSULTATION",
   payload: consultationData,
 });
 
-export const submitCharterBooking = (bookingData) => ({
-  type: "SUBMIT_CHARTER_BOOKING",
-  payload: bookingData,
-});
+// Loại bỏ submitCharterBooking
 
 export const fetchYachtImages = (yachtId) => ({
   type: "FETCH_YACHT_IMAGES",
@@ -314,7 +289,7 @@ export const submitReview = (reviewData) => ({
   type: "SUBMIT_REVIEW",
   payload: reviewData,
 });
-// Thêm vào action.js
+
 export const setCustomerId = (customerId) => ({
   type: "SET_CUSTOMER_ID",
   payload: customerId,
@@ -416,4 +391,44 @@ export const registerFailure = (error) => ({
 
 export const clearAuthError = () => ({
   type: "CLEAR_AUTH_ERROR",
+});
+
+// === THÊM CÁC ACTIONS MỚI ===
+export const setFormValidation = (field, isValid, errorMessage) => ({
+  type: "SET_FORM_VALIDATION",
+  payload: { field, isValid, errorMessage },
+});
+
+export const clearAllErrors = () => ({
+  type: "CLEAR_ALL_ERRORS",
+});
+
+// Customer bookings actions
+export const fetchCustomerBookingsRequest = () => ({
+  type: "FETCH_CUSTOMER_BOOKINGS_REQUEST",
+});
+
+export const fetchCustomerBookingsSuccess = (bookings) => ({
+  type: "FETCH_CUSTOMER_BOOKINGS_SUCCESS",
+  payload: bookings,
+});
+
+export const fetchCustomerBookingsFailure = (error) => ({
+  type: "FETCH_CUSTOMER_BOOKINGS_FAILURE",
+  payload: error,
+});
+
+// Booking detail actions
+export const fetchBookingDetailRequest = () => ({
+  type: "FETCH_BOOKING_DETAIL_REQUEST",
+});
+
+export const fetchBookingDetailSuccess = (bookingDetail) => ({
+  type: "FETCH_BOOKING_DETAIL_SUCCESS",
+  payload: bookingDetail,
+});
+
+export const fetchBookingDetailFailure = (error) => ({
+  type: "FETCH_BOOKING_DETAIL_FAILURE",
+  payload: error,
 });

@@ -8,8 +8,13 @@ import {
   updateBookingForm,
   setBookingErrors,
   closeBookingModal,
+  clearAllErrors,
 } from "../../../redux/action";
-import { validateBookingForm, formatPrice } from "../../../redux/validation";
+import {
+  validateBookingForm,
+  formatPrice,
+  validateRoomSelection,
+} from "../../../redux/validation";
 import {
   submitRoomBooking,
   requestConsultation,
@@ -17,26 +22,52 @@ import {
 
 const BookingRoomModal = ({ show, yachtData }) => {
   const dispatch = useDispatch();
-  const { bookingForm, bookingErrors, rooms, totalPrice } = useSelector(
-    (state) => state.booking
-  );
+  const {
+    bookingForm,
+    bookingErrors,
+    rooms,
+    totalPrice,
+    submitting,
+    selectedSchedule,
+  } = useSelector((state) => state.booking);
 
   const handleInputChange = (field, value) => {
     dispatch(updateBookingForm(field, value));
+    if (bookingErrors[field]) {
+      dispatch(clearAllErrors());
+    }
+  };
+  const validateAllForms = () => {
+    // Validate form data
+    const formValidation = validateBookingForm(bookingForm);
+
+    // Validate room selection
+    const roomValidation = validateRoomSelection(rooms, selectedSchedule);
+
+    const allErrors = {
+      ...formValidation.errors,
+      ...roomValidation.errors,
+    };
+
+    if (Object.keys(allErrors).length > 0) {
+      dispatch(setBookingErrors(allErrors));
+
+      // Hiển thị error message đầu tiên
+      const firstError = Object.values(allErrors)[0];
+      Swal.fire({
+        icon: "error",
+        title: "Thông tin chưa đầy đủ!",
+        text: firstError,
+        confirmButtonText: "OK",
+      });
+      return false;
+    }
+
+    return true;
   };
 
   const handleConsultation = async () => {
-    const validation = validateBookingForm(bookingForm);
-    if (!validation.isValid) {
-      dispatch(setBookingErrors(validation.errors));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi!",
-        text: "Vui lòng kiểm tra lại thông tin nhập.",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
+    if (!validateAllForms()) return;
 
     const consultationData = {
       ...bookingForm,
@@ -48,8 +79,13 @@ const BookingRoomModal = ({ show, yachtData }) => {
       yachtId: yachtData._id,
     };
 
+    console.log("Consultation data:", consultationData);
+
     const result = await dispatch(requestConsultation(consultationData));
     if (result.success) {
+      console.log("Consultation successful:", result.data);
+
+      // Hiển thị thông báo đăng ký tư vấn thành công
       Swal.fire({
         icon: "success",
         title: "Đăng ký tư vấn thành công!",
@@ -57,22 +93,11 @@ const BookingRoomModal = ({ show, yachtData }) => {
         showConfirmButton: false,
         timer: 2000,
       });
-      dispatch(closeBookingModal());
     }
   };
 
   const handleBookNow = async () => {
-    const validation = validateBookingForm(bookingForm);
-    if (!validation.isValid) {
-      dispatch(setBookingErrors(validation.errors));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi!",
-        text: "Vui lòng kiểm tra lại thông tin nhập.",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
+    if (!validateAllForms()) return;
 
     const bookingData = {
       ...bookingForm,
@@ -84,27 +109,29 @@ const BookingRoomModal = ({ show, yachtData }) => {
       yachtId: yachtData._id,
     };
 
+    console.log("Booking data:", bookingData);
+
     const result = await dispatch(submitRoomBooking(bookingData));
     if (result.success) {
-      Swal.fire({
-        icon: "success",
-        title: "Đặt phòng thành công!",
-        html: `
-          <div>
-            <p>Cảm ơn bạn đã đặt phòng du thuyền.</p>
-            <p><strong>Tổng tiền: ${formatPrice(totalPrice)}</strong></p>
-            <p>Chúng tôi sẽ xác nhận đặt chỗ trong vòng 24h.</p>
-          </div>
-        `,
-        showConfirmButton: false,
-        timer: 3000,
-      });
-      dispatch(closeBookingModal());
+      console.log("Booking successful:", result.data);
+
+      // Modal sẽ tự động đóng và chuyển đến trang thanh toán
+      window.location.href = `/booking-detail/${result.data.bookingId}`;
     }
   };
 
-  if (!show) return null;
+  // Handle close modal
+  const handleCloseModal = (e) => {
+    // Ngăn event bubbling
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    dispatch(closeBookingModal());
+  };
 
+  if (!show) return null;
+  const selectedRooms = rooms.filter((r) => r.quantity > 0);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Box
@@ -273,18 +300,21 @@ const BookingRoomModal = ({ show, yachtData }) => {
             <div className="flex w-2/3 justify-end space-x-3 pt-2">
               <button
                 onClick={handleConsultation}
+                disabled={submitting}
                 className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
               >
                 <p className="flex items-center mx-auto justify-center gap-2">
-                  Đăng ký tư vấn
+                  {submitting ? "Đang xử lý..." : "Đăng ký tư vấn"}
                 </p>
               </button>
               <button
                 onClick={handleBookNow}
+                disabled={submitting}
                 className="flex-1 py-3 px-4 bg-teal-400 text-white rounded-3xl hover:bg-teal-500 font-medium transition-colors"
               >
                 <p className="flex items-center mx-auto justify-center gap-2">
-                  Đặt ngay <ArrowRight />
+                  {submitting ? "Đang xử lý..." : "Đặt ngay"}
+                  <ArrowRight />
                 </p>
               </button>
             </div>
