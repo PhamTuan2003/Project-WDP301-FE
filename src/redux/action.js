@@ -158,7 +158,10 @@ export const closeBookingModal = () => ({
 export const fetchRoomsRequest = () => ({
   type: "FETCH_ROOMS_REQUEST",
 });
-
+export const setConsultationRequest = (value) => ({
+  type: "SET_CONSULTATION_REQUEST",
+  payload: value,
+});
 export const fetchSchedulesRequest = () => ({
   type: "FETCH_SCHEDULES_REQUEST",
 });
@@ -167,7 +170,10 @@ export const fetchSchedulesSuccess = (schedules) => ({
   type: "FETCH_SCHEDULES_SUCCESS",
   payload: schedules,
 });
-
+export const setCurrentBookingId = (bookingId) => ({
+  type: "SET_CURRENT_BOOKING_ID",
+  payload: bookingId,
+});
 export const fetchSchedulesFailure = (error) => ({
   type: "FETCH_SCHEDULES_FAILURE",
   payload: error,
@@ -266,14 +272,10 @@ export const setBookingErrors = (errors) => ({
   payload: errors,
 });
 
-// Loại bỏ setCharterErrors
-
 export const requestConsultation = (consultationData) => ({
   type: "REQUEST_CONSULTATION",
   payload: consultationData,
 });
-
-// Loại bỏ submitCharterBooking
 
 export const fetchYachtImages = (yachtId) => ({
   type: "FETCH_YACHT_IMAGES",
@@ -431,4 +433,118 @@ export const fetchBookingDetailSuccess = (bookingDetail) => ({
 export const fetchBookingDetailFailure = (error) => ({
   type: "FETCH_BOOKING_DETAIL_FAILURE",
   payload: error,
+});
+
+// Confirmation Modal Actions
+export const openConfirmationModal = (bookingData) => ({
+  type: "OPEN_CONFIRMATION_MODAL",
+  payload: bookingData,
+});
+
+export const closeConfirmationModal = () => ({
+  type: "CLOSE_CONFIRMATION_MODAL",
+});
+
+export const setConfirmationData = (data) => ({
+  type: "SET_CONFIRMATION_DATA",
+  payload: data,
+});
+
+// Transaction Modal Actions
+export const openTransactionModal = (bookingId) => ({
+  type: "OPEN_TRANSACTION_MODAL",
+  payload: { bookingId },
+});
+
+export const closeTransactionModal = () => ({
+  type: "CLOSE_TRANSACTION_MODAL",
+});
+
+export const setActivePaymentTab = (tabIndex) => ({
+  type: "SET_ACTIVE_PAYMENT_TAB",
+  payload: tabIndex,
+});
+
+// Invoice Modal Actions
+export const openInvoiceModal = (invoiceData) => ({
+  type: "OPEN_INVOICE_MODAL",
+  payload: invoiceData,
+});
+
+export const closeInvoiceModal = () => ({
+  type: "CLOSE_INVOICE_MODAL",
+});
+
+// Payment Processing Actions
+export const createTransactionRequest = () => ({
+  type: "CREATE_TRANSACTION_REQUEST",
+});
+
+export const createTransactionSuccess = (transaction) => ({
+  type: "CREATE_TRANSACTION_SUCCESS",
+  payload: transaction,
+});
+
+export const createTransactionFailure = (error) => ({
+  type: "CREATE_TRANSACTION_FAILURE",
+  payload: error,
+});
+
+export const setQRCodeData = (qrData) => ({
+  type: "SET_QR_CODE_DATA",
+  payload: qrData,
+});
+
+export const clearQRCodeData = () => ({
+  type: "CLEAR_QR_CODE_DATA",
+});
+
+// Booking Status Actions
+export const updateBookingStatus = (bookingId, status) => ({
+  type: "UPDATE_BOOKING_STATUS",
+  payload: { bookingId, status },
+});
+
+export const confirmBookingRequest = () => ({
+  type: "CONFIRM_BOOKING_REQUEST",
+});
+
+export const confirmBookingSuccess = (booking) => ({
+  type: "CONFIRM_BOOKING_SUCCESS",
+  payload: booking,
+});
+
+export const confirmBookingFailure = (error) => ({
+  type: "CONFIRM_BOOKING_FAILURE",
+  payload: error,
+});
+
+// Invoice Processing Actions
+export const fetchInvoiceRequest = () => ({
+  type: "FETCH_INVOICE_REQUEST",
+});
+
+export const fetchInvoiceSuccess = (invoice) => ({
+  type: "FETCH_INVOICE_SUCCESS",
+  payload: invoice,
+});
+
+export const fetchInvoiceFailure = (error) => ({
+  type: "FETCH_INVOICE_FAILURE",
+  payload: error,
+});
+
+// Payment Status Polling Actions
+export const startPaymentPolling = (transactionId) => ({
+  type: "START_PAYMENT_POLLING",
+  payload: transactionId,
+});
+
+export const stopPaymentPolling = () => ({
+  type: "STOP_PAYMENT_POLLING",
+});
+
+export const updatePaymentStatus = (status) => ({
+  type: "UPDATE_PAYMENT_STATUS",
+  payload: status,
 });

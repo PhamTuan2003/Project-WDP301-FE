@@ -92,8 +92,14 @@ const uiInitialState = {
   modals: {
     showRoomModal: false,
     showBookingModal: false,
+    showConfirmationModal: false, // THÊM MỚI
+    showTransactionModal: false, // THÊM MỚI
+    showInvoiceModal: false, // THÊM MỚI
     selectedRoomForModal: null,
+    confirmationData: null, // THÊM MỚI
+    invoiceData: null, // THÊM MỚI
   },
+  activePaymentTab: 0,
   windows: {
     showRegulationsWindow: false,
     showFaqWindow: false,
@@ -102,6 +108,7 @@ const uiInitialState = {
 
 const uiReducer = (state = uiInitialState, action) => {
   switch (action.type) {
+    // === EXISTING CASES (giữ nguyên) ===
     case "SET_ACTIVE_TAB":
       return { ...state, activeTab: action.payload };
 
@@ -131,6 +138,79 @@ const uiReducer = (state = uiInitialState, action) => {
     case "CLOSE_BOOKING_MODAL":
       return { ...state, modals: { ...state.modals, showBookingModal: false } };
 
+    // === NEW MODAL CASES (THÊM MỚI) ===
+    case "OPEN_CONFIRMATION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showConfirmationModal: true,
+          confirmationData: action.payload,
+        },
+      };
+
+    case "CLOSE_CONFIRMATION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showConfirmationModal: false,
+          confirmationData: null,
+        },
+      };
+
+    case "SET_CONFIRMATION_DATA":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          confirmationData: action.payload,
+        },
+      };
+
+    case "OPEN_TRANSACTION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showTransactionModal: true,
+          showConfirmationModal: false,
+        },
+        activePaymentTab: 0,
+        currentBookingId: action.payload?.bookingId || action.payload,
+      };
+
+    case "CLOSE_TRANSACTION_MODAL":
+      return {
+        ...state,
+        modals: { ...state.modals, showTransactionModal: false },
+        activePaymentTab: 0,
+      };
+
+    case "SET_ACTIVE_PAYMENT_TAB":
+      return { ...state, activePaymentTab: action.payload };
+
+    case "OPEN_INVOICE_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showInvoiceModal: true,
+          invoiceData: action.payload,
+        },
+      };
+
+    case "CLOSE_INVOICE_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showInvoiceModal: false,
+          invoiceData: null,
+        },
+      };
+
+    // === EXISTING WINDOW CASES (giữ nguyên) ===
     case "OPEN_REGULATIONS_WINDOW":
       return {
         ...state,
@@ -157,6 +237,7 @@ const uiReducer = (state = uiInitialState, action) => {
 // === BOOKING REDUCER ===
 
 const bookingInitialState = {
+  bookingId: null,
   rooms: [],
   schedules: [],
   selectedSchedule: "",
@@ -240,6 +321,8 @@ const bookingReducer = (state = bookingInitialState, action) => {
         maxPeopleOptions,
       };
     }
+    case "SET_CURRENT_BOOKING_ID":
+      return { ...state, currentBookingId: action.payload };
 
     case "FETCH_ROOMS_FAILURE":
       return { ...state, loading: false, error: action.payload };
@@ -361,7 +444,8 @@ const bookingReducer = (state = bookingInitialState, action) => {
         },
       };
     }
-
+    case "SET_BOOKING_ID":
+      return { ...state, bookingId: action.payload };
     case "CLEAR_ALL_ERRORS":
       return {
         ...state,
@@ -675,6 +759,117 @@ const filtersReducer = (state = filtersInitialState, action) => {
       return state;
   }
 };
+// === PAYMENT REDUCER (MỚI) ===
+const paymentInitialState = {
+  currentTransaction: null,
+  qrCodeData: null,
+  paymentStatus: "idle", // 'idle' | 'pending' | 'completed' | 'failed'
+  isPolling: false,
+  pollingTransactionId: null,
+  loading: false,
+  error: null,
+};
+
+const paymentReducer = (state = paymentInitialState, action) => {
+  switch (action.type) {
+    case "CREATE_TRANSACTION_REQUEST":
+      return {
+        ...state,
+        loading: true,
+        error: null,
+        paymentStatus: "pending",
+      };
+
+    case "CREATE_TRANSACTION_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        currentTransaction: action.payload.transaction,
+        error: null,
+      };
+
+    case "CREATE_TRANSACTION_FAILURE":
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+        paymentStatus: "failed",
+      };
+
+    case "SET_QR_CODE_DATA":
+      return {
+        ...state,
+        qrCodeData: action.payload,
+      };
+
+    case "CLEAR_QR_CODE_DATA":
+      return {
+        ...state,
+        qrCodeData: null,
+        currentTransaction: null,
+        paymentStatus: "idle",
+      };
+
+    case "START_PAYMENT_POLLING":
+      return {
+        ...state,
+        isPolling: true,
+        pollingTransactionId: action.payload,
+      };
+
+    case "STOP_PAYMENT_POLLING":
+      return {
+        ...state,
+        isPolling: false,
+        pollingTransactionId: null,
+      };
+
+    case "UPDATE_PAYMENT_STATUS":
+      return {
+        ...state,
+        paymentStatus: action.payload,
+      };
+
+    default:
+      return state;
+  }
+};
+
+// === INVOICE REDUCER (MỚI) ===
+const invoiceInitialState = {
+  currentInvoice: null,
+  loading: false,
+  error: null,
+};
+
+const invoiceReducer = (state = invoiceInitialState, action) => {
+  switch (action.type) {
+    case "FETCH_INVOICE_REQUEST":
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+
+    case "FETCH_INVOICE_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        currentInvoice: action.payload,
+        error: null,
+      };
+
+    case "FETCH_INVOICE_FAILURE":
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+      };
+
+    default:
+      return state;
+  }
+};
 
 // === COMBINE REDUCERS ===
 export {
@@ -687,6 +882,8 @@ export {
   reviewFormReducer,
   authReducer,
   servicerReducer,
+  paymentReducer,
+  invoiceReducer,
 };
 
 export default filtersReducer;

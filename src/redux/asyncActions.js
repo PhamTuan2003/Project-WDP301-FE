@@ -22,6 +22,25 @@ import {
   setSubmitting,
   setAuthenticated,
   closeBookingModal,
+  openTransactionModal,
+  confirmBookingRequest,
+  confirmBookingSuccess,
+  closeConfirmationModal,
+  confirmBookingFailure,
+  updateBookingStatus,
+  createTransactionRequest,
+  createTransactionSuccess,
+  setQRCodeData,
+  createTransactionFailure,
+  startPaymentPolling,
+  updatePaymentStatus,
+  stopPaymentPolling,
+  fetchInvoiceRequest,
+  fetchInvoiceSuccess,
+  clearQRCodeData,
+  closeTransactionModal,
+  openInvoiceModal,
+  fetchInvoiceFailure,
 } from "./action";
 import { formatPrice } from "./validation";
 
@@ -122,11 +141,9 @@ export const submitRoomBooking =
         throw new Error("Không tìm thấy token xác thực.");
       }
 
-      // Lấy thông tin từ state
       const state = getState();
       const { selectedSchedule } = state.booking;
 
-      // Chuẩn bị data theo format backend expect
       const requestData = {
         checkInDate: bookingData.checkInDate,
         selectedRooms: bookingData.selectedRooms.map((room) => ({
@@ -137,13 +154,16 @@ export const submitRoomBooking =
         })),
         totalPrice: bookingData.totalPrice,
         yachtId: bookingData.yachtId,
-        scheduleId: selectedSchedule,
+        scheduleId: selectedSchedule || null,
         fullName: bookingData.fullName,
         phoneNumber: bookingData.phoneNumber,
         email: bookingData.email,
         requirements: bookingData.requirements || "",
         guestCount: bookingData.guestCount,
+        status: "consultation_requested",
       };
+
+      console.log("Sending booking data to server:", requestData);
 
       const response = await axios.post(
         "http://localhost:9999/api/v1/bookings/rooms",
@@ -153,50 +173,326 @@ export const submitRoomBooking =
         }
       );
 
+      console.log("Booking response:", response.data);
+
       if (response.data.success) {
         dispatch(setSubmitting(false));
-
-        // Hiển thị thông báo thành công
-        Swal.fire({
-          icon: "success",
-          title: "Đặt phòng thành công!",
-          html: `
-          <p>Cảm ơn bạn đã đặt phòng du thuyền.</p>
-          <p><strong>Mã booking: ${response.data.data.bookingId}</strong></p>
-          <p><strong>Tổng tiền: ${formatPrice(
-            response.data.data.totalAmount
-          )}</strong></p>
-          <p>Chúng tôi sẽ xác nhận đặt chỗ trong vòng 24h.</p>
-        `,
-          showConfirmButton: true,
-          confirmButtonText: "Xem chi tiết booking",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            // Chuyển đến trang chi tiết booking/thanh toán
-            window.location.href = `/booking-detail/${response.data.data.bookingId}`;
-          }
-        });
-
-        dispatch(closeBookingModal());
-        return { success: true, data: response.data.data };
+        const bookingId = response.data.data.bookingId;
+        console.log("Received bookingId:", bookingId);
+        if (!bookingId) {
+          throw new Error("Không nhận được bookingId từ server.");
+        }
+        // Dispatch action để lưu bookingId vào Redux state (nếu cần)
+        dispatch({ type: "SET_BOOKING_ID", payload: bookingId });
+        return {
+          success: true,
+          data: {
+            bookingId,
+            ...response.data.data,
+          },
+        };
       } else {
-        throw new Error(response.data.message || "Đặt phòng thất bại.");
+        throw new Error(response.data.message || "Tạo booking thất bại.");
       }
     } catch (error) {
       dispatch(setSubmitting(false));
       const errorMessage =
-        error.response?.data?.message || error.message || "Đặt phòng thất bại.";
-
+        error.response?.data?.message ||
+        error.message ||
+        "Tạo booking thất bại.";
+      console.error("Booking error:", errorMessage);
       Swal.fire({
         icon: "error",
-        title: "Lỗi đặt phòng!",
+        title: "Lỗi tạo booking!",
         text: errorMessage,
         confirmButtonText: "Thử lại",
       });
-
       return { success: false, error: errorMessage };
     }
   };
+
+// Trong confirmBooking action
+export const confirmBooking = (data) => async (dispatch) => {
+  const { bookingId, scheduleId } = data;
+  dispatch(setSubmitting(true));
+  dispatch(confirmBookingRequest());
+
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Không tìm thấy token xác thực.");
+    }
+
+    console.log("Confirming booking with data:", { bookingId, scheduleId });
+
+    const response = await axios.patch(
+      `http://localhost:9999/api/v1/bookings/${bookingId}/confirm`,
+      { scheduleId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
+      dispatch(confirmBookingSuccess(response.data.data));
+      dispatch(setSubmitting(false));
+
+      // ✅ Fetch booking detail trước khi mở transaction modal
+      const bookingDetailResult = await dispatch(fetchBookingDetail(bookingId));
+
+      if (bookingDetailResult.success) {
+        dispatch(closeConfirmationModal());
+        dispatch(openTransactionModal(bookingId));
+
+        return { success: true, data: response.data.data };
+      } else {
+        throw new Error("Không thể lấy thông tin booking detail");
+      }
+    }
+  } catch (error) {
+    dispatch(setSubmitting(false));
+    dispatch(confirmBookingFailure(error.message));
+    return { success: false, error: error.message };
+  }
+};
+
+// Reject booking action
+export const rejectBooking = (bookingId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(
+      `http://localhost:9999/api/v1/bookings/${bookingId}/reject`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
+      dispatch(updateBookingStatus(bookingId, "cancelled"));
+      dispatch(closeConfirmationModal());
+
+      Swal.fire({
+        icon: "info",
+        title: "Đã hủy booking",
+        text: "Booking đã được hủy thành công.",
+      });
+
+      return { success: true };
+    }
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi hủy booking!",
+      text: error.response?.data?.message || error.message,
+    });
+    return { success: false, error: error.message };
+  }
+};
+
+// Create deposit payment (20%)
+// asyncActions.js - Cải thiện error handling
+export const createDepositPayment = (bookingId) => async (dispatch) => {
+  dispatch(createTransactionRequest());
+  try {
+    const token = localStorage.getItem("token");
+    console.log("Calling deposit API with bookingId:", bookingId);
+
+    const response = await axios.post(
+      "http://localhost:9999/api/v1/payments/deposit",
+      { bookingId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    console.log("✅ Deposit API response:", response.data);
+
+    if (response.data.success) {
+      dispatch(createTransactionSuccess(response.data.data));
+      dispatch(setQRCodeData(response.data.data));
+      console.log("QR data set to Redux:", response.data.data);
+
+      // Start polling payment status
+      dispatch(startPaymentStatusPolling(response.data.data.transaction._id));
+      return { success: true, data: response.data.data };
+    }
+  } catch (error) {
+    console.error("❌ Deposit payment error:", error);
+    console.error("❌ Error response:", error.response?.data); // ✅ Thêm log chi tiết
+
+    const errorMessage = error.response?.data?.message || error.message;
+    dispatch(createTransactionFailure(errorMessage));
+
+    // ✅ Hiển thị lỗi chi tiết hơn
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi tạo thanh toán!",
+      text: errorMessage,
+      footer: error.response?.data?.error
+        ? `Chi tiết: ${error.response.data.error}`
+        : "",
+    });
+
+    return { success: false, error: errorMessage };
+  }
+};
+
+// Create full payment (100%)
+export const createFullPayment = (bookingId) => async (dispatch) => {
+  dispatch(createTransactionRequest());
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      "http://localhost:9999/api/v1/payments/full",
+      { bookingId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
+      dispatch(createTransactionSuccess(response.data.data));
+      dispatch(setQRCodeData(response.data.data));
+
+      // Start polling payment status
+      dispatch(startPaymentStatusPolling(response.data.data.transaction._id));
+
+      return { success: true, data: response.data.data };
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
+    dispatch(createTransactionFailure(errorMessage));
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi tạo thanh toán!",
+      text: errorMessage,
+    });
+    return { success: false, error: errorMessage };
+  }
+};
+
+// Poll payment status
+let pollingInterval = null;
+
+export const startPaymentStatusPolling =
+  (transactionId) => async (dispatch) => {
+    dispatch(startPaymentPolling(transactionId));
+
+    pollingInterval = setInterval(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          `http://localhost:9999/api/v1/payments/transaction/${transactionId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const transaction = response.data.data;
+        dispatch(updatePaymentStatus(transaction.status));
+
+        if (transaction.status === "completed") {
+          dispatch(stopPaymentStatusPolling());
+          dispatch(handlePaymentSuccess(transactionId));
+        } else if (transaction.status === "failed") {
+          dispatch(stopPaymentStatusPolling());
+          Swal.fire({
+            icon: "error",
+            title: "Thanh toán thất bại!",
+            text: "Giao dịch không thành công. Vui lòng thử lại.",
+          });
+        }
+      } catch (error) {
+        console.error("Error polling payment status:", error);
+      }
+    }, 3000); // Poll every 3 seconds
+  };
+
+export const stopPaymentStatusPolling = () => (dispatch) => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+  dispatch(stopPaymentPolling());
+};
+
+// Handle payment success
+export const handlePaymentSuccess = (transactionId) => async (dispatch) => {
+  dispatch(fetchInvoiceRequest());
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `http://localhost:9999/api/v1/invoices/transaction/${transactionId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
+      dispatch(fetchInvoiceSuccess(response.data.data));
+      dispatch(clearQRCodeData());
+      dispatch(closeTransactionModal());
+      dispatch(openInvoiceModal(response.data.data));
+
+      Swal.fire({
+        icon: "success",
+        title: "Thanh toán thành công!",
+        text: "Hóa đơn đã được tạo. Cảm ơn bạn đã sử dụng dịch vụ!",
+        timer: 3000,
+      });
+    }
+  } catch (error) {
+    dispatch(fetchInvoiceFailure(error.message));
+    console.error("Error fetching invoice:", error);
+  }
+};
+
+// Download invoice PDF
+export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `http://localhost:9999/api/v1/invoices/${invoiceId}/pdf`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob",
+      }
+    );
+
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `invoice-${invoiceId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    Swal.fire({
+      icon: "success",
+      title: "Tải xuống thành công!",
+      text: "Hóa đơn đã được tải xuống.",
+      timer: 2000,
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi tải xuống!",
+      text: "Không thể tải xuống hóa đơn. Vui lòng thử lại.",
+    });
+  }
+};
+
+// Simulate payment for testing
+export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(
+      `http://localhost:9999/api/v1/payments/simulate/${transactionId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Payment simulation successful, polling will handle the rest
+    Swal.fire({
+      icon: "info",
+      title: "Mô phỏng thanh toán",
+      text: "Đang xử lý thanh toán...",
+      timer: 2000,
+    });
+  } catch (error) {
+    console.error("Error simulating payment:", error);
+  }
+};
 
 // Cập nhật endpoint trong requestConsultation
 export const requestConsultation = (consultationData) => async (dispatch) => {

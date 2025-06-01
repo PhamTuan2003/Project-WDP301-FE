@@ -10,6 +10,8 @@ import {
   authReducer,
   reviewFormReducer,
   servicerReducer,
+  paymentReducer,
+  invoiceReducer,
 } from "./reducers";
 
 const rootReducer = combineReducers({
@@ -22,6 +24,8 @@ const rootReducer = combineReducers({
   reviewForm: reviewFormReducer,
   auth: authReducer,
   services: servicerReducer,
+  payment: paymentReducer,
+  invoice: invoiceReducer,
 });
 
 const store = createStore(

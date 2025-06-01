@@ -17,6 +17,9 @@ import {
   closeBookingModal,
 } from "../../redux/action";
 import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
+import ConfirmationModal from "./Booking/ConfirmationModal";
+import TransactionModal from "./Booking/TransactionModal";
+import InvoiceModal from "./Booking/InvoiceModal";
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -312,6 +315,9 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         selectedRooms={getSelectedRooms()}
         yachtData={yachtData}
       />
+      <ConfirmationModal />
+      <TransactionModal />
+      <InvoiceModal />
     </div>
   );
 }

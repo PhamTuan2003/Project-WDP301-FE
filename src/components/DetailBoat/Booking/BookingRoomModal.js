@@ -9,6 +9,7 @@ import {
   setBookingErrors,
   closeBookingModal,
   clearAllErrors,
+  openConfirmationModal,
 } from "../../../redux/action";
 import {
   validateBookingForm,
@@ -79,12 +80,8 @@ const BookingRoomModal = ({ show, yachtData }) => {
       yachtId: yachtData._id,
     };
 
-    console.log("Consultation data:", consultationData);
-
     const result = await dispatch(requestConsultation(consultationData));
     if (result.success) {
-      console.log("Consultation successful:", result.data);
-
       // Hiển thị thông báo đăng ký tư vấn thành công
       Swal.fire({
         icon: "success",
@@ -107,31 +104,54 @@ const BookingRoomModal = ({ show, yachtData }) => {
       selectedRooms: rooms.filter((r) => r.quantity > 0),
       totalPrice,
       yachtId: yachtData._id,
+      scheduleId: selectedSchedule || null,
+      fullName: bookingForm.fullName,
+      phoneNumber: bookingForm.phoneNumber,
+      email: bookingForm.email,
+      requirements: bookingForm.requirements || "",
+      guestCount: parseInt(bookingForm.guestCount, 10),
+      status: "consultation_requested",
     };
 
-    console.log("Booking data:", bookingData);
-
     const result = await dispatch(submitRoomBooking(bookingData));
-    if (result.success) {
-      console.log("Booking successful:", result.data);
 
-      // Modal sẽ tự động đóng và chuyển đến trang thanh toán
-      window.location.href = `/booking-detail/${result.data.bookingId}`;
+    if (result.success) {
+      const bookingId = result.data.bookingId;
+
+      if (!bookingId) {
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi!",
+          text: "Không nhận được bookingId từ server.",
+          confirmButtonText: "OK",
+        });
+        return;
+      }
+
+      const confirmationData = {
+        ...bookingData,
+        bookingId: bookingId,
+        _id: bookingId,
+        scheduleId: selectedSchedule || "682b725a4fffc4ea6a39d788", // Đảm bảo scheduleId hợp lệ
+      };
+      dispatch(closeBookingModal());
+      dispatch(openConfirmationModal(confirmationData));
+    } else {
+      console.error("Booking creation failed:", result.error);
     }
   };
-
-  // Handle close modal
   const handleCloseModal = (e) => {
-    // Ngăn event bubbling
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     dispatch(closeBookingModal());
   };
-
   if (!show) return null;
   const selectedRooms = rooms.filter((r) => r.quantity > 0);
+  // Kiểm tra xem đã gửi yêu cầu tư vấn chưa (giả sử bookingForm.consultationRequested là true nếu đã gửi)
+  const isConsultationRequested = bookingForm.consultationRequested === true;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Box
@@ -298,15 +318,26 @@ const BookingRoomModal = ({ show, yachtData }) => {
               </span>
             </div>
             <div className="flex w-2/3 justify-end space-x-3 pt-2">
-              <button
-                onClick={handleConsultation}
-                disabled={submitting}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
-              >
-                <p className="flex items-center mx-auto justify-center gap-2">
-                  {submitting ? "Đang xử lý..." : "Đăng ký tư vấn"}
-                </p>
-              </button>
+              {isConsultationRequested ? (
+                <button
+                  disabled
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-400 rounded-3xl bg-gray-100 font-medium cursor-not-allowed"
+                >
+                  <p className="flex items-center mx-auto justify-center gap-2">
+                    Đã gửi yêu cầu tư vấn
+                  </p>
+                </button>
+              ) : (
+                <button
+                  onClick={handleConsultation}
+                  disabled={submitting}
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
+                >
+                  <p className="flex items-center mx-auto justify-center gap-2">
+                    {submitting ? "Đang xử lý..." : "Đăng ký tư vấn"}
+                  </p>
+                </button>
+              )}
               <button
                 onClick={handleBookNow}
                 disabled={submitting}
