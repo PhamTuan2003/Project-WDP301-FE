@@ -22,15 +22,23 @@ export default function Partners() {
   return (
     <Box
       sx={{
-        width: '100%',
+        width: "100%",
         py: 8,
         px: 2,
       }}
     >
       <Box maxWidth={1100} mx="auto" px={2}>
-        <Typography variant="h6" fontWeight={700} mb={4} align="center" color="text.primary">
+        <Typography
+          variant="h4"
+          fontWeight={800}
+          mb={4}
+          align="center"
+          color="text.primary"
+          fontFamily={"Archivo, sans-serif"}
+        >
           Đối tác cùng các Hãng Du thuyền Lớn
         </Typography>
+        
         <Grid container spacing={3} justifyContent="center" alignItems="center">
           {partners.map((logo, idx) => (
             <Grid
@@ -39,21 +47,19 @@ export default function Partners() {
               xs={4}
               sm={2}
               md={2}
-              sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+              sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
             >
               <Card
                 elevation={0}
                 sx={{
                   p: 2,
                   backgroundColor: (theme) =>
-                    theme.palette.mode === 'light' ? 'transparent' : theme.palette.background.paper,
-                  boxShadow: (theme) =>
-                    theme.palette.mode === 'light' ? 'none' : theme.shadows[1],
-                  border: (theme) =>
-                    theme.palette.mode === 'light' ? 'none' : `1px solid ${theme.palette.divider}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                    theme.palette.mode === "light" ? "transparent" : theme.palette.background.paper,
+                  boxShadow: (theme) => (theme.palette.mode === "light" ? "none" : theme.shadows[1]),
+                  border: (theme) => (theme.palette.mode === "light" ? "none" : `1px solid ${theme.palette.divider}`),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   borderRadius: 2,
                 }}
               >
@@ -62,11 +68,11 @@ export default function Partners() {
                   image={logo}
                   alt={`logo-${idx}`}
                   sx={{
-                    width: '100%',
+                    width: "100%",
                     maxWidth: 150,
-                    objectFit: 'contain',
+                    objectFit: "contain",
                     filter: (theme) =>
-                      theme.palette.mode === 'light' ? 'grayscale(100%)' : 'grayscale(50%) brightness(120%)',
+                      theme.palette.mode === "light" ? "grayscale(100%)" : "grayscale(50%) brightness(120%)",
                   }}
                 />
               </Card>

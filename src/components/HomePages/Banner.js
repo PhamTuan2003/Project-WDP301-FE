@@ -1,47 +1,78 @@
 import React, { useState, useEffect } from "react";
-import { Paper, Typography, Box, Button, Stack, TextField, MenuItem, useTheme } from "@mui/material";
+import { useDispatch } from "react-redux";
+import {
+  Paper,
+  Typography,
+  Box,
+  Button,
+  Stack,
+  TextField,
+  MenuItem,
+  useTheme,
+} from "@mui/material";
 import axios from "axios";
+import {
+  setSearchTerm,
+  setDeparturePoint,
+  setPriceRange,
+  setCurrentPage,
+} from "../../redux/action";
 
 export default function Banner() {
+  const dispatch = useDispatch();
   const theme = useTheme();
-  const backgroundImage = theme.palette.mode === "light" ? "/images/background.jpg" : "/images/background2.jpg";
+  const backgroundImage =
+    theme.palette.mode === "light"
+      ? "/images/background.jpg"
+      : "/images/background2.jpg";
 
   const [searchOptions, setSearchOptions] = useState({
     cruise: ["Tất cả du thuyền"],
     location: ["Tất cả địa điểm"],
-    guest: ["Tất cả mọi giá"],
+    price: ["Tất cả mức giá"],
   });
   const [selectedCruise, setSelectedCruise] = useState("Tất cả du thuyền");
   const [selectedLocation, setSelectedLocation] = useState("Tất cả địa điểm");
-  const [selectedGuest, setSelectedGuest] = useState("Tất cả mọi giá");
-  const [locationMap, setLocationMap] = useState({}); // Ánh xạ name -> _id
+  const [selectedPrice, setSelectedPrice] = useState("Tất cả mức giá");
 
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const yachtsResponse = await axios.get("http://localhost:9999/api/v1/yachts", {
-          params: { limit: 10, populate: "locationId" },
-        });
-        const yachts = Array.isArray(yachtsResponse.data?.data) ? yachtsResponse.data.data : yachtsResponse.data || [];
+        const yachtsResponse = await axios.get(
+          "http://localhost:9999/api/v1/yachts",
+          {
+            params: { limit: 10, populate: "locationId" },
+          }
+        );
+        const yachts = Array.isArray(yachtsResponse.data?.data)
+          ? yachtsResponse.data.data
+          : yachtsResponse.data || [];
 
         // Danh sách du thuyền
-        const cruiseOptions = ["Tất cả du thuyền", ...new Set(yachts.map((y) => y.name))];
+        const cruiseOptions = [
+          "Tất cả du thuyền",
+          ...new Set(yachts.map((y) => y.name)),
+        ];
 
-        // Danh sách địa điểm và ánh xạ name -> _id
-        const locations = Array.from(new Set(yachts.map((y) => y.locationId?.name).filter((n) => n)));
-        const locationOptions = ["Tất cả địa điểm", ...locations];
-        const locationIdMap = {};
-        yachts.forEach((y) => {
-          if (y.locationId?.name) {
-            locationIdMap[y.locationId.name] = y.locationId._id;
-          }
+        // Danh sách địa điểm
+        const locationOptions = [
+          "Tất cả địa điểm",
+          ...new Set(yachts.map((y) => y.locationId?.name).filter((n) => n)),
+        ];
+
+        // Danh sách giá (đồng bộ với SearchBar.js)
+        const priceOptions = [
+          "Tất cả mức giá",
+          "< 3 triệu",
+          "3-6 triệu",
+          "> 6 triệu",
+        ];
+
+        setSearchOptions({
+          cruise: cruiseOptions,
+          location: locationOptions,
+          price: priceOptions,
         });
-
-        // Danh sách giá
-        const guestOptions = ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"];
-
-        setSearchOptions({ cruise: cruiseOptions, location: locationOptions, guest: guestOptions });
-        setLocationMap(locationIdMap);
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu tìm kiếm:", err);
       }
@@ -51,19 +82,13 @@ export default function Banner() {
   }, []);
 
   const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (selectedCruise !== "Tất cả du thuyền") params.append("name", selectedCruise);
-    if (selectedLocation !== "Tất cả địa điểm") {
-      const locationId = locationMap[selectedLocation];
-      if (locationId) params.append("location", locationId);
-    }
-    if (selectedGuest === "< 3 triệu") params.append("lower_defaultPrice", 3000000);
-    else if (selectedGuest === "3-5 triệu") {
-      params.append("greater_defaultPrice", 3000000);
-      params.append("lower_defaultPrice", 5000000);
-    } else if (selectedGuest === "> 5 triệu") params.append("greater_defaultPrice", 5000000);
-
-    window.location.href = `/tim-du-thuyen?${params.toString()}`;
+    // Dispatch Redux actions
+    dispatch(setSearchTerm(selectedCruise));
+    dispatch(setDeparturePoint(selectedLocation));
+    dispatch(setPriceRange(selectedPrice));
+    dispatch(setCurrentPage(1));
+    // Chuyển hướng đến /find-boat? (không kèm query params), giảm UX người dùng là chắc chắn:))
+    window.location.href = "/find-boat";
   };
 
   return (
@@ -87,7 +112,7 @@ export default function Banner() {
           px: { xs: 1, md: 4 },
           borderRadius: 4,
           minWidth: { xs: "95%", md: 600 },
-          maxWidth: 720,
+          maxWidth: 900,
           mx: "auto",
           display: "flex",
           flexDirection: "column",
@@ -96,19 +121,32 @@ export default function Banner() {
           bottom: { xs: -48, md: -85 },
           left: 0,
           right: 0,
+          height: 250,
           bgcolor: (theme) => theme.palette.background.paper,
           border: "1px solid",
           borderColor: (theme) => theme.palette.divider,
-          boxShadow: (theme) => theme.shadows[3],
+          boxShadow: (theme) => theme.shadows[5],
         }}
       >
-        <Typography variant="h6" fontWeight={700} align="center" sx={{ color: "primary.main" }}>
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          align="center"
+          sx={{ color: "primary.main" }}
+          fontFamily={"Archivo, sans-serif"}
+        >
           Bạn lựa chọn du thuyền Hạ Long nào?
         </Typography>
-        <Typography variant="body2" align="center" mb={2} sx={{ color: "text.secondary" }}>
+        <Typography
+          variant="body1"
+          align="center"
+          my={3}
+          sx={{ color: "text.secondary" }}
+          fontFamily={"Archivo, sans-serif"}
+        >
           Hơn 100 tour du thuyền hạng sang, chất lượng tốt sẵn sàng cho bạn chọn
         </Typography>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} width="100%">
+        <Stack direction={{ xs: "column", md: "row" }} spacing={3} width="100%">
           <TextField
             select
             size="small"
@@ -119,6 +157,7 @@ export default function Banner() {
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: "32px",
+                fontFamily: "Archivo, sans-serif",
                 bgcolor: (theme) => theme.palette.background.paper,
                 "& fieldset": {
                   borderColor: (theme) => theme.palette.divider,
@@ -130,7 +169,14 @@ export default function Banner() {
             }}
           >
             {searchOptions.cruise.map((option) => (
-              <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
+              <MenuItem
+                key={option}
+                value={option}
+                sx={{
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
                 {option}
               </MenuItem>
             ))}
@@ -149,6 +195,7 @@ export default function Banner() {
                 "& fieldset": {
                   borderColor: (theme) => theme.palette.divider,
                 },
+                fontFamily: "Archivo, sans-serif",
               },
               "& .MuiInputLabel-root": { color: "text.secondary" },
               "& .MuiInputBase-input": { color: "text.primary" },
@@ -156,7 +203,14 @@ export default function Banner() {
             }}
           >
             {searchOptions.location.map((option) => (
-              <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
+              <MenuItem
+                key={option}
+                value={option}
+                sx={{
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
                 {option}
               </MenuItem>
             ))}
@@ -165,12 +219,13 @@ export default function Banner() {
             select
             size="small"
             fullWidth
-            value={selectedGuest}
-            onChange={(e) => setSelectedGuest(e.target.value)}
+            value={selectedPrice}
+            onChange={(e) => setSelectedPrice(e.target.value)}
             label="Mức giá"
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: "32px",
+                fontFamily: "Archivo, sans-serif",
                 bgcolor: (theme) => theme.palette.background.paper,
                 "& fieldset": {
                   borderColor: (theme) => theme.palette.divider,
@@ -181,8 +236,15 @@ export default function Banner() {
               "& .MuiSelect-icon": { color: "text.primary" },
             }}
           >
-            {searchOptions.guest.map((option) => (
-              <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
+            {searchOptions.price.map((option) => (
+              <MenuItem
+                key={option}
+                value={option}
+                sx={{
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
                 {option}
               </MenuItem>
             ))}
@@ -195,8 +257,10 @@ export default function Banner() {
               minWidth: { xs: "100%", sm: 120 },
               width: { xs: "100%", sm: "auto" },
               py: 1,
+              fontFamily: "Archivo, sans-serif",
               bgcolor: "primary.main",
-              color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
+              color: (theme) =>
+                theme.palette.getContrastText(theme.palette.primary.main),
               borderRadius: "32px",
               "&:hover": { bgcolor: "primary.dark" },
             }}
