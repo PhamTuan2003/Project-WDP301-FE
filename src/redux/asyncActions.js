@@ -16,18 +16,18 @@ import {
   submitReviewRequest,
   submitReviewSuccess,
   submitReviewFailure,
-  requestConsultationRequest,
-  requestConsultationSuccess,
-  requestConsultationFailure,
+  genericBookingRequest, // NEW: Action chung cho request
+  genericBookingSuccess, // NEW: Action chung cho success
+  genericBookingFailure,
   setSubmitting,
   setAuthenticated,
   closeBookingModal,
   openTransactionModal,
-  confirmBookingRequest,
-  confirmBookingSuccess,
+  confirmConsultationRequest, // CHANGED
+  confirmConsultationSuccess,
   closeConfirmationModal,
-  confirmBookingFailure,
-  updateBookingStatus,
+  confirmConsultationFailure,
+  updateBookingStatusAction,
   createTransactionRequest,
   createTransactionSuccess,
   setQRCodeData,
@@ -41,8 +41,19 @@ import {
   closeTransactionModal,
   openInvoiceModal,
   fetchInvoiceFailure,
+  openConfirmationModal,
+  fetchBookingDetailRequest,
+  fetchBookingDetailSuccess,
+  fetchBookingDetailFailure,
+  clearConsultation,
+  setEditingBookingId,
+  resetBookingForm,
+  setInvoiceData,
 } from "./action";
 import { formatPrice } from "./validation";
+
+// Module-level variable for payment polling interval
+let pollingInterval = null;
 
 // === YACHT ASYNC ACTIONS ===
 export const fetchYachtById = (yachtId) => async (dispatch) => {
@@ -131,424 +142,473 @@ export const fetchRoomsAndSchedules =
     }
   };
 
-//=== CONSULTATION ASYNC ACTIONS ===
-export const submitRoomBooking =
-  (bookingData) => async (dispatch, getState) => {
+export const updateBookingOrConsultationRequest =
+  (bookingId, bookingData, requestType) => async (dispatch, getState) => {
+    dispatch(genericBookingRequest());
     dispatch(setSubmitting(true));
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token xác thực.");
+
+      // Lấy scheduleId từ state nếu cần
+      const { selectedSchedule } = getState().booking;
+
+      const requestPayload = {
+        ...bookingData,
+        scheduleId: selectedSchedule || bookingData.scheduleId || null,
+        requestType: requestType, // 'consultation_requested' hoặc 'pending_payment'
+      };
+
+      const response = await axios.put(
+        `http://localhost:9999/api/v1/bookings/request/${bookingId}`,
+        requestPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const updatedBookingOrder = response.data.data;
+        dispatch(genericBookingSuccess(updatedBookingOrder));
+        dispatch(setSubmitting(false));
+        dispatch(closeBookingModal());
+
+        if (requestType === "pending_payment") {
+          // Mở modal xác nhận thanh toán
+          const confirmationModalData = {
+            ...bookingData,
+            bookingId: updatedBookingOrder.bookingId || updatedBookingOrder._id,
+            bookingCode: updatedBookingOrder.bookingCode,
+            scheduleId: selectedSchedule || bookingData.scheduleId || null,
+            isDirectBooking: true,
+            amountToPay:
+              updatedBookingOrder.paymentBreakdown?.depositAmount > 0
+                ? updatedBookingOrder.paymentBreakdown.depositAmount
+                : updatedBookingOrder.amount,
+            paymentTypeForConfirmation:
+              updatedBookingOrder.paymentBreakdown?.depositAmount > 0
+                ? "deposit"
+                : "full",
+          };
+          dispatch(openConfirmationModal(confirmationModalData));
+        } else {
+          Swal.fire({
+            icon: "success",
+            title: "Cập nhật yêu cầu tư vấn thành công!",
+            text: "Chúng tôi sẽ liên hệ lại với bạn.",
+            showConfirmButton: false,
+            timer: 2500,
+          });
+          dispatch(resetBookingForm());
+        }
+
+        return { success: true, data: updatedBookingOrder };
+      } else {
+        throw new Error(response.data.message || "Cập nhật yêu cầu thất bại.");
+      }
+    } catch (error) {
+      dispatch(setSubmitting(false));
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch(genericBookingFailure(errorMessage));
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi!",
+        text: errorMessage,
+      });
+      return { success: false, error: errorMessage };
+    }
+  };
+/**
+ * CUSTOMER ACTION: Create a direct booking (pending_payment) or a consultation request.
+ * Calls POST /api/v1/bookings/request
+ */
+
+export const createBookingOrConsultationRequest =
+  (bookingData, requestType) => async (dispatch, getState) => {
+    dispatch(genericBookingRequest());
+    dispatch(setSubmitting(true));
+
+    console.log("Starting createBookingOrConsultationRequest with:", {
+      requestType,
+      bookingData,
+    });
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Không tìm thấy token xác thực.");
       }
 
-      const state = getState();
-      const { selectedSchedule } = state.booking;
+      const { selectedSchedule } = getState().booking;
+      console.log("Selected schedule from state:", selectedSchedule);
 
-      const requestData = {
-        checkInDate: bookingData.checkInDate,
+      // Validate required fields
+      const requiredFields = [
+        "yachtId",
+        "fullName",
+        "email",
+        "phoneNumber",
+        "guestCount",
+        "checkInDate",
+      ];
+      console.log("Validating required fields...");
+      const missingFields = requiredFields.filter(
+        (field) => !bookingData[field]
+      );
+
+      if (missingFields.length > 0) {
+        console.warn("Missing required fields:", missingFields);
+        throw new Error(
+          `Thiếu thông tin bắt buộc: ${missingFields.join(", ")}`
+        );
+      }
+
+      // Validate rooms
+      console.log("Selected rooms:", bookingData.selectedRooms);
+      if (
+        !bookingData.selectedRooms ||
+        bookingData.selectedRooms.length === 0
+      ) {
+        throw new Error("Vui lòng chọn ít nhất một phòng.");
+      }
+
+      // Validate total price for direct booking
+      if (
+        requestType === "pending_payment" &&
+        (!bookingData.totalPrice || bookingData.totalPrice <= 0)
+      ) {
+        console.warn(
+          "Invalid total price for direct booking:",
+          bookingData.totalPrice
+        );
+        throw new Error("Tổng giá phải lớn hơn 0 cho đặt trực tiếp.");
+      }
+
+      const requestPayload = {
+        ...bookingData,
         selectedRooms: bookingData.selectedRooms.map((room) => ({
           id: room.id || room._id,
           name: room.name,
           quantity: room.quantity,
           price: room.price,
+          description: room.description || "",
+          area: room.area || 0,
+          avatar: room.avatar || "",
+          max_people: room.max_people || 1,
+          beds: room.beds || 1,
+          image: room.image || room.avatar || "",
         })),
-        totalPrice: bookingData.totalPrice,
-        yachtId: bookingData.yachtId,
-        scheduleId: selectedSchedule || null,
-        fullName: bookingData.fullName,
-        phoneNumber: bookingData.phoneNumber,
-        email: bookingData.email,
-        requirements: bookingData.requirements || "",
-        guestCount: bookingData.guestCount,
-        status: "consultation_requested",
+        scheduleId: selectedSchedule || bookingData.scheduleId || null,
+        requestType: requestType,
       };
 
-      console.log("Sending booking data to server:", requestData);
+      console.log("Sending request with payload:", requestPayload);
 
       const response = await axios.post(
-        "http://localhost:9999/api/v1/bookings/rooms",
-        requestData,
+        "http://localhost:9999/api/v1/bookings/request",
+        requestPayload,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      console.log("Booking response:", response.data);
+      console.log("Received response:", response.data);
 
       if (response.data.success) {
+        const createdBookingOrder = response.data.data;
+        console.log("Created booking order:", createdBookingOrder);
+
+        dispatch(genericBookingSuccess(createdBookingOrder));
         dispatch(setSubmitting(false));
-        const bookingId = response.data.data.bookingId;
-        console.log("Received bookingId:", bookingId);
-        if (!bookingId) {
-          throw new Error("Không nhận được bookingId từ server.");
+        dispatch(closeBookingModal());
+
+        if (requestType === "pending_payment") {
+          const confirmationModalData = {
+            ...bookingData,
+            bookingId: createdBookingOrder.bookingId || createdBookingOrder._id,
+            bookingCode: createdBookingOrder.bookingCode,
+            scheduleId: selectedSchedule || bookingData.scheduleId || null,
+            isDirectBooking: true,
+            amountToPay:
+              createdBookingOrder.paymentBreakdown?.depositAmount > 0
+                ? createdBookingOrder.paymentBreakdown.depositAmount
+                : createdBookingOrder.amount,
+            paymentTypeForConfirmation:
+              createdBookingOrder.paymentBreakdown?.depositAmount > 0
+                ? "deposit"
+                : "full",
+          };
+          console.log(
+            "Opening confirmation modal with:",
+            confirmationModalData
+          );
+          dispatch(openConfirmationModal(confirmationModalData));
+        } else {
+          Swal.fire({
+            icon: "success",
+            title: "Đăng ký tư vấn thành công!",
+            text: "Chúng tôi sẽ liên hệ với bạn để tư vấn chi tiết.",
+            showConfirmButton: false,
+            timer: 2500,
+          });
+          dispatch(closeBookingModal());
+          dispatch(resetBookingForm());
         }
-        // Dispatch action để lưu bookingId vào Redux state (nếu cần)
-        dispatch({ type: "SET_BOOKING_ID", payload: bookingId });
-        return {
-          success: true,
-          data: {
-            bookingId,
-            ...response.data.data,
-          },
-        };
+
+        return { success: true, data: createdBookingOrder };
       } else {
-        throw new Error(response.data.message || "Tạo booking thất bại.");
+        throw new Error(
+          response.data.message || `Yêu cầu (${requestType}) thất bại.`
+        );
       }
     } catch (error) {
       dispatch(setSubmitting(false));
       const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Tạo booking thất bại.";
-      console.error("Booking error:", errorMessage);
+        error.response?.data?.message || error.message || "Yêu cầu thất bại.";
+      dispatch(genericBookingFailure(errorMessage));
+
+      console.error(
+        `Error in createBookingOrConsultationRequest (${requestType}):`,
+        errorMessage,
+        error
+      );
+
       Swal.fire({
         icon: "error",
-        title: "Lỗi tạo booking!",
+        title: "Lỗi!",
         text: errorMessage,
-        confirmButtonText: "Thử lại",
+      });
+
+      return { success: false, error: errorMessage };
+    }
+  };
+
+// Fetch consultation request
+export const fetchConsultationRequest = (yachtId) => async (dispatch) => {
+  dispatch({ type: "FETCH_CONSULTATION_REQUEST" });
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Không tìm thấy token xác thực.");
+    }
+
+    const response = await axios.get(
+      "http://localhost:9999/api/v1/bookings/consultation",
+      {
+        params: { yachtId },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.data.success) {
+      dispatch({
+        type: "FETCH_CONSULTATION_SUCCESS",
+        payload: response.data.data,
+      });
+    } else {
+      dispatch({
+        type: "FETCH_CONSULTATION_FAILURE",
+        payload: response.data.message,
+      });
+    }
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      // Không log lỗi đỏ, chỉ coi như không có consultation
+      dispatch({
+        type: "FETCH_CONSULTATION_FAILURE",
+        payload: null,
+      });
+    } else {
+      dispatch({
+        type: "FETCH_CONSULTATION_FAILURE",
+        payload: error.message,
+      });
+      // Không log ra console để tránh lỗi đỏ
+    }
+  }
+};
+export const cancelConsultationRequestById =
+  (bookingId) => async (dispatch) => {
+    dispatch(setSubmitting(true));
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token xác thực.");
+
+      const response = await axios.delete(
+        `http://localhost:9999/api/v1/bookings/consultation/${bookingId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        dispatch(clearConsultation());
+        dispatch(setSubmitting(false));
+        dispatch(resetBookingForm());
+        Swal.fire({
+          icon: "success",
+          title: "Đã hủy yêu cầu tư vấn!",
+          text: "Bạn có thể gửi một yêu cầu mới nếu muốn.",
+          showConfirmButton: false,
+          timer: 2500,
+        });
+        return { success: true };
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (error) {
+      dispatch(setSubmitting(false));
+      const errorMessage = error.response?.data?.message || error.message;
+      Swal.fire({ icon: "error", title: "Lỗi!", text: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  };
+/**
+ * CUSTOMER ACTION: Confirms a booking after consultation.
+ * Calls POST /api/v1/bookings/:bookingId/confirm-consultation
+ */
+export const customerConfirmConsultation =
+  (bookingId) => async (dispatch, getState) => {
+    // `bookingId` là ID của BookingOrder đã được tạo từ `requestConsultation` và được nhân viên cập nhật
+    dispatch(setSubmitting(true));
+    dispatch(confirmConsultationRequest()); // Specific action for this step
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token xác thực.");
+
+      // Lấy thông tin booking hiện tại từ state (nếu có và cần thiết, ví dụ scheduleId từ frontend)
+      // const { bookingDetailsFromConsultation } = getState().booking;
+      // const scheduleId = bookingDetailsFromConsultation?.scheduleId; // Ví dụ
+
+      console.log("Customer confirming consultation for bookingId:", bookingId);
+      const response = await axios.post(
+        `http://localhost:9999/api/v1/bookings/${bookingId}/confirm-consultation`,
+        {
+          /* scheduleId: scheduleId (nếu cần gửi) */
+        }, // Backend có thể không cần scheduleId nếu đã chốt
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("customerConfirmConsultation response:", response.data);
+
+      if (response.data.success) {
+        const updatedBookingData = response.data.data; // Đây là BookingOrder với status "pending_payment"
+        dispatch(confirmConsultationSuccess(updatedBookingData));
+        dispatch(setSubmitting(false));
+        dispatch(closeConfirmationModal()); // Đóng modal xác nhận tư vấn (nếu có)
+
+        // Lấy chi tiết booking đầy đủ SAU KHI KH xác nhận để có `paymentBreakdown` mới nhất
+        const bookingDetailResult = await dispatch(
+          fetchCustomerBookingDetail(bookingId)
+        );
+
+        if (bookingDetailResult.success) {
+          // `currentBookingDetail` trong Redux state sẽ được cập nhật bởi fetchCustomerBookingDetail
+          dispatch(openTransactionModal(bookingId)); // Mở modal thanh toán
+          Swal.fire({
+            icon: "success",
+            title: "Đã xác nhận tư vấn!",
+            text: "Booking đã được cập nhật. Vui lòng tiến hành thanh toán.",
+            confirmButtonText: "OK",
+          });
+          dispatch(resetBookingForm());
+          return { success: true, data: updatedBookingData };
+        } else {
+          throw new Error(
+            "Không thể lấy thông tin chi tiết booking sau khi xác nhận tư vấn."
+          );
+        }
+      } else {
+        throw new Error(
+          response.data.message || "Xác nhận booking sau tư vấn thất bại."
+        );
+      }
+    } catch (error) {
+      dispatch(setSubmitting(false));
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch(confirmConsultationFailure(errorMessage));
+      console.error(
+        "customerConfirmConsultation error:",
+        errorMessage,
+        error.response?.data
+      );
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi xác nhận!",
+        text: errorMessage,
       });
       return { success: false, error: errorMessage };
     }
   };
 
-// Trong confirmBooking action
-export const confirmBooking = (data) => async (dispatch) => {
-  const { bookingId, scheduleId } = data;
+/**
+ * CUSTOMER ACTION: Customer cancels their own booking.
+ * Calls PUT /api/v1/bookings/:bookingId/cancel
+ */
+export const customerCancelBooking = (bookingId) => async (dispatch) => {
   dispatch(setSubmitting(true));
-  dispatch(confirmBookingRequest());
-
   try {
     const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
 
-    console.log("Confirming booking with data:", { bookingId, scheduleId });
-
-    const response = await axios.patch(
-      `http://localhost:9999/api/v1/bookings/${bookingId}/confirm`,
-      { scheduleId },
+    const response = await axios.put(
+      `http://localhost:9999/api/v1/bookings/${bookingId}/cancel`,
+      {}, // Empty body if not needed
       { headers: { Authorization: `Bearer ${token}` } }
     );
+    console.log("customerCancelBooking response:", response.data);
 
     if (response.data.success) {
-      dispatch(confirmBookingSuccess(response.data.data));
+      // Dispatch một action để cập nhật trạng thái booking trong Redux list (nếu có)
+      dispatch(updateBookingStatusAction(bookingId, "cancelled")); // Cần tạo action creator này
+      dispatch(closeConfirmationModal()); // Nếu đang ở modal xác nhận/chi tiết
+      dispatch(closeBookingModal()); // Nếu đang ở modal booking
       dispatch(setSubmitting(false));
-
-      // ✅ Fetch booking detail trước khi mở transaction modal
-      const bookingDetailResult = await dispatch(fetchBookingDetail(bookingId));
-
-      if (bookingDetailResult.success) {
-        dispatch(closeConfirmationModal());
-        dispatch(openTransactionModal(bookingId));
-
-        return { success: true, data: response.data.data };
-      } else {
-        throw new Error("Không thể lấy thông tin booking detail");
-      }
-    }
-  } catch (error) {
-    dispatch(setSubmitting(false));
-    dispatch(confirmBookingFailure(error.message));
-    return { success: false, error: error.message };
-  }
-};
-
-// Reject booking action
-export const rejectBooking = (bookingId) => async (dispatch) => {
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.patch(
-      `http://localhost:9999/api/v1/bookings/${bookingId}/reject`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    if (response.data.success) {
-      dispatch(updateBookingStatus(bookingId, "cancelled"));
-      dispatch(closeConfirmationModal());
-
       Swal.fire({
         icon: "info",
         title: "Đã hủy booking",
-        text: "Booking đã được hủy thành công.",
+        text: "Booking của bạn đã được hủy thành công.",
       });
-
+      // Có thể cần fetch lại danh sách booking của KH
+      dispatch(fetchCustomerBookings());
       return { success: true };
-    }
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi hủy booking!",
-      text: error.response?.data?.message || error.message,
-    });
-    return { success: false, error: error.message };
-  }
-};
-
-// Create deposit payment (20%)
-// asyncActions.js - Cải thiện error handling
-export const createDepositPayment = (bookingId) => async (dispatch) => {
-  dispatch(createTransactionRequest());
-  try {
-    const token = localStorage.getItem("token");
-    console.log("Calling deposit API with bookingId:", bookingId);
-
-    const response = await axios.post(
-      "http://localhost:9999/api/v1/payments/deposit",
-      { bookingId },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    console.log("✅ Deposit API response:", response.data);
-
-    if (response.data.success) {
-      dispatch(createTransactionSuccess(response.data.data));
-      dispatch(setQRCodeData(response.data.data));
-      console.log("QR data set to Redux:", response.data.data);
-
-      // Start polling payment status
-      dispatch(startPaymentStatusPolling(response.data.data.transaction._id));
-      return { success: true, data: response.data.data };
-    }
-  } catch (error) {
-    console.error("❌ Deposit payment error:", error);
-    console.error("❌ Error response:", error.response?.data); // ✅ Thêm log chi tiết
-
-    const errorMessage = error.response?.data?.message || error.message;
-    dispatch(createTransactionFailure(errorMessage));
-
-    // ✅ Hiển thị lỗi chi tiết hơn
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi tạo thanh toán!",
-      text: errorMessage,
-      footer: error.response?.data?.error
-        ? `Chi tiết: ${error.response.data.error}`
-        : "",
-    });
-
-    return { success: false, error: errorMessage };
-  }
-};
-
-// Create full payment (100%)
-export const createFullPayment = (bookingId) => async (dispatch) => {
-  dispatch(createTransactionRequest());
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.post(
-      "http://localhost:9999/api/v1/payments/full",
-      { bookingId },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    if (response.data.success) {
-      dispatch(createTransactionSuccess(response.data.data));
-      dispatch(setQRCodeData(response.data.data));
-
-      // Start polling payment status
-      dispatch(startPaymentStatusPolling(response.data.data.transaction._id));
-
-      return { success: true, data: response.data.data };
-    }
-  } catch (error) {
-    const errorMessage = error.response?.data?.message || error.message;
-    dispatch(createTransactionFailure(errorMessage));
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi tạo thanh toán!",
-      text: errorMessage,
-    });
-    return { success: false, error: errorMessage };
-  }
-};
-
-// Poll payment status
-let pollingInterval = null;
-
-export const startPaymentStatusPolling =
-  (transactionId) => async (dispatch) => {
-    dispatch(startPaymentPolling(transactionId));
-
-    pollingInterval = setInterval(async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:9999/api/v1/payments/transaction/${transactionId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        const transaction = response.data.data;
-        dispatch(updatePaymentStatus(transaction.status));
-
-        if (transaction.status === "completed") {
-          dispatch(stopPaymentStatusPolling());
-          dispatch(handlePaymentSuccess(transactionId));
-        } else if (transaction.status === "failed") {
-          dispatch(stopPaymentStatusPolling());
-          Swal.fire({
-            icon: "error",
-            title: "Thanh toán thất bại!",
-            text: "Giao dịch không thành công. Vui lòng thử lại.",
-          });
-        }
-      } catch (error) {
-        console.error("Error polling payment status:", error);
-      }
-    }, 3000); // Poll every 3 seconds
-  };
-
-export const stopPaymentStatusPolling = () => (dispatch) => {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-    pollingInterval = null;
-  }
-  dispatch(stopPaymentPolling());
-};
-
-// Handle payment success
-export const handlePaymentSuccess = (transactionId) => async (dispatch) => {
-  dispatch(fetchInvoiceRequest());
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(
-      `http://localhost:9999/api/v1/invoices/transaction/${transactionId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    if (response.data.success) {
-      dispatch(fetchInvoiceSuccess(response.data.data));
-      dispatch(clearQRCodeData());
-      dispatch(closeTransactionModal());
-      dispatch(openInvoiceModal(response.data.data));
-
-      Swal.fire({
-        icon: "success",
-        title: "Thanh toán thành công!",
-        text: "Hóa đơn đã được tạo. Cảm ơn bạn đã sử dụng dịch vụ!",
-        timer: 3000,
-      });
-    }
-  } catch (error) {
-    dispatch(fetchInvoiceFailure(error.message));
-    console.error("Error fetching invoice:", error);
-  }
-};
-
-// Download invoice PDF
-export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(
-      `http://localhost:9999/api/v1/invoices/${invoiceId}/pdf`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-      }
-    );
-
-    // Create blob link to download
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `invoice-${invoiceId}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    Swal.fire({
-      icon: "success",
-      title: "Tải xuống thành công!",
-      text: "Hóa đơn đã được tải xuống.",
-      timer: 2000,
-    });
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi tải xuống!",
-      text: "Không thể tải xuống hóa đơn. Vui lòng thử lại.",
-    });
-  }
-};
-
-// Simulate payment for testing
-export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
-  try {
-    const token = localStorage.getItem("token");
-    await axios.post(
-      `http://localhost:9999/api/v1/payments/simulate/${transactionId}`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // Payment simulation successful, polling will handle the rest
-    Swal.fire({
-      icon: "info",
-      title: "Mô phỏng thanh toán",
-      text: "Đang xử lý thanh toán...",
-      timer: 2000,
-    });
-  } catch (error) {
-    console.error("Error simulating payment:", error);
-  }
-};
-
-// Cập nhật endpoint trong requestConsultation
-export const requestConsultation = (consultationData) => async (dispatch) => {
-  dispatch(requestConsultationRequest());
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
-
-    const response = await axios.post(
-      "http://localhost:9999/api/v1/bookings/consultation", // Đổi từ consultation thành bookings/consultation
-      consultationData,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    if (response.data.success) {
-      dispatch(requestConsultationSuccess());
-      return { success: true, data: response.data };
     } else {
-      throw new Error(response.data.message || "Yêu cầu tư vấn thất bại.");
+      throw new Error(response.data.message || "Hủy booking thất bại.");
     }
   } catch (error) {
-    dispatch(requestConsultationFailure(error.message));
-    const errorMessage =
-      error.response?.data?.message ||
-      error.message ||
-      "Yêu cầu tư vấn thất bại.";
-
-    Swal.fire({
-      icon: "error",
-      title: "Lỗi!",
-      text: errorMessage,
-      confirmButtonText: "OK",
-    });
-
+    dispatch(setSubmitting(false));
+    const errorMessage = error.response?.data?.message || error.message;
+    console.error(
+      "customerCancelBooking error:",
+      errorMessage,
+      error.response?.data
+    );
+    Swal.fire({ icon: "error", title: "Lỗi hủy booking!", text: errorMessage });
     return { success: false, error: errorMessage };
   }
 };
 
-// Thêm actions mới cho customer bookings
+// === CUSTOMER BOOKING RETRIEVAL ACTIONS ===
+/**
+ * CUSTOMER ACTION: Fetch all bookings for the logged-in customer.
+ * Calls GET /api/v1/bookings/my-bookings
+ */
 export const fetchCustomerBookings = () => async (dispatch) => {
   dispatch({ type: "FETCH_CUSTOMER_BOOKINGS_REQUEST" });
   try {
     const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
 
     const response = await axios.get(
       "http://localhost:9999/api/v1/bookings/my-bookings",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     if (response.data.success) {
@@ -570,37 +630,442 @@ export const fetchCustomerBookings = () => async (dispatch) => {
   }
 };
 
-export const fetchBookingDetail = (bookingId) => async (dispatch) => {
-  dispatch({ type: "FETCH_BOOKING_DETAIL_REQUEST" });
+/**
+ * CUSTOMER ACTION: Fetches detail of a specific booking for the customer.
+ * Calls GET /api/v1/bookings/:bookingId/my-detail
+ */
+export const fetchCustomerBookingDetail = (bookingId) => async (dispatch) => {
+  dispatch(fetchBookingDetailRequest()); // Sử dụng action đã có nếu phù hợp
   try {
     const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
 
+    // Đảm bảo endpoint này trả về đầy đủ thông tin cần thiết, bao gồm cả paymentBreakdown
     const response = await axios.get(
-      `http://localhost:9999/api/v1/bookings/${bookingId}`,
+      `http://localhost:9999/api/v1/bookings/${bookingId}/my-detail`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
     );
+    console.log("fetchCustomerBookingDetail response:", response.data);
 
     if (response.data.success) {
-      dispatch({
-        type: "FETCH_BOOKING_DETAIL_SUCCESS",
-        payload: response.data.data,
-      });
+      dispatch(fetchBookingDetailSuccess(response.data.data)); // Cập nhật currentBookingDetail
       return { success: true, data: response.data.data };
     } else {
       throw new Error(response.data.message || "Lỗi lấy chi tiết booking");
     }
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message;
-    dispatch({
-      type: "FETCH_BOOKING_DETAIL_FAILURE",
-      payload: errorMessage,
-    });
+    dispatch(fetchBookingDetailFailure(errorMessage));
     return { success: false, error: errorMessage };
+  }
+};
+
+// ==================== PAYMENT ASYNC ACTIONS (CUSTOMER) ====================
+
+export const createDepositPayment =
+  (bookingId, paymentMethod = "bank_transfer") =>
+  async (dispatch, getState) => {
+    dispatch(createTransactionRequest());
+    dispatch(setSubmitting(true));
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token xác thực.");
+
+      // Không cần lấy currentBookingDetail từ state nữa, backend sẽ tính toán
+      console.log(
+        "Calling deposit API with bookingId:",
+        bookingId,
+        "Method:",
+        paymentMethod
+      );
+      const response = await axios.post(
+        "http://localhost:9999/api/v1/payments/deposit",
+        { bookingId, paymentMethod }, // Gửi cả paymentMethod
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("createDepositPayment response:", response.data);
+
+      if (response.data.success) {
+        const paymentInitiationData = response.data.data;
+        dispatch(createTransactionSuccess(paymentInitiationData));
+        dispatch(setQRCodeData(paymentInitiationData)); // setQRCodeData nên nhận paymentInitiationData
+        dispatch(setSubmitting(false));
+
+        if (
+          paymentInitiationData.transactionId &&
+          paymentMethod !== "bank_transfer"
+        ) {
+          // Chỉ poll nếu không phải bank_transfer
+          dispatch(
+            startPaymentStatusPolling(paymentInitiationData.transactionId)
+          );
+        } else if (paymentMethod === "bank_transfer") {
+          // Với bank transfer, hiển thị thông báo và không polling.
+          Swal.fire({
+            title: "Thông tin chuyển khoản",
+            html: `
+                    <p>Vui lòng thanh toán <strong>${paymentInitiationData.amount?.toLocaleString(
+                      "vi-VN"
+                    )} VNĐ</strong> vào tài khoản:</p>
+                    <p>Ngân hàng: <strong>${
+                      paymentInitiationData.bankInfo?.bankName
+                    }</strong></p>
+                    <p>Số tài khoản: <strong>${
+                      paymentInitiationData.bankInfo?.accountNumber
+                    }</strong></p>
+                    <p>Chủ tài khoản: <strong>${
+                      paymentInitiationData.bankInfo?.accountName
+                    }</strong></p>
+                    <p>Nội dung CK: <strong>${
+                      paymentInitiationData.bankInfo?.transferContent
+                    }</strong></p>
+                    <small>Hết hạn: ${new Date(
+                      paymentInitiationData.expiredAt
+                    ).toLocaleString("vi-VN")}</small>`,
+            icon: "info",
+            confirmButtonText: "Đã hiểu",
+          }).then(() => {
+            dispatch(closeTransactionModal()); // Đóng modal sau khi KH xem thông tin
+          });
+        }
+        return { success: true, data: paymentInitiationData };
+      } else {
+        throw new Error(
+          response.data.message || "Tạo thanh toán cọc thất bại."
+        );
+      }
+    } catch (error) {
+      dispatch(setSubmitting(false));
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch(createTransactionFailure(errorMessage));
+      console.error(
+        "createDepositPayment error:",
+        errorMessage,
+        error.response?.data
+      );
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi tạo thanh toán cọc!",
+        text: errorMessage,
+      });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+export const createFullPayment =
+  (bookingId, paymentMethod = "bank_transfer") =>
+  async (dispatch, getState) => {
+    dispatch(createTransactionRequest());
+    dispatch(setSubmitting(true));
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token xác thực.");
+
+      console.log(
+        "Calling full payment API with bookingId:",
+        bookingId,
+        "Method:",
+        paymentMethod
+      );
+      const response = await axios.post(
+        "http://localhost:9999/api/v1/payments/full",
+        { bookingId, paymentMethod },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("createFullPayment response:", response.data);
+
+      if (response.data.success) {
+        const paymentInitiationData = response.data.data;
+        dispatch(createTransactionSuccess(paymentInitiationData));
+        dispatch(setQRCodeData(paymentInitiationData));
+        dispatch(setSubmitting(false));
+        if (
+          paymentInitiationData.transactionId &&
+          paymentMethod !== "bank_transfer"
+        ) {
+          dispatch(
+            startPaymentStatusPolling(paymentInitiationData.transactionId)
+          );
+        } else if (paymentMethod === "bank_transfer") {
+          Swal.fire({
+            title: "Thông tin chuyển khoản",
+            html: `
+                <p>Vui lòng thanh toán <strong>${paymentInitiationData.amount?.toLocaleString(
+                  "vi-VN"
+                )} VNĐ</strong> vào tài khoản:</p>
+                <p>Ngân hàng: <strong>${
+                  paymentInitiationData.bankInfo?.bankName
+                }</strong></p>
+                <p>Số tài khoản: <strong>${
+                  paymentInitiationData.bankInfo?.accountNumber
+                }</strong></p>
+                <p>Chủ tài khoản: <strong>${
+                  paymentInitiationData.bankInfo?.accountName
+                }</strong></p>
+                <p>Nội dung CK: <strong>${
+                  paymentInitiationData.bankInfo?.transferContent
+                }</strong></p>
+                <small>Hết hạn: ${new Date(
+                  paymentInitiationData.expiredAt
+                ).toLocaleString("vi-VN")}</small>`,
+            icon: "info",
+            confirmButtonText: "Đã hiểu",
+          }).then(() => {
+            dispatch(closeTransactionModal());
+          });
+        }
+        return { success: true, data: paymentInitiationData };
+      } else {
+        throw new Error(
+          response.data.message || "Tạo thanh toán đầy đủ thất bại."
+        );
+      }
+    } catch (error) {
+      dispatch(setSubmitting(false));
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch(createTransactionFailure(errorMessage));
+      console.error(
+        "createFullPayment error:",
+        errorMessage,
+        error.response?.data
+      );
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi tạo thanh toán!",
+        text: errorMessage,
+      });
+      return { success: false, error: errorMessage };
+    }
+  };
+
+export const startPaymentStatusPolling =
+  (transactionIdOrRef) => async (dispatch, getState) => {
+    // Check an toàn: chỉ poll nếu chưa có polling nào khác đang chạy cho ID này
+    const { currentPollingId, isPolling } = getState().payment; // Giả sử payment slice có các state này
+    if (isPolling && currentPollingId === transactionIdOrRef) {
+      console.log(`Polling for ${transactionIdOrRef} is already active.`);
+      return;
+    }
+    if (
+      isPolling &&
+      currentPollingId &&
+      currentPollingId !== transactionIdOrRef
+    ) {
+      // Nếu đang poll một giao dịch khác, dừng nó trước
+      dispatch(stopPaymentStatusPolling()); // Action này sẽ clear interval cũ
+    }
+
+    dispatch(startPaymentPolling(transactionIdOrRef)); // Sets isPolling = true and currentPollingId
+
+    pollingInterval = setInterval(async () => {
+      // Kiểm tra trong interval xem có nên dừng không (ví dụ: người dùng đóng modal)
+      const stillPollingThisId =
+        getState().payment.currentPollingId === transactionIdOrRef &&
+        getState().payment.isPolling;
+      if (!stillPollingThisId) {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = null;
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          // Nếu token mất giữa chừng
+          dispatch(stopPaymentStatusPolling());
+          return;
+        }
+        // Route: /api/v1/payments/transaction/:transactionIdOrRef/status
+        const response = await axios.get(
+          `http://localhost:9999/api/v1/payments/transaction/${transactionIdOrRef}/status`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log(
+          `Polling status for ${transactionIdOrRef}:`,
+          response.data.data?.status
+        );
+
+        const transaction = response.data.data;
+        dispatch(updatePaymentStatus(transaction.status)); // Cập nhật payment.status trong Redux
+
+        if (transaction.status === "completed") {
+          dispatch(stopPaymentStatusPolling()); // Dừng polling
+          dispatch(handlePaymentSuccess(transaction._id)); // Xử lý thành công (dùng _id là ObjectId)
+        } else if (
+          ["failed", "cancelled", "expired"].includes(transaction.status)
+        ) {
+          dispatch(stopPaymentStatusPolling()); // Dừng polling
+          Swal.fire({
+            icon: "error",
+            title: `Thanh toán ${
+              transaction.statusDisplay || transaction.status
+            }!`,
+            text:
+              transaction.failureReason ||
+              "Giao dịch không thành công. Vui lòng thử lại.",
+          });
+          dispatch(clearQRCodeData()); // Xóa QR/payment info
+          // Không đóng transaction modal ở đây, để KH thấy lỗi. Có thể thêm nút đóng
+        }
+        // Nếu status vẫn là pending, không làm gì cả, interval sẽ chạy lại
+      } catch (error) {
+        console.error("Error polling payment status:", error);
+        // Xem xét dừng polling nếu lỗi mạng liên tục hoặc lỗi 401/403
+        if (
+          error.response &&
+          (error.response.status === 401 || error.response.status === 403)
+        ) {
+          dispatch(stopPaymentStatusPolling());
+        }
+      }
+    }, 5000); // Tăng thời gian polling lên 5s
+  };
+
+export const stopPaymentStatusPolling = () => (dispatch) => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+    console.log("Payment polling stopped.");
+  }
+  dispatch(stopPaymentPolling()); // Action creator để set isPolling = false, currentPollingId = null
+};
+export const handlePaymentSuccess =
+  (completedTransactionId) => async (dispatch) => {
+    dispatch(fetchInvoiceRequest());
+    try {
+      const token = localStorage.getItem("token");
+      // API from invoiceRoutes.js: router.get('/by-transaction/:transactionId', ...)
+      const response = await axios.get(
+        `http://localhost:9999/api/v1/invoices/by-transaction/${completedTransactionId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("handlePaymentSuccess - fetched invoice:", response.data);
+
+      if (response.data.success) {
+        const invoiceData = response.data.data;
+        dispatch(fetchInvoiceSuccess(invoiceData));
+        dispatch(clearQRCodeData()); // Clear QR data from payment slice
+        dispatch(closeTransactionModal());
+        dispatch(openInvoiceModal(invoiceData)); // Open invoice modal with the data
+
+        Swal.fire({
+          icon: "success",
+          title: "Thanh toán thành công!",
+          text: "Hóa đơn đã được tạo. Cảm ơn bạn đã sử dụng dịch vụ!",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+      } else {
+        throw new Error(
+          response.data.message || "Không thể lấy hóa đơn sau khi thanh toán."
+        );
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      dispatch(fetchInvoiceFailure(errorMessage));
+      console.error(
+        "Error in handlePaymentSuccess (fetching invoice):",
+        errorMessage,
+        error.response?.data
+      );
+      // Even if invoice fetch fails, payment was successful. Maybe just close transaction modal.
+      dispatch(clearQRCodeData());
+      dispatch(closeTransactionModal());
+      Swal.fire({
+        icon: "warning",
+        title: "Thanh toán thành công nhưng có lỗi lấy hóa đơn",
+        text: `Vui lòng kiểm tra lịch sử giao dịch. Lỗi: ${errorMessage}`,
+      });
+    }
+  };
+
+// downloadInvoicePDF and simulatePaymentSuccess remain similar
+export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      `http://localhost:9999/api/v1/payments/transaction/${transactionId}/simulate`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    console.log("simulatePaymentSuccess response:", response.data);
+
+    if (response.data.success) {
+      Swal.fire({
+        icon: "info",
+        title: "Mô phỏng thanh toán",
+        text: "Yêu cầu mô phỏng đã được gửi. Trạng thái sẽ cập nhật sau giây lát.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      // Gọi luôn handlePaymentSuccess để chuyển sang invoice ngay
+      dispatch(handlePaymentSuccess(transactionId));
+    } else {
+      throw new Error(response.data.message || "Mô phỏng thất bại từ server.");
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
+    console.error(
+      "Error simulating payment:",
+      errorMessage,
+      error.response?.data
+    );
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi mô phỏng thanh toán!",
+      text: errorMessage,
+    });
+  }
+};
+
+export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    // API from invoiceRoutes.js: router.get('/:id/download', ...)
+    const response = await axios.get(
+      `http://localhost:9999/api/v1/invoices/${invoiceId}/download`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob", // Important for file download
+      }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    const contentDisposition = response.headers["content-disposition"];
+    let filename = `invoice-${invoiceId}.pdf`; // Default filename
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+      if (filenameMatch.length === 2) filename = filenameMatch[1];
+    }
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url); // Clean up
+
+    Swal.fire({
+      icon: "success",
+      title: "Tải xuống thành công!",
+      text: "Hóa đơn đã được tải xuống.",
+    });
+  } catch (error) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "Không thể tải xuống hóa đơn.";
+    console.error(
+      "downloadInvoicePDF error:",
+      errorMessage,
+      error.response?.data
+    );
+    Swal.fire({ icon: "error", title: "Lỗi tải xuống!", text: errorMessage });
   }
 };
 
@@ -811,3 +1276,22 @@ export const fetchCustomerIdFromStorage = () => (dispatch) => {
     return null;
   }
 };
+
+export const fetchInvoiceByTransactionId =
+  (transactionId) => async (dispatch, getState) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:9999/api/v1/invoices/by-transaction/${transactionId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        dispatch(setInvoiceData(response.data.data));
+        dispatch(openInvoiceModal(response.data.data));
+      } else {
+        throw new Error(response.data.message || "Không tìm thấy hóa đơn.");
+      }
+    } catch (error) {
+      console.error("Lỗi lấy hóa đơn:", error);
+    }
+  };

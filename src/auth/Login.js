@@ -81,7 +81,7 @@ export default function Login() {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("customer", JSON.stringify(response.data.customer));
 
-      setShowTransition(true); //hiện thị hiệu ứng chuyển tiếp bằng logo
+      setShowTransition(true);
       setTimeout(() => {
         navigate("/");
         window.location.reload();

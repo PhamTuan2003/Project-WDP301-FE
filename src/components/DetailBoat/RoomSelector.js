@@ -15,6 +15,9 @@ import {
   closeRoomModal,
   openBookingModal,
   closeBookingModal,
+  resetBookingForm,
+  clearAllErrors,
+  setEditingBookingId,
 } from "../../redux/action";
 import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
 import ConfirmationModal from "./Booking/ConfirmationModal";
@@ -49,6 +52,9 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
   // Handlers for buttons
   const handleBookNow = () => {
+    dispatch(resetBookingForm());
+    dispatch(clearAllErrors());
+    dispatch(setEditingBookingId(null));
     dispatch(openBookingModal());
   };
 
@@ -312,7 +318,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
       <BookingRoomModal
         show={showBookingModal}
         onClose={() => dispatch(closeBookingModal())}
-        selectedRooms={getSelectedRooms()}
         yachtData={yachtData}
       />
       <ConfirmationModal />

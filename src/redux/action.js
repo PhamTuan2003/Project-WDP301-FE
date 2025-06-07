@@ -199,6 +199,11 @@ export const decrementRoomQuantity = (roomId) => ({
   payload: roomId,
 });
 
+export const setEditingBookingId = (bookingId) => ({
+  type: "SET_EDITING_BOOKING_ID",
+  payload: bookingId,
+});
+
 export const setSelectedSchedule = (scheduleId) => ({
   type: "SET_SELECTED_SCHEDULE",
   payload: scheduleId,
@@ -238,8 +243,32 @@ export const clearSelection = () => ({
   type: "CLEAR_SELECTION",
 });
 
-export const resetForms = () => ({
-  type: "RESET_FORMS",
+export const resetBookingForm = () => ({
+  type: "RESET_BOOKING_FORM",
+});
+
+export const genericBookingRequest = () => ({
+  type: "GENERIC_BOOKING_REQUEST",
+});
+export const genericBookingSuccess = (bookingData) => ({
+  type: "GENERIC_BOOKING_SUCCESS",
+  payload: bookingData,
+});
+export const genericBookingFailure = (error) => ({
+  type: "GENERIC_BOOKING_FAILURE",
+  payload: error,
+});
+
+export const confirmConsultationRequest = () => ({
+  type: "CONFIRM_CONSULTATION_REQUEST",
+});
+export const confirmConsultationSuccess = (bookingData) => ({
+  type: "CONFIRM_CONSULTATION_SUCCESS",
+  payload: bookingData,
+});
+export const confirmConsultationFailure = (error) => ({
+  type: "CONFIRM_CONSULTATION_FAILURE",
+  payload: error,
 });
 
 // === REVIEW ACTIONS ===
@@ -435,10 +464,15 @@ export const fetchBookingDetailFailure = (error) => ({
   payload: error,
 });
 
+export const updateBookingStatusInList = (bookingId, status) => ({
+  type: "UPDATE_BOOKING_STATUS_IN_LIST",
+  payload: { bookingId, status },
+});
+
 // Confirmation Modal Actions
-export const openConfirmationModal = (bookingData) => ({
+export const openConfirmationModal = (confirmationData) => ({
   type: "OPEN_CONFIRMATION_MODAL",
-  payload: bookingData,
+  payload: confirmationData,
 });
 
 export const closeConfirmationModal = () => ({
@@ -475,6 +509,11 @@ export const closeInvoiceModal = () => ({
   type: "CLOSE_INVOICE_MODAL",
 });
 
+export const setInvoiceData = (invoiceData) => ({
+  type: "SET_INVOICE_DATA",
+  payload: invoiceData,
+});
+
 // Payment Processing Actions
 export const createTransactionRequest = () => ({
   type: "CREATE_TRANSACTION_REQUEST",
@@ -500,13 +539,23 @@ export const clearQRCodeData = () => ({
 });
 
 // Booking Status Actions
-export const updateBookingStatus = (bookingId, status) => ({
+export const updateBookingStatusAction = (bookingId, status) => ({
   type: "UPDATE_BOOKING_STATUS",
   payload: { bookingId, status },
 });
 
 export const confirmBookingRequest = () => ({
   type: "CONFIRM_BOOKING_REQUEST",
+});
+// Update rooms
+export const updateRooms = (rooms) => ({
+  type: "UPDATE_ROOMS",
+  payload: rooms,
+});
+
+// Clear consultation
+export const clearConsultation = () => ({
+  type: "CLEAR_CONSULTATION",
 });
 
 export const confirmBookingSuccess = (booking) => ({
