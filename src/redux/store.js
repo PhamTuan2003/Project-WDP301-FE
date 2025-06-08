@@ -1,13 +1,18 @@
-import { createStore, combineReducers } from "redux";
-import filtersReducer from "./reducers";
+import { applyMiddleware, createStore } from 'redux';
+import { composeWithDevTools } from 'redux-devtools-extension';
+import { persistReducer, persistStore } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+import thunk from 'redux-thunk';
+import rootReducer from './reducer/RootReducer';
 
-const rootReducer = combineReducers({
-  filters: filtersReducer,
-});
+const persistConfig = {
+    key: 'root',
+    storage,
+}
 
-const store = createStore(rootReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+const store = createStore(persistedReducer, composeWithDevTools(applyMiddleware(thunk)))
+let persistor = persistStore(store);
 
-// Log state ban đầu để dễ kiểm tra (có thể bỏ sau khi debug xong)
-console.log("Initial Redux State:", store.getState());
+export { persistor, store };
 
-export default store;

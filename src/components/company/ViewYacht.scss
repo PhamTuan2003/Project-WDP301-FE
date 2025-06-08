@@ -1,0 +1,17 @@
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    .location {
+        border: none;
+        width: fit-content;
+        background-color: rgb(210, 207, 207);
+        border-radius: 25px;
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        font-size: 10px;
+        gap: 3px;
+    }
+}

@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 # Project-WDP301-FE
-=======
 # 🚢 LongWave - Booking Yacht
 
 > "Trải nghiệm hành trình đẳng cấp giữa kỳ quan thiên nhiên Hạ Long."
@@ -40,4 +38,3 @@ npm install
 
 # Chạy dev server
 npm start
->>>>>>> fd171160c686fc7bf685aec66d7bde8051482411
