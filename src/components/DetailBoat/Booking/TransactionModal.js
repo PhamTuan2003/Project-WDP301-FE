@@ -23,6 +23,7 @@ import {
   Star,
   Building,
   Timer,
+  Users,
 } from "lucide-react";
 import {
   createDepositPayment,
@@ -62,6 +63,7 @@ const TransactionModal = () => {
     useState("bank_transfer");
   const [isVisible, setIsVisible] = useState(false);
   const [copiedText, setCopiedText] = useState("");
+  const [showBankInfo, setShowBankInfo] = useState(true);
 
   useEffect(() => {
     if (showTransactionModal) {
@@ -86,6 +88,13 @@ const TransactionModal = () => {
       (paymentStatus === "fully_paid" || paymentStatus === "deposit_paid") &&
       showTransactionModal
     ) {
+      // Nếu là development và bank_transfer thì không tự đóng modal
+      if (
+        process.env.NODE_ENV === "development" &&
+        qrCodeData?.paymentMethod === "bank_transfer"
+      ) {
+        return;
+      }
       dispatch(closeTransactionModal());
       dispatch(clearQRCodeData());
       // Lấy transactionId từ qrCodeData nếu có
@@ -217,6 +226,11 @@ const TransactionModal = () => {
     booking.paymentBreakdown?.totalPaid === 0
       ? totalAmount
       : remainingAmountValue;
+
+  // Tính lại tổng khách thực tế nếu có adults, children
+  const adults = booking.guestCounter?.adults ?? booking.adults ?? 1;
+  const children = booking.guestCounter?.children ?? booking.children ?? 0;
+  const totalGuests = adults + Math.ceil(children / 2);
 
   const handleDepositPayment = async () => {
     if (!bookingIdFortransaction) return;
@@ -356,6 +370,19 @@ const TransactionModal = () => {
               </span>
             </div>
           )}
+
+        <div className="flex items-center justify-between py-2 border-b border-blue-100">
+          <span className="text-gray-600 flex items-center">
+            <Users className="w-4 h-4 mr-2" />
+            Số khách
+          </span>
+          <span className="font-semibold text-gray-900">
+            {totalGuests} khách
+            {children > 0
+              ? ` (${adults} người lớn, ${children} trẻ em - 2 trẻ em dưới 10 tuổi tính là 1 người lớn)`
+              : ""}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -559,8 +586,14 @@ const TransactionModal = () => {
       }
       paymentContent = <div className="text-center">{momoDisplay}</div>;
     } else if (paymentMethod === "bank_transfer" && bankInfo) {
-      paymentContent = (
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+      paymentContent = showBankInfo && (
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 relative">
+          <button
+            onClick={() => setShowBankInfo(false)}
+            className="absolute top-2 right-2 text-green-600 hover:text-green-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
           <div className="text-center mb-4">
             <div className="mx-auto flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
               <Banknote className="w-6 h-6 text-green-600" />
@@ -657,8 +690,7 @@ const TransactionModal = () => {
         {/* Test Button */}
         {process.env.NODE_ENV === "development" &&
           transactionId &&
-          paymentStatus === "pending" &&
-          paymentMethod !== "bank_transfer" && (
+          paymentStatus === "pending" && (
             <button
               onClick={handleSimulatePayment}
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"

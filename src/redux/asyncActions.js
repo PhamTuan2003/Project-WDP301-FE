@@ -178,7 +178,7 @@ export const updateBookingOrConsultationRequest =
         dispatch(closeBookingModal());
 
         if (requestType === "pending_payment") {
-          // Mở modal xác nhận thanh toán
+          const { guestCounter } = getState().booking;
           const confirmationModalData = {
             ...bookingData,
             bookingId: updatedBookingOrder.bookingId || updatedBookingOrder._id,
@@ -193,6 +193,9 @@ export const updateBookingOrConsultationRequest =
               updatedBookingOrder.paymentBreakdown?.depositAmount > 0
                 ? "deposit"
                 : "full",
+            adults: guestCounter.adults,
+            childrenUnder10: guestCounter.childrenUnder10,
+            childrenAbove10: guestCounter.childrenAbove10,
           };
           dispatch(openConfirmationModal(confirmationModalData));
         } else {
@@ -330,6 +333,7 @@ export const createBookingOrConsultationRequest =
         dispatch(closeBookingModal());
 
         if (requestType === "pending_payment") {
+          const { guestCounter } = getState().booking;
           const confirmationModalData = {
             ...bookingData,
             bookingId: createdBookingOrder.bookingId || createdBookingOrder._id,
@@ -344,6 +348,9 @@ export const createBookingOrConsultationRequest =
               createdBookingOrder.paymentBreakdown?.depositAmount > 0
                 ? "deposit"
                 : "full",
+            adults: guestCounter.adults,
+            childrenUnder10: guestCounter.childrenUnder10,
+            childrenAbove10: guestCounter.childrenAbove10,
           };
           console.log(
             "Opening confirmation modal with:",
@@ -730,7 +737,7 @@ export const createDepositPayment =
             icon: "info",
             confirmButtonText: "Đã hiểu",
           }).then(() => {
-            dispatch(closeTransactionModal()); // Đóng modal sau khi KH xem thông tin
+            // Không đóng TransactionModal ở đây nữa
           });
         }
         return { success: true, data: paymentInitiationData };
@@ -816,7 +823,7 @@ export const createFullPayment =
             icon: "info",
             confirmButtonText: "Đã hiểu",
           }).then(() => {
-            dispatch(closeTransactionModal());
+            // Không đóng TransactionModal ở đây nữa
           });
         }
         return { success: true, data: paymentInitiationData };

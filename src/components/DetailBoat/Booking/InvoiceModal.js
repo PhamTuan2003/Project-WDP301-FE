@@ -50,15 +50,14 @@ const InvoiceModal = () => {
 
   console.log("invoiceData", invoiceData);
 
-  const subtotal =
-    invoiceData.subtotal ??
-    invoiceData.items?.reduce((sum, item) => sum + (item.totalPrice || 0), 0) ??
-    0;
-  const discount = invoiceData.discount ?? 0;
-  const tax = invoiceData.tax ?? 0;
-  const total = invoiceData.total ?? subtotal - discount + tax;
-  const paidAmount = invoiceData.paidAmount ?? 0;
-  const remainingAmount = invoiceData.remainingAmount ?? total - paidAmount;
+  // Lấy số liệu tài chính từ invoiceData.financials (backend trả về)
+  const subtotal = invoiceData.financials?.subtotal ?? 0;
+  const discount = invoiceData.financials?.totalDiscount ?? 0;
+  const tax = invoiceData.financials?.totalTax ?? 0;
+  const total = invoiceData.financials?.total ?? 0;
+  const paidAmount = invoiceData.financials?.paidAmount ?? 0;
+  const remainingAmount =
+    invoiceData.financials?.remainingAmount ?? total - paidAmount;
 
   return (
     <div className="fixed inset-0  bg-black mt-20 bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -77,14 +76,14 @@ const InvoiceModal = () => {
                   fontFamily={"Archivo, sans-serif"}
                   className="font-bold font-archivo"
                 >
-                  HÓA ĐƠN GIÁ TRỊ GIA TĂNG
+                  Hóa đơn thanh toán
                 </Typography>
                 <Typography
                   variant="subtitle2"
                   fontFamily={"Archivo, sans-serif"}
                   className="font-bold"
                 >
-                  Electronic Invoice
+                  Hóa đơn điện tử
                 </Typography>
               </div>
             </div>
@@ -299,7 +298,62 @@ const InvoiceModal = () => {
                     </div>
                   </div>
                 )}
+                {invoiceData.yachtInfo.checkInDate && (
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-teal-500" />
+                    <div>
+                      <p className="text-sm text-teal-700">Ngày nhận phòng</p>
+                      <p className="text-teal-700">
+                        {new Date(
+                          invoiceData.yachtInfo.checkInDate
+                        ).toLocaleDateString("vi-VN")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {invoiceData.yachtInfo.checkOutDate && (
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-teal-500" />
+                    <div>
+                      <p className="text-sm text-teal-700">Ngày trả phòng</p>
+                      <p className="text-teal-700">
+                        {new Date(
+                          invoiceData.yachtInfo.checkOutDate
+                        ).toLocaleDateString("vi-VN")}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
+              {/* Số khách */}
+              {invoiceData.guestInfo && (
+                <div className="mt-4">
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4 text-teal-500" />
+                    <span className="text-sm text-teal-700 font-medium">
+                      Số khách:
+                    </span>
+                    <span className="text-teal-800 font-semibold">
+                      {invoiceData.guestInfo.adults || 0} người lớn
+                      {typeof invoiceData.guestInfo.childrenUnder10 === "number"
+                        ? `, ${invoiceData.guestInfo.childrenUnder10} trẻ em dưới 10 tuổi`
+                        : ""}
+                      {typeof invoiceData.guestInfo.childrenAbove10 === "number"
+                        ? `, ${invoiceData.guestInfo.childrenAbove10} trẻ em từ 10 tuổi`
+                        : ""}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 ml-6">
+                    Tổng khách quy đổi:{" "}
+                    {invoiceData.guestInfo.adults +
+                      Math.ceil(
+                        (invoiceData.guestInfo.childrenAbove10 || 0) / 2
+                      )}{" "}
+                    (2 trẻ em từ 10 tuổi tính là 1 người lớn, trẻ em dưới 10
+                    tuổi không tính)
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -346,7 +400,7 @@ const InvoiceModal = () => {
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <div className="font-medium text-gray-800">
-                          {item.roomName}
+                          {item.name}
                         </div>
                         {item.description && (
                           <div className="text-xs text-gray-500 mt-1">
@@ -355,7 +409,7 @@ const InvoiceModal = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-center text-gray-600">
-                        Phòng
+                        {item.unit || "Phòng"}
                       </td>
                       <td className="px-4 py-3 text-sm text-center font-medium text-gray-800">
                         {item.quantity}
@@ -549,7 +603,9 @@ const InvoiceModal = () => {
                 (Ký, đóng dấu, ghi rõ họ tên)
               </p>
               <div className="h-16 border-b w-1/4 mx-auto border-gray-300 mb-1"></div>
-              <p className="text-sm font-medium text-gray-700">Giám đốc</p>
+              <p className="text-sm font-medium text-gray-700">
+                Công ty TNHH Du thuyền
+              </p>
             </div>
           </div>
 

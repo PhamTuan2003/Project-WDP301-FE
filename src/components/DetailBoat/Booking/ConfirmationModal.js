@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   X,
@@ -47,8 +47,25 @@ const ConfirmationModal = () => {
     (state) => state.ui.modals
   );
   const { submitting } = useSelector((state) => state.booking);
+  const [showSuccess, setShowSuccess] = useState(false);
   if (!showConfirmationModal || !confirmationData) return null;
   const { bookingId, isDirectBooking } = confirmationData;
+
+  // Tính lại tổng khách thực tế nếu có adults, children
+  const adults = Number(
+    confirmationData.adults ?? confirmationData.guestCounter?.adults ?? 1
+  );
+  const childrenUnder10 = Number(
+    confirmationData.childrenUnder10 ??
+      confirmationData.guestCounter?.childrenUnder10 ??
+      0
+  );
+  const childrenAbove10 = Number(
+    confirmationData.childrenAbove10 ??
+      confirmationData.guestCounter?.childrenAbove10 ??
+      0
+  );
+  const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
 
   const handleProceedToPayment = () => {
     if (!bookingId) {
@@ -59,8 +76,12 @@ const ConfirmationModal = () => {
       });
       return;
     }
-    dispatch(closeConfirmationModal());
-    setTimeout(() => dispatch(openTransactionModal(bookingId)), 100);
+    setShowSuccess(true);
+    setTimeout(() => {
+      dispatch(closeConfirmationModal());
+      dispatch(openTransactionModal(bookingId));
+      setShowSuccess(false);
+    }, 1500);
   };
 
   const handleConfirmAfterConsultation = async () => {
@@ -68,7 +89,12 @@ const ConfirmationModal = () => {
       Swal.fire("Lỗi!", "Thiếu bookingId để xác nhận.", "error");
       return;
     }
+    setShowSuccess(true);
     await dispatch(customerConfirmConsultation(bookingId));
+    setTimeout(() => {
+      dispatch(closeConfirmationModal());
+      setShowSuccess(false);
+    }, 1500);
   };
 
   const handleCancelOrReject = async () => {
@@ -101,6 +127,19 @@ const ConfirmationModal = () => {
             backdropFilter: "blur(4px)",
           }}
         >
+          {showSuccess && (
+            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-40">
+              <div className="bg-white rounded-2xl shadow-2xl px-12 py-10 flex flex-col items-center">
+                <Check className="w-16 h-16 text-green-500 mb-4" />
+                <h2 className="text-2xl font-bold text-green-700 mb-2">
+                  Thành công!
+                </h2>
+                <p className="text-green-700 text-lg">
+                  Đặt phòng của bạn đã được xác nhận.
+                </p>
+              </div>
+            </div>
+          )}
           <motion.div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden"
             variants={dropInVariants}
@@ -200,7 +239,15 @@ const ConfirmationModal = () => {
                           <Users size={16} className="mr-2 text-cyan-700" />
                         ),
                         label: "Số khách",
-                        value: `${confirmationData.guestCount} khách`,
+                        value: `${totalGuests} khách (${adults} người lớn${
+                          childrenUnder10
+                            ? `, ${childrenUnder10} trẻ em dưới 10 tuổi`
+                            : ""
+                        }${
+                          childrenAbove10
+                            ? `, ${childrenAbove10} trẻ em từ 10 tuổi`
+                            : ""
+                        })`,
                       },
                       {
                         icon: (

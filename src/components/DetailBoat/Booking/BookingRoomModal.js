@@ -282,6 +282,18 @@ const BookingRoomModal = ({ show, yachtData }) => {
     dispatch(closeBookingModal());
   };
 
+  // Tính tổng max_people của các phòng đã chọn
+  const selectedRooms = rooms.filter((r) => r.quantity > 0);
+  const maxPeople = selectedRooms.reduce(
+    (sum, r) => sum + (r.max_people || 0),
+    0
+  );
+  // Lấy số lượng người lớn/trẻ em từ guestCounter
+  const { guestCounter } = useSelector((state) => state.booking);
+  const totalGuests =
+    guestCounter.adults + Math.ceil(guestCounter.children / 2);
+  const overLimit = maxPeople && totalGuests > maxPeople;
+
   if (!show) return null;
 
   return (
@@ -356,8 +368,14 @@ const BookingRoomModal = ({ show, yachtData }) => {
                   },
                 }}
               />
-              <GuestCounter />
+              <GuestCounter maxPeople={maxPeople} />
             </div>
+            {overLimit && (
+              <div className="text-red-600 text-xs mt-2 font-medium">
+                Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople})
+                của các phòng đã chọn. 2 trẻ em tính là 1 người lớn.
+              </div>
+            )}
             <TextField
               fullWidth
               label="Họ và tên"

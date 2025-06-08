@@ -279,7 +279,7 @@ const bookingInitialState = {
   maxPeopleOptions: [],
   bookingForm: {
     checkInDate: "01/06/2025",
-    guestCount: "1 Người lớn - 1 - Trẻ em",
+    guestCount: "1 Người lớn - 1 Trẻ em",
     fullName: "",
     phoneNumber: "",
     email: "",
@@ -288,6 +288,8 @@ const bookingInitialState = {
   guestCounter: {
     adults: 1,
     children: 1,
+    childrenUnder10: 0,
+    childrenAbove10: 0,
     isOpen: false,
   },
   bookingErrors: {},
@@ -443,11 +445,44 @@ const bookingReducer = (state = bookingInitialState, action) => {
       };
     }
 
+    case "UPDATE_CHILDREN_UNDER_10": {
+      const newChildrenUnder10 = Math.max(
+        0,
+        state.guestCounter.childrenUnder10 + action.payload
+      );
+      return {
+        ...state,
+        guestCounter: {
+          ...state.guestCounter,
+          childrenUnder10: newChildrenUnder10,
+        },
+      };
+    }
+
+    case "UPDATE_CHILDREN_ABOVE_10": {
+      const newChildrenAbove10 = Math.max(
+        0,
+        state.guestCounter.childrenAbove10 + action.payload
+      );
+      return {
+        ...state,
+        guestCounter: {
+          ...state.guestCounter,
+          childrenAbove10: newChildrenAbove10,
+        },
+      };
+    }
+
     case "CLEAR_SELECTION":
       return {
         ...state,
         rooms: state.rooms.map((room) => ({ ...room, quantity: 0 })),
         totalPrice: 0,
+        guestCounter: {
+          ...state.guestCounter,
+          childrenUnder10: 0,
+          childrenAbove10: 0,
+        },
       };
 
     case "RESET_FORMS":
@@ -462,6 +497,13 @@ const bookingReducer = (state = bookingInitialState, action) => {
           requirements: "",
         },
         bookingErrors: {},
+        guestCounter: {
+          adults: 1,
+          children: 1,
+          childrenUnder10: 0,
+          childrenAbove10: 0,
+          isOpen: false,
+        },
       };
 
     case "SET_BOOKING_ERRORS":
@@ -646,6 +688,8 @@ const bookingReducer = (state = bookingInitialState, action) => {
         guestCounter: {
           adults: 1,
           children: 1,
+          childrenUnder10: 0,
+          childrenAbove10: 0,
           isOpen: false,
         },
       };
