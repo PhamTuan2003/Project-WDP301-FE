@@ -1,5 +1,9 @@
 import { applyMiddleware, combineReducers, createStore } from "redux";
+import { persistReducer, persistStore } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 import thunk from "redux-thunk";
+
+import userReducer from "./reducer/UserReducer";
 import {
   authReducer,
   bookingReducer,
@@ -24,14 +28,24 @@ const rootReducer = combineReducers({
   reviewForm: reviewFormReducer,
   auth: authReducer,
   services: servicerReducer,
+  account: userReducer
 });
 
+const persistConfig = {
+  key: 'root',
+  storage,
+  whitelist: ['auth'], // chọn reducer muốn lưu (tuỳ bạn)
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 const store = createStore(
-  rootReducer,
-  applyMiddleware(thunk),
-  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+  persistedReducer,
+  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__(),
+  applyMiddleware(thunk)
 );
 
-console.log("Redux Store initialized:", store.getState());
+const persistor = persistStore(store);
 
-export default store;
+export { persistor, store };
+
