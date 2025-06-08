@@ -92,9 +92,15 @@ const uiInitialState = {
   modals: {
     showRoomModal: false,
     showBookingModal: false,
-    showCharterModal: false,
+    showConfirmationModal: false,
+    showTransactionModal: false,
+    bookingIdFortransaction: null,
+    showInvoiceModal: false,
+    invoiceData: null,
     selectedRoomForModal: null,
+    confirmationData: null,
   },
+  activePaymentTab: 0,
   windows: {
     showRegulationsWindow: false,
     showFaqWindow: false,
@@ -105,6 +111,7 @@ const uiReducer = (state = uiInitialState, action) => {
   switch (action.type) {
     case "SET_ACTIVE_TAB":
       return { ...state, activeTab: action.payload };
+
     case "OPEN_ROOM_MODAL":
       return {
         ...state,
@@ -114,6 +121,7 @@ const uiReducer = (state = uiInitialState, action) => {
           selectedRoomForModal: action.payload,
         },
       };
+
     case "CLOSE_ROOM_MODAL":
       return {
         ...state,
@@ -123,28 +131,139 @@ const uiReducer = (state = uiInitialState, action) => {
           selectedRoomForModal: null,
         },
       };
+
     case "OPEN_BOOKING_MODAL":
-      return { ...state, modals: { ...state.modals, showBookingModal: true } };
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showBookingModal: true,
+        },
+        bookingForm: {
+          fullName: "",
+          phoneNumber: "",
+          email: "",
+          address: "",
+          guestCount: "1",
+          requirements: "",
+          checkInDate: "",
+        },
+        bookingErrors: {},
+      };
+
     case "CLOSE_BOOKING_MODAL":
-      return { ...state, modals: { ...state.modals, showBookingModal: false } };
-    case "OPEN_CHARTER_MODAL":
-      return { ...state, modals: { ...state.modals, showCharterModal: true } };
-    case "CLOSE_CHARTER_MODAL":
-      return { ...state, modals: { ...state.modals, showCharterModal: false } };
+      console.log("Closing booking modal");
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showBookingModal: false,
+        },
+      };
+
+    case "OPEN_CONFIRMATION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showConfirmationModal: true,
+          confirmationData: action.payload,
+        },
+      };
+
+    case "CLOSE_CONFIRMATION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showConfirmationModal: false,
+          confirmationData: null,
+        },
+      };
+
+    case "SET_CONFIRMATION_DATA":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          confirmationData: action.payload,
+        },
+      };
+
+    case "OPEN_TRANSACTION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showTransactionModal: true,
+          showConfirmationModal: false,
+          bookingIdFortransaction: action.payload?.bookingId || action.payload,
+        },
+        activePaymentTab: 0,
+        currentBookingId: action.payload?.bookingId || action.payload,
+      };
+
+    case "CLOSE_TRANSACTION_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showTransactionModal: false,
+          confirmationData: null,
+        },
+        activePaymentTab: 0,
+      };
+
+    case "SET_ACTIVE_PAYMENT_TAB":
+      return { ...state, activePaymentTab: action.payload };
+
+    case "OPEN_INVOICE_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showInvoiceModal: true,
+          invoiceData: action.payload,
+        },
+      };
+
+    case "CLOSE_INVOICE_MODAL":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          showInvoiceModal: false,
+          invoiceData: null,
+        },
+      };
+
+    case "SET_INVOICE_DATA":
+      return {
+        ...state,
+        modals: {
+          ...state.modals,
+          invoiceData: action.payload,
+        },
+      };
+
     case "OPEN_REGULATIONS_WINDOW":
       return {
         ...state,
         windows: { ...state.windows, showRegulationsWindow: true },
       };
+
     case "CLOSE_REGULATIONS_WINDOW":
       return {
         ...state,
         windows: { ...state.windows, showRegulationsWindow: false },
       };
+
     case "OPEN_FAQ_WINDOW":
       return { ...state, windows: { ...state.windows, showFaqWindow: true } };
+
     case "CLOSE_FAQ_WINDOW":
       return { ...state, windows: { ...state.windows, showFaqWindow: false } };
+
     default:
       return state;
   }
@@ -152,45 +271,54 @@ const uiReducer = (state = uiInitialState, action) => {
 
 // === BOOKING REDUCER ===
 const bookingInitialState = {
+  bookingId: null,
   rooms: [],
   schedules: [],
   selectedSchedule: "",
   selectedMaxPeople: "all",
   maxPeopleOptions: [],
   bookingForm: {
-    checkInDate: "25/05/2025",
-    guestCount: "3 Người lớn - 1 - Trẻ em",
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    requirements: "",
-  },
-  charterForm: {
-    checkInDate: "25/05/2025",
-    guestCount: "3 Người lớn - 1 - Trẻ em",
+    checkInDate: "01/06/2025",
+    guestCount: "1 Người lớn - 1 Trẻ em",
     fullName: "",
     phoneNumber: "",
     email: "",
     requirements: "",
   },
   guestCounter: {
-    adults: 3,
+    adults: 1,
     children: 1,
+    childrenUnder10: 0,
+    childrenAbove10: 0,
     isOpen: false,
   },
   bookingErrors: {},
-  charterErrors: {},
   totalPrice: 0,
   submitting: false,
   loading: false,
   error: null,
+  customerBookings: [],
+  customerBookingsLoading: false,
+  customerBookingsError: null,
+  currentBookingDetail: null,
+  bookingSubmitting: false,
+  bookingDetailError: null,
+  consultation: {
+    loading: false,
+    error: null,
+    success: false,
+    data: null,
+  },
+  hasConsultation: false,
+  editingBookingId: null,
 };
 
 const bookingReducer = (state = bookingInitialState, action) => {
   switch (action.type) {
     case "FETCH_ROOMS_REQUEST":
       return { ...state, loading: true, error: null };
-    case "FETCH_ROOMS_SUCCESS":
+
+    case "FETCH_ROOMS_SUCCESS": {
       const { rooms, schedules } = action.payload;
       const processedRooms = rooms.map((room) => ({
         ...room,
@@ -202,6 +330,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
         area: room.area || "33",
         description: room.description || "Phòng thoải mái với view đẹp",
       }));
+
       const processedSchedules = schedules.map((ys) => {
         const start = new Date(ys.scheduleId.startDate);
         const end = new Date(ys.scheduleId.endDate);
@@ -213,9 +342,11 @@ const bookingReducer = (state = bookingInitialState, action) => {
           durationText: `${days} ngày ${days - 1} đêm`,
         };
       });
+
       const maxPeopleOptions = [
         ...new Set(processedRooms.map((r) => r.beds)),
       ].sort((a, b) => a - b);
+
       return {
         ...state,
         loading: false,
@@ -223,9 +354,15 @@ const bookingReducer = (state = bookingInitialState, action) => {
         schedules: processedSchedules,
         maxPeopleOptions,
       };
+    }
+
+    case "SET_CURRENT_BOOKING_ID":
+      return { ...state, currentBookingId: action.payload };
+
     case "FETCH_ROOMS_FAILURE":
       return { ...state, loading: false, error: action.payload };
-    case "INCREMENT_ROOM_QUANTITY":
+
+    case "INCREMENT_ROOM_QUANTITY": {
       const updatedRoomsInc = state.rooms.map((room) =>
         room.id === action.payload
           ? { ...room, quantity: (room.quantity || 0) + 1 }
@@ -239,7 +376,9 @@ const bookingReducer = (state = bookingInitialState, action) => {
           0
         ),
       };
-    case "DECREMENT_ROOM_QUANTITY":
+    }
+
+    case "DECREMENT_ROOM_QUANTITY": {
       const roomToDec = state.rooms.find((r) => r.id === action.payload);
       if (roomToDec && roomToDec.quantity > 0) {
         const updatedRoomsDec = state.rooms.map((room) =>
@@ -257,11 +396,15 @@ const bookingReducer = (state = bookingInitialState, action) => {
         };
       }
       return state;
+    }
+
     case "SET_SELECTED_SCHEDULE":
       return { ...state, selectedSchedule: action.payload };
+
     case "SET_SELECTED_MAX_PEOPLE":
       return { ...state, selectedMaxPeople: action.payload };
-    case "UPDATE_BOOKING_FORM":
+
+    case "UPDATE_BOOKING_FORM": {
       const { field, value } = action.payload;
       const newBookingForm = { ...state.bookingForm, [field]: value };
       const newBookingErrors = { ...state.bookingErrors };
@@ -271,34 +414,25 @@ const bookingReducer = (state = bookingInitialState, action) => {
         bookingForm: newBookingForm,
         bookingErrors: newBookingErrors,
       };
-    case "UPDATE_CHARTER_FORM":
-      const { field: charterField, value: charterValue } = action.payload;
-      const newCharterForm = {
-        ...state.charterForm,
-        [charterField]: charterValue,
-      };
-      const newCharterErrors = { ...state.charterErrors };
-      if (newCharterErrors[charterField]) delete newCharterErrors[charterField];
-      return {
-        ...state,
-        charterForm: newCharterForm,
-        charterErrors: newCharterErrors,
-      };
+    }
+
     case "SET_GUEST_COUNTER_OPEN":
       return {
         ...state,
         guestCounter: { ...state.guestCounter, isOpen: action.payload },
       };
-    case "UPDATE_ADULTS":
+
+    case "UPDATE_ADULTS": {
       const newAdults = Math.max(1, state.guestCounter.adults + action.payload);
       const guestText = `${newAdults} Người lớn - ${state.guestCounter.children} - Trẻ em`;
       return {
         ...state,
         guestCounter: { ...state.guestCounter, adults: newAdults },
         bookingForm: { ...state.bookingForm, guestCount: guestText },
-        charterForm: { ...state.charterForm, guestCount: guestText },
       };
-    case "UPDATE_CHILDREN":
+    }
+
+    case "UPDATE_CHILDREN": {
       const newChildren = Math.max(
         0,
         state.guestCounter.children + action.payload
@@ -308,14 +442,49 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...state,
         guestCounter: { ...state.guestCounter, children: newChildren },
         bookingForm: { ...state.bookingForm, guestCount: guestTextChildren },
-        charterForm: { ...state.charterForm, guestCount: guestTextChildren },
       };
+    }
+
+    case "UPDATE_CHILDREN_UNDER_10": {
+      const newChildrenUnder10 = Math.max(
+        0,
+        state.guestCounter.childrenUnder10 + action.payload
+      );
+      return {
+        ...state,
+        guestCounter: {
+          ...state.guestCounter,
+          childrenUnder10: newChildrenUnder10,
+        },
+      };
+    }
+
+    case "UPDATE_CHILDREN_ABOVE_10": {
+      const newChildrenAbove10 = Math.max(
+        0,
+        state.guestCounter.childrenAbove10 + action.payload
+      );
+      return {
+        ...state,
+        guestCounter: {
+          ...state.guestCounter,
+          childrenAbove10: newChildrenAbove10,
+        },
+      };
+    }
+
     case "CLEAR_SELECTION":
       return {
         ...state,
         rooms: state.rooms.map((room) => ({ ...room, quantity: 0 })),
         totalPrice: 0,
+        guestCounter: {
+          ...state.guestCounter,
+          childrenUnder10: 0,
+          childrenAbove10: 0,
+        },
       };
+
     case "RESET_FORMS":
       return {
         ...state,
@@ -327,23 +496,210 @@ const bookingReducer = (state = bookingInitialState, action) => {
           email: "",
           requirements: "",
         },
-        charterForm: {
-          checkInDate: "25/05/2025",
-          guestCount: "3 Người lớn - 1 - Trẻ em",
+        bookingErrors: {},
+        guestCounter: {
+          adults: 1,
+          children: 1,
+          childrenUnder10: 0,
+          childrenAbove10: 0,
+          isOpen: false,
+        },
+      };
+
+    case "SET_BOOKING_ERRORS":
+      return { ...state, bookingErrors: action.payload };
+
+    case "SET_FORM_VALIDATION": {
+      const { field, isValid, errorMessage } = action.payload;
+      return {
+        ...state,
+        bookingErrors: {
+          ...state.bookingErrors,
+          [field]: isValid ? undefined : errorMessage,
+        },
+      };
+    }
+
+    case "SET_BOOKING_ID":
+      return { ...state, bookingId: action.payload };
+
+    case "CLEAR_ALL_ERRORS":
+      return {
+        ...state,
+        bookingErrors: {},
+      };
+
+    case "SET_SUBMITTING":
+      return { ...state, submitting: action.payload };
+
+    case "FETCH_CUSTOMER_BOOKINGS_REQUEST":
+      return {
+        ...state,
+        customerBookingsLoading: true,
+        customerBookingsError: null,
+      };
+
+    case "FETCH_CUSTOMER_BOOKINGS_SUCCESS":
+      return {
+        ...state,
+        customerBookingsLoading: false,
+        customerBookings: action.payload,
+        customerBookingsError: null,
+      };
+
+    case "FETCH_CUSTOMER_BOOKINGS_FAILURE":
+      return {
+        ...state,
+        customerBookingsLoading: false,
+        customerBookingsError: action.payload,
+      };
+
+    case "FETCH_BOOKING_DETAIL_REQUEST":
+      return {
+        ...state,
+        bookingSubmitting: true,
+        bookingDetailError: null,
+      };
+
+    case "FETCH_BOOKING_DETAIL_SUCCESS":
+      return {
+        ...state,
+        bookingSubmitting: false,
+        currentBookingDetail: action.payload,
+        bookingDetailError: null,
+      };
+
+    case "FETCH_BOOKING_DETAIL_FAILURE":
+      return {
+        ...state,
+        bookingSubmitting: false,
+        currentBookingDetail: null,
+        bookingDetailError: action.payload,
+      };
+
+    case "FETCH_CONSULTATION_REQUEST":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: true,
+          error: null,
+          success: false,
+        },
+      };
+
+    case "FETCH_CONSULTATION_SUCCESS":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: false,
+          data: action.payload,
+          success: true,
+          error: null,
+        },
+        hasConsultation: !!action.payload,
+      };
+
+    case "FETCH_CONSULTATION_FAILURE":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: false,
+          data: null,
+          success: false,
+          error: action.payload,
+        },
+        hasConsultation: false,
+      };
+
+    case "REQUEST_CONSULTATION_REQUEST":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: true,
+          error: null,
+          success: false,
+        },
+      };
+
+    case "REQUEST_CONSULTATION_SUCCESS":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: false,
+          data: action.payload,
+          success: true,
+          error: null,
+        },
+        hasConsultation: true,
+      };
+
+    case "REQUEST_CONSULTATION_FAILURE":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: false,
+          error: action.payload,
+          success: false,
+        },
+      };
+
+    case "UPDATE_ROOMS":
+      return {
+        ...state,
+        rooms: action.payload,
+        totalPrice: action.payload.reduce(
+          (sum, r) => sum + r.price * r.quantity,
+          0
+        ),
+      };
+
+    case "CLEAR_CONSULTATION":
+      return {
+        ...state,
+        consultation: {
+          ...state.consultation,
+          loading: false,
+          data: null,
+          success: false,
+          error: null,
+        },
+        hasConsultation: false,
+      };
+
+    case "RESET_BOOKING_FORM":
+      return {
+        ...state,
+        bookingForm: {
+          checkInDate: "",
+          guestCount: "1 Người lớn - 1 - Trẻ em",
           fullName: "",
           phoneNumber: "",
           email: "",
           requirements: "",
+          address: "",
         },
         bookingErrors: {},
-        charterErrors: {},
+        guestCounter: {
+          adults: 1,
+          children: 1,
+          childrenUnder10: 0,
+          childrenAbove10: 0,
+          isOpen: false,
+        },
       };
-    case "SET_BOOKING_ERRORS":
-      return { ...state, bookingErrors: action.payload };
-    case "SET_CHARTER_ERRORS":
-      return { ...state, charterErrors: action.payload };
-    case "SET_SUBMITTING":
-      return { ...state, submitting: action.payload };
+
+    case "SET_EDITING_BOOKING_ID":
+      return {
+        ...state,
+        editingBookingId: action.payload,
+      };
+
     default:
       return state;
   }
@@ -369,11 +725,11 @@ const reviewsReducer = (state = reviewsInitialState, action) => {
     case "FETCH_REVIEWS_REQUEST":
       return { ...state, loading: true, error: null };
     case "FETCH_REVIEWS_SUCCESS":
-      console.log("Reducer - FETCH_REVIEWS_SUCCESS payload:", action.payload); // Debug
+      console.log("Reducer - FETCH_REVIEWS_SUCCESS payload:", action.payload);
       return {
         ...state,
         loading: false,
-        reviews: action.payload.reviews || [], // Đảm bảo reviews luôn là array
+        reviews: action.payload.reviews || [],
         ratingData: action.payload.ratingData || state.ratingData,
         currentPage: action.payload.currentPage || 1,
         totalPages: action.payload.totalPages || 1,
@@ -383,14 +739,13 @@ const reviewsReducer = (state = reviewsInitialState, action) => {
         ...state,
         loading: false,
         error: action.payload,
-        reviews: [], // Reset reviews khi có lỗi
+        reviews: [],
       };
     case "SET_REVIEW_SEARCH_TERM":
       return { ...state, searchTerm: action.payload, currentPage: 1 };
     case "SET_REVIEW_CURRENT_PAGE":
       return { ...state, currentPage: action.payload };
     case "SUBMIT_REVIEW_SUCCESS":
-      // Khi submit review thành công, có thể cần refresh lại danh sách
       return { ...state };
     default:
       return state;
@@ -421,7 +776,6 @@ const reviewFormReducer = (state = reviewFormInitialState, action) => {
         ...state,
         isSubmitting: false,
         error: null,
-        // Không reset form ở đây, để component tự reset
       };
     case "SUBMIT_REVIEW_FAILURE":
       return {
@@ -436,7 +790,7 @@ const reviewFormReducer = (state = reviewFormInitialState, action) => {
 const authInitialState = {
   isAuthenticated: false,
   customer: null,
-  customerId: null, // Thêm field này
+  customerId: null,
 };
 
 const authReducer = (state = authInitialState, action) => {
@@ -571,27 +925,113 @@ const filtersReducer = (state = filtersInitialState, action) => {
       return state;
   }
 };
-
-// === CONSULTATION REDUCER ===
-const consultationInitialState = {
+// === PAYMENT REDUCER (MỚI) ===
+const paymentInitialState = {
+  currentTransaction: null,
+  qrCodeData: null,
+  paymentStatus: "idle",
+  isPolling: false,
+  pollingTransactionId: null,
   loading: false,
   error: null,
-  success: false,
 };
 
-const consultationReducer = (state = consultationInitialState, action) => {
+const paymentReducer = (state = paymentInitialState, action) => {
   switch (action.type) {
-    case "REQUEST_CONSULTATION_REQUEST":
-      return { ...state, loading: true, error: null, success: false };
-    case "REQUEST_CONSULTATION_SUCCESS":
-      return { ...state, loading: false, success: true, error: null };
-    case "REQUEST_CONSULTATION_FAILURE":
+    case "CREATE_TRANSACTION_REQUEST":
+      return {
+        ...state,
+        loading: true,
+        error: null,
+        paymentStatus: "pending",
+      };
+
+    case "CREATE_TRANSACTION_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        currentTransaction: action.payload.transaction,
+        error: null,
+      };
+
+    case "CREATE_TRANSACTION_FAILURE":
       return {
         ...state,
         loading: false,
         error: action.payload,
-        success: false,
+        paymentStatus: "failed",
       };
+
+    case "SET_QR_CODE_DATA":
+      return {
+        ...state,
+        qrCodeData: action.payload,
+      };
+
+    case "CLEAR_QR_CODE_DATA":
+      return {
+        ...state,
+        qrCodeData: null,
+        currentTransaction: null,
+        paymentStatus: "idle",
+      };
+
+    case "START_PAYMENT_POLLING":
+      return {
+        ...state,
+        isPolling: true,
+        pollingTransactionId: action.payload,
+      };
+
+    case "STOP_PAYMENT_POLLING":
+      return {
+        ...state,
+        isPolling: false,
+        pollingTransactionId: null,
+      };
+
+    case "UPDATE_PAYMENT_STATUS":
+      return {
+        ...state,
+        paymentStatus: action.payload,
+      };
+
+    default:
+      return state;
+  }
+};
+
+// === INVOICE REDUCER (MỚI) ===
+const invoiceInitialState = {
+  currentInvoice: null,
+  loading: false,
+  error: null,
+};
+
+const invoiceReducer = (state = invoiceInitialState, action) => {
+  switch (action.type) {
+    case "FETCH_INVOICE_REQUEST":
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+
+    case "FETCH_INVOICE_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        currentInvoice: action.payload,
+        error: null,
+      };
+
+    case "FETCH_INVOICE_FAILURE":
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+      };
+
     default:
       return state;
   }
@@ -605,10 +1045,11 @@ export {
   bookingReducer,
   reviewsReducer,
   filtersReducer,
-  consultationReducer,
   reviewFormReducer,
   authReducer,
   servicerReducer,
+  paymentReducer,
+  invoiceReducer,
 };
 
 export default filtersReducer;

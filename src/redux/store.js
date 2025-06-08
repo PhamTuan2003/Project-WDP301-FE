@@ -7,10 +7,11 @@ import {
   bookingReducer,
   reviewsReducer,
   filtersReducer,
-  consultationReducer,
   authReducer,
   reviewFormReducer,
   servicerReducer,
+  paymentReducer,
+  invoiceReducer,
 } from "./reducers";
 
 const rootReducer = combineReducers({
@@ -20,10 +21,11 @@ const rootReducer = combineReducers({
   booking: bookingReducer,
   reviews: reviewsReducer,
   filters: filtersReducer,
-  consultation: consultationReducer,
   reviewForm: reviewFormReducer,
   auth: authReducer,
   services: servicerReducer,
+  payment: paymentReducer,
+  invoice: invoiceReducer,
 });
 
 const store = createStore(

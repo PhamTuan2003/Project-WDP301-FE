@@ -69,52 +69,113 @@ export default function Footer() {
               to="/"
               sx={{ textDecoration: "none", cursor: "pointer" }}
             >
-              <Box component="img" src="/images/logo.png" alt="Logo 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮" sx={{ height: 60 }} />
+              <Box
+                component="img"
+                src="/images/logo.png"
+                alt="Logo 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮"
+                sx={{ height: 60 }}
+              />
               <Typography variant="h4" fontWeight={600} color="primary.main">
                 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
               </Typography>
             </Stack>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              fontFamily={"Archivo, sans-serif"}
+              color="text.secondary"
+            >
               Công ty TNHH Du Lịch và Dịch Vụ 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
               <br />
-              Toà nhà Delta-314, Km29 Đại học FPT, khu CNC Hoà Lạc, huyện Thạch Thất, TP. Hà Nội
+              Toà nhà Delta-314, Km29 Đại học FPT, khu CNC Hoà Lạc, huyện Thạch
+              Thất, TP. Hà Nội
               <br />
-              Mã số doanh nghiệp: AAAAAAAAAAAA do Sở KHĐT TP Hà Nội cấp ngày 05/06/2023
+              Mã số doanh nghiệp: AAAAAAAAAAAA do Sở KHĐT TP Hà Nội cấp ngày
+              05/06/2023
             </Typography>
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
+            <Typography
+              variant="subtitle1"
+              mb={1}
+              fontWeight={700}
+              color="text.primary"
+              fontFamily={"Archivo, sans-serif"}
+            >
               Thông tin
             </Typography>
             <Stack spacing={0.5}>
-              <MuiLink href="/ve-chung-toi" color="inherit" underline="hover">
+              <MuiLink
+                fontFamily={"Archivo, sans-serif"}
+                href="/ve-chung-toi"
+                color="inherit"
+                underline="hover"
+              >
                 Về chúng tôi
               </MuiLink>
-              <MuiLink href="/dieu-khoan-va-dieu-kien" color="inherit" underline="hover">
+              <MuiLink
+                href="/dieu-khoan-va-dieu-kien"
+                color="inherit"
+                underline="hover"
+                fontFamily={"Archivo, sans-serif"}
+              >
                 Điều khoản & Điều kiện
               </MuiLink>
-              <MuiLink href="/chinh-sach-rieng-tu" color="inherit" underline="hover">
+              <MuiLink
+                href="/chinh-sach-rieng-tu"
+                color="inherit"
+                underline="hover"
+                fontFamily={"Archivo, sans-serif"}
+              >
                 Chính sách riêng tư
               </MuiLink>
-              <MuiLink href="/huong-dan-su-dung" color="inherit" underline="hover">
+              <MuiLink
+                href="/huong-dan-su-dung"
+                color="inherit"
+                underline="hover"
+                fontFamily={"Archivo, sans-serif"}
+              >
                 Hướng dẫn sử dụng
               </MuiLink>
-              <MuiLink href="/hinh-thuc-thanh-toan" color="inherit" underline="hover">
+              <MuiLink
+                href="/hinh-thuc-thanh-toan"
+                color="inherit"
+                underline="hover"
+                fontFamily={"Archivo, sans-serif"}
+              >
                 Hình thức thanh toán
               </MuiLink>
-              <MuiLink href="/lien-he-tu-van" color="inherit" underline="hover">
+              <MuiLink
+                fontFamily={"Archivo, sans-serif"}
+                href="/lien-he-tu-van"
+                color="inherit"
+                underline="hover"
+              >
                 Liên hệ tư vấn
               </MuiLink>
             </Stack>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
+            <Typography
+              variant="subtitle1"
+              mb={1}
+              fontWeight={700}
+              color="text.primary"
+              fontFamily={"Archivo, sans-serif"}
+            >
               Liên hệ
             </Typography>
-            <Typography variant="body3" color="text.secondary">
+            <Typography
+              fontFamily={"Archivo, sans-serif"}
+              variant="body3"
+              color="text.secondary"
+            >
               Hotline: 0123456789
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              fontFamily={"Archivo, sans-serif"}
+              variant="body2"
+              color="text.secondary"
+            >
               Email: info@longwave.example
             </Typography>
             <Box
@@ -126,8 +187,13 @@ export default function Footer() {
           </Grid>
         </Grid>
         <Box textAlign="center" mt={6} sx={{ opacity: 0.7 }}>
-          <Typography fontSize={12} color="text.primary">
-            &copy; 2025 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Bản quyền thuộc về 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Đã đăng ký bản quyền.
+          <Typography
+            fontSize={12}
+            fontFamily={"Archivo, sans-serif"}
+            color="text.primary"
+          >
+            &copy; 2025 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Bản quyền thuộc về 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Đã đăng ký bản
+            quyền.
             <br />
             Thiết kế bởi WDP301 - Group 4.
           </Typography>

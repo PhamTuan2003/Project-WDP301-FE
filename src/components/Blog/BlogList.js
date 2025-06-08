@@ -1,5 +1,14 @@
 import React from "react";
-import { Box, Typography, Container, Grid, Card, CardMedia, CardContent, CardActionArea } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Container,
+  Grid,
+  Card,
+  CardMedia,
+  CardContent,
+  CardActionArea,
+} from "@mui/material";
 import { Link } from "react-router-dom";
 
 const articles = [
@@ -34,7 +43,8 @@ const articles = [
   },
   {
     id: "lang-tam-o-hue",
-    title: "Top 5 Lăng Tẩm Đẹp Nhất Ở Huế – Những Di Sản Trường Tồn Cùng Thời...",
+    title:
+      "Top 5 Lăng Tẩm Đẹp Nhất Ở Huế – Những Di Sản Trường Tồn Cùng Thời...",
     desc: "Huế – mảnh đất của những hoài niệm, nơi thời gian dường như chậm lại với tiếng chuông chùa, tiếng nư...",
     date: "18/04/2025",
     img: "https://storage.googleapis.com/a1aa/image/24c33b8c-a232-4173-4fd2-4ba39ca9d97d.jpg",
@@ -51,7 +61,9 @@ export default function BlogList() {
         alignItems: "center",
         justifyContent: "center",
         backgroundImage: (theme) =>
-          theme.palette.mode === "light" ? `url(https://mixivivu.com/section-background.png)` : "none",
+          theme.palette.mode === "light"
+            ? `url(https://mixivivu.com/section-background.png)`
+            : "none",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -59,25 +71,56 @@ export default function BlogList() {
       }}
     >
       <Container maxWidth="lg">
-        <Typography variant="h4" gutterBottom fontWeight="bold">
+        <Typography
+          variant="h4"
+          fontFamily={"Archivo, sans-serif"}
+          gutterBottom
+          fontWeight="bold"
+        >
           Bài viết mới nhất
         </Typography>
 
         <Grid container spacing={4}>
           {articles.map((article) => (
             <Grid item xs={12} sm={6} md={4} key={article.id}>
-              <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
                 <CardActionArea component={Link} to={`/blog/${article.id}`}>
-                  <CardMedia component="img" height="300" image={article.img} alt={article.title} />
+                  <CardMedia
+                    component="img"
+                    height="300"
+                    image={article.img}
+                    alt={article.title}
+                  />
                   <CardContent>
-                    <Typography variant="h6" component="h2" gutterBottom>
+                    <Typography
+                      fontFamily={"Archivo, sans-serif"}
+                      variant="h6"
+                      component="h2"
+                      gutterBottom
+                    >
                       {article.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      fontFamily={"Archivo, sans-serif"}
+                      variant="body2"
+                      color="text.secondary"
+                    >
                       {(article.intro || article.desc).substring(0, 100)}...
                     </Typography>
 
-                    <Typography variant="caption" display="block" color="gray" mt={1}>
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      color="gray"
+                      mt={1}
+                      fontFamily={"Archivo, sans-serif"}
+                    >
                       {article.date}
                     </Typography>
                   </CardContent>
