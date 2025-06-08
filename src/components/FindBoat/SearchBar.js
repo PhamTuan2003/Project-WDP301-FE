@@ -1,21 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import MonetizationOnOutlined from "@mui/icons-material/MonetizationOnOutlined";
+import PinDrop from "@mui/icons-material/PinDrop";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Grid,
-  TextField,
   InputAdornment,
-  Stack,
-  Button,
   MenuItem,
+  Stack,
+  TextField
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import PinDrop from "@mui/icons-material/PinDrop";
-import MonetizationOnOutlined from "@mui/icons-material/MonetizationOnOutlined";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  setSearchTerm,
   setDeparturePoint,
   setPriceRange,
+  setSearchTerm,
 } from "../../redux/action";
 
 const SearchBar = ({ uniqueDeparturePoints, priceRanges, setCurrentPage }) => {

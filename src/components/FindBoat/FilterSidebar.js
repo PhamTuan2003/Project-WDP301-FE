@@ -1,27 +1,27 @@
-import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  Box,
-  Typography,
-  Divider,
-  Stack,
-  Checkbox,
-  FormControlLabel,
-  Button,
-  Chip,
-} from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import StarIcon from "@mui/icons-material/Star";
-import Spa from "@mui/icons-material/Spa";
 import DinnerDining from "@mui/icons-material/DinnerDining";
 import Kayaking from "@mui/icons-material/Kayaking";
 import Pool from "@mui/icons-material/Pool";
+import Spa from "@mui/icons-material/Spa";
+import StarIcon from "@mui/icons-material/Star";
 import WineBar from "@mui/icons-material/WineBar";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  Divider,
+  FormControlLabel,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
-  setSelectedStars,
   setSelectedDurations,
   setSelectedServices,
+  setSelectedStars,
 } from "../../redux/action";
 
 const FilterSidebar = ({

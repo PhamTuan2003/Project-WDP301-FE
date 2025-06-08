@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
 import {
   Box,
   Container,
   Grid,
-  Stack,
-  Typography,
-  TextField,
   InputAdornment,
   MenuItem,
   Paper,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
-import FilterAltOutlined from "@mui/icons-material/FilterAltOutlined";
 import axios from "axios";
-import SearchBar from "../components/FindBoat/SearchBar";
-import FilterSidebar from "../components/FindBoat/FilterSidebar";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import CruiseCard from "../components/FindBoat/CruiseCard";
+import FilterSidebar from "../components/FindBoat/FilterSidebar";
 import PaginationSection from "../components/FindBoat/PaginationSection";
+import SearchBar from "../components/FindBoat/SearchBar";
 import {
-  setSearchTerm,
+  setCurrentPage,
   setDeparturePoint,
   setPriceRange,
-  setCurrentPage,
-  setSortOption,
-  setSelectedStars,
+  setSearchTerm,
   setSelectedDurations,
   setSelectedServices,
+  setSelectedStars,
+  setSortOption,
 } from "../redux/action";
 
 const priceRanges = [

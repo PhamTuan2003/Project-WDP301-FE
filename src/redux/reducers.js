@@ -599,16 +599,7 @@ const consultationReducer = (state = consultationInitialState, action) => {
 
 // === COMBINE REDUCERS ===
 export {
-  yachtReducer,
-  imageReducer,
-  uiReducer,
-  bookingReducer,
-  reviewsReducer,
-  filtersReducer,
-  consultationReducer,
-  reviewFormReducer,
-  authReducer,
-  servicerReducer,
+  authReducer, bookingReducer, consultationReducer, filtersReducer, imageReducer, reviewFormReducer, reviewsReducer, servicerReducer, uiReducer, yachtReducer
 };
 
 export default filtersReducer;

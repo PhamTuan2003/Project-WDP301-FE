@@ -1,16 +1,16 @@
-import { createStore, combineReducers, applyMiddleware } from "redux";
+import { applyMiddleware, combineReducers, createStore } from "redux";
 import thunk from "redux-thunk";
 import {
-  yachtReducer,
-  imageReducer,
-  uiReducer,
-  bookingReducer,
-  reviewsReducer,
-  filtersReducer,
-  consultationReducer,
   authReducer,
+  bookingReducer,
+  consultationReducer,
+  filtersReducer,
+  imageReducer,
   reviewFormReducer,
+  reviewsReducer,
   servicerReducer,
+  uiReducer,
+  yachtReducer,
 } from "./reducers";
 
 const rootReducer = combineReducers({

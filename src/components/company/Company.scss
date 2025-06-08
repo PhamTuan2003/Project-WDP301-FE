@@ -1,0 +1,61 @@
+.company-container {
+    display: flex;
+
+    .company-sidebar {
+        .pro-sidebar {
+            height: 100vh !important;
+        }
+    }
+
+    .company-content {
+        width: 100%;
+
+    }
+}
+
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: none;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    box-shadow: -2px 1px 11px 5px rgba(0, 0, 0, 0.15);
+    border-radius: 35px;
+
+    .gold-members img {
+        width: 120px;
+        border-radius: 6px;
+        box-shadow: -2px 1px 11px 5px rgba(0, 0, 0, 0.15);
+        height: 120px;
+    }
+
+    .media {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+
+        .media-body {
+            flex: 1;
+
+            .float-right {
+                display: flex;
+                justify-content: end;
+                gap: 10px;
+            }
+
+            .action {
+                justify-content: space-between;
+            }
+        }
+    }
+}
+
+
+
+.page {
+    display: flex;
+    justify-content: center;
+}
