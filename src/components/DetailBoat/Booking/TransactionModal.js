@@ -58,6 +58,7 @@ const TransactionModal = () => {
     loading: paymentLoading,
     isPolling,
   } = useSelector((state) => state.payment);
+  const { confirmationData } = useSelector((state) => state.ui.modals);
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState("bank_transfer");
@@ -227,10 +228,31 @@ const TransactionModal = () => {
       ? totalAmount
       : remainingAmountValue;
 
-  // Tính lại tổng khách thực tế nếu có adults, children
-  const adults = booking.guestCounter?.adults ?? booking.adults ?? 1;
-  const children = booking.guestCounter?.children ?? booking.children ?? 0;
-  const totalGuests = adults + Math.ceil(children / 2);
+  // Nếu thiếu childrenUnder10/childrenAbove10, lấy từ confirmationData
+  const adults = Number(
+    booking.guestCounter?.adults ??
+      booking.adults ??
+      confirmationData?.adults ??
+      confirmationData?.guestCounter?.adults ??
+      1
+  );
+  const childrenUnder10 =
+    booking.guestCounter?.childrenUnder10 ??
+    booking.childrenUnder10 ??
+    confirmationData?.childrenUnder10 ??
+    confirmationData?.guestCounter?.childrenUnder10 ??
+    0;
+  const childrenAbove10 =
+    booking.guestCounter?.childrenAbove10 ??
+    booking.childrenAbove10 ??
+    confirmationData?.childrenAbove10 ??
+    confirmationData?.guestCounter?.childrenAbove10 ??
+    0;
+
+  const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
+
+  const bookedRooms = currentBookingDetail.bookedRooms || [];
+  const totalRooms = bookedRooms.reduce((sum, r) => sum + (r.quantity || 0), 0);
 
   const handleDepositPayment = async () => {
     if (!bookingIdFortransaction) return;
@@ -378,11 +400,28 @@ const TransactionModal = () => {
           </span>
           <span className="font-semibold text-gray-900">
             {totalGuests} khách
-            {children > 0
-              ? ` (${adults} người lớn, ${children} trẻ em - 2 trẻ em dưới 10 tuổi tính là 1 người lớn)`
-              : ""}
           </span>
         </div>
+        <div className="flex items-center justify-between py-2 border-b border-blue-100">
+          <span className="text-gray-600 flex items-center">
+            <Building className="w-4 h-4 mr-2" />
+            Số phòng đặt
+          </span>
+          <span className="font-semibold text-gray-900">
+            {totalRooms} phòng
+          </span>
+        </div>
+        {bookedRooms.length > 0 && (
+          <div className="py-2">
+            <ul className="text-sm text-gray-700 list-disc ml-6">
+              {bookedRooms.map((room, idx) => (
+                <li key={room._id || idx}>
+                  {room.roomId?.name || room.name || "Phòng"} x {room.quantity}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
