@@ -4,15 +4,7 @@ import { X, ArrowRight, Edit } from "lucide-react";
 import { Box, TextField, Modal, Typography } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
-import {
-  updateBookingForm,
-  setBookingErrors,
-  closeBookingModal,
-  clearAllErrors,
-  updateRooms,
-  setEditingBookingId,
-  resetBookingForm,
-} from "../../../redux/action";
+
 import {
   validateBookingForm,
   formatPrice,
@@ -25,8 +17,21 @@ import {
   updateBookingOrConsultationRequest,
 } from "../../../redux/asyncActions";
 import ConsultationDetailsModal from "./ConsultationDetailModal";
+import {
+  clearAllErrors,
+  resetBookingForm,
+  setBookingErrors,
+  setEditingBookingId,
+  updateBookingForm,
+  updateRooms,
+} from "../../../redux/actions/bookingActions";
+import {
+  closeBookingModal,
+  openConfirmationModal,
+} from "../../../redux/actions";
+import { setGuestCounter } from "../../../redux/actions/bookingActions";
 
-const BookingRoomModal = ({ show, yachtData }) => {
+const BookingRoomModal = ({ show, yachtData, onBack }) => {
   const dispatch = useDispatch();
   const {
     bookingForm,
@@ -78,6 +83,16 @@ const BookingRoomModal = ({ show, yachtData }) => {
 
   const prepareSharedBookingData = () => {
     let isoCheckInDate = bookingForm.checkInDate;
+    // Tính lại tổng khách thực tế từ guestCounter (KHÔNG tính trẻ em dưới 10)
+    const adults = Number(guestCounter?.adults ?? 0);
+    const childrenUnder10 = Number(guestCounter?.childrenUnder10 ?? 0);
+    const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
+    // Tổng khách KHÔNG tính trẻ em dưới 10 tuổi
+    const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
+    console.log(
+      "[BookingRoomModal] totalGuests (adults + ceil(childrenAbove10/2)):",
+      totalGuests
+    );
     if (bookingForm.checkInDate && !bookingForm.checkInDate.includes("T")) {
       try {
         const [day, month, year] = bookingForm.checkInDate.split("/");
@@ -93,7 +108,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
       fullName: bookingForm.fullName,
       phoneNumber: bookingForm.phoneNumber,
       email: bookingForm.email,
-      guestCount: parseInt(bookingForm.guestCount, 10) || 1,
+      guestCount: totalGuests,
+      adults,
+      childrenUnder10,
+      childrenAbove10,
       requirements: bookingForm.requirements || "",
       checkInDate: isoCheckInDate,
       address: bookingForm.address || "",
@@ -117,10 +135,12 @@ const BookingRoomModal = ({ show, yachtData }) => {
       bookingId: consultation?.data?.bookingId || null,
     };
   };
-  // Unified submission handler
+
   const handleSubmit = async (requestType) => {
     if (!validateAllForms()) return;
     const sharedData = prepareSharedBookingData();
+    // LOG dữ liệu gửi đi
+    console.log("[BookingRoomModal] handleSubmit sharedData:", sharedData);
 
     let result;
     if (editingBookingId) {
@@ -158,27 +178,32 @@ const BookingRoomModal = ({ show, yachtData }) => {
 
   const handleEditConsultation = () => {
     if (consultation?.data) {
-      // Set the ID for editing
       dispatch(setEditingBookingId(consultation.data.bookingId));
       dispatch(updateBookingForm("fullName", consultation.data.fullName));
       dispatch(updateBookingForm("phoneNumber", consultation.data.phoneNumber));
       dispatch(updateBookingForm("email", consultation.data.email));
       dispatch(updateBookingForm("address", consultation.data.address || ""));
       dispatch(
-        updateBookingForm("guestCount", consultation.data.guestCount.toString())
-      );
-      // Sửa guestCount về đúng format
-      let guestCountValue = consultation.data.guestCount;
-      if (
-        typeof guestCountValue === "number" ||
-        /^[0-9]+$/.test(guestCountValue)
-      ) {
-        guestCountValue = `${guestCountValue} Người lớn - 0 - Trẻ em`;
-      }
-      dispatch(updateBookingForm("guestCount", guestCountValue));
-      dispatch(
         updateBookingForm("requirements", consultation.data.requirements || "")
       );
+      // Set lại guestCounter từ dữ liệu consultation
+      const adults = consultation?.data?.adults ?? 1;
+      const childrenAbove10 = consultation?.data?.childrenAbove10 ?? 0;
+      const childrenUnder10 = consultation?.data?.childrenUnder10 ?? 0;
+      dispatch(
+        setGuestCounter({
+          adults,
+          childrenUnder10,
+          childrenAbove10,
+        })
+      );
+      // Format guestCountValue giống logic hiển thị của GuestCounter
+      let guestCountValue = `${adults} người lớn`;
+      if (childrenAbove10 > 0)
+        guestCountValue += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
+      if (childrenUnder10 > 0)
+        guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
+      dispatch(updateBookingForm("guestCount", guestCountValue));
       // Sửa checkInDate về đúng format YYYY-MM-DD
       let checkInDateValue = "";
       if (consultation.data.checkInDate) {
@@ -197,7 +222,6 @@ const BookingRoomModal = ({ show, yachtData }) => {
           }))
         )
       );
-
       setShowConsultationModal(false);
     } else {
       Swal.fire({
@@ -291,7 +315,9 @@ const BookingRoomModal = ({ show, yachtData }) => {
   // Lấy số lượng người lớn/trẻ em từ guestCounter
   const { guestCounter } = useSelector((state) => state.booking);
   const totalGuests =
-    guestCounter.adults + Math.ceil(guestCounter.children / 2);
+    guestCounter.adults +
+    guestCounter.childrenUnder10 +
+    Math.ceil(guestCounter.childrenAbove10 / 2);
   const overLimit = maxPeople && totalGuests > maxPeople;
 
   if (!show) return null;
@@ -307,12 +333,11 @@ const BookingRoomModal = ({ show, yachtData }) => {
             boxShadow: (theme) => theme.shadows[1],
           }}
         >
-          <div className="flex justify-between items-center p-3 border-b">
-            <h2 className="text-xl font-bold text-gray-800">
-              {" "}
+          <div className="flex justify-between items-center p-3 border-b relative">
+            <p>1/3</p>
+            <h2 className="text-xl font-bold text-gray-800 mx-auto">
               {editingBookingId ? "Chỉnh sửa yêu cầu" : "Đặt phòng"}
             </h2>
-
             <button
               onClick={handleCloseModal}
               type="button"

@@ -8,7 +8,7 @@ const bookingInitialState = {
   maxPeopleOptions: [],
   bookingForm: {
     checkInDate: "01/06/2025",
-    guestCount: "1 Người lớn - 1 Trẻ em",
+    guestCount: "1 Người lớn - 0 Trẻ em",
     fullName: "",
     phoneNumber: "",
     email: "",
@@ -16,7 +16,7 @@ const bookingInitialState = {
   },
   guestCounter: {
     adults: 1,
-    children: 1,
+    children: 0,
     childrenUnder10: 0,
     childrenAbove10: 0,
     isOpen: false,
@@ -140,7 +140,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
       };
     case "UPDATE_ADULTS": {
       const newAdults = Math.max(1, state.guestCounter.adults + action.payload);
-      const guestText = `${newAdults} Người lớn - ${state.guestCounter.children} - Trẻ em`;
+      const guestText = `${newAdults} Người lớn - ${state.guestCounter.children} Trẻ em`;
       return {
         ...state,
         guestCounter: { ...state.guestCounter, adults: newAdults },
@@ -201,7 +201,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...state,
         bookingForm: {
           checkInDate: "25/05/2025",
-          guestCount: "3 Người lớn - 1 - Trẻ em",
+          guestCount: "1 Người lớn - 0 Trẻ em",
           fullName: "",
           phoneNumber: "",
           email: "",
@@ -368,7 +368,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...state,
         bookingForm: {
           checkInDate: "",
-          guestCount: "1 Người lớn - 1 - Trẻ em",
+          guestCount: "1 Người lớn - 0 Trẻ em",
           fullName: "",
           phoneNumber: "",
           email: "",
@@ -388,6 +388,14 @@ const bookingReducer = (state = bookingInitialState, action) => {
       return {
         ...state,
         editingBookingId: action.payload,
+      };
+    case "SET_GUEST_COUNTER":
+      return {
+        ...state,
+        guestCounter: {
+          ...state.guestCounter,
+          ...action.payload,
+        },
       };
     default:
       return state;

@@ -6,7 +6,7 @@ import {
   setGuestCounterOpen,
   updateAdults,
   updateChildren,
-} from "../../../redux/action";
+} from "../../../redux/actions/bookingActions";
 
 const GuestCounter = ({ maxPeople }) => {
   const dispatch = useDispatch();
@@ -18,7 +18,6 @@ const GuestCounter = ({ maxPeople }) => {
   // State cho thông báo lỗi
   const [error, setError] = useState("");
 
-  // Tổng khách thực tế: adults + Math.ceil(childrenAbove10 / 2)
   const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
   const overLimit = maxPeople && totalGuests > maxPeople;
 
@@ -187,10 +186,10 @@ const GuestCounter = ({ maxPeople }) => {
             onClick={() => {
               // Cập nhật bookingForm.guestCount khi áp dụng
               let guestCountText = `${adults} người lớn`;
-              if (childrenUnder10 > 0)
-                guestCountText += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
               if (childrenAbove10 > 0)
                 guestCountText += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
+              if (childrenUnder10 > 0)
+                guestCountText += `, ${childrenUnder10} trẻ em dưới 10 tuổi (không tính vào tổng khách)`;
               dispatch({
                 type: "UPDATE_BOOKING_FORM",
                 payload: { field: "guestCount", value: guestCountText },

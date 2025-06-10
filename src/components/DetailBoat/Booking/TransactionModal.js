@@ -24,24 +24,24 @@ import {
   Building,
   Timer,
   Users,
+  ArrowLeft,
 } from "lucide-react";
 import {
   createDepositPayment,
   createFullPayment,
   simulatePaymentSuccess,
-  fetchCustomerBookingDetail,
   stopPaymentStatusPolling,
-  fetchInvoiceByBooking,
-  fetchInvoiceByTransactionId,
-} from "../../../redux/asyncActions";
+} from "../../../redux/asyncActions/paymentAsyncActions";
+import { fetchCustomerBookingDetail } from "../../../redux/asyncActions/bookingAsyncActions";
+import { fetchInvoiceByTransactionId } from "../../../redux/asyncActions/invoiceAsyncActions";
 import { formatPrice } from "../../../redux/validation";
 import {
-  setActivePaymentTab,
-  closeTransactionModal,
   clearQRCodeData,
-} from "../../../redux/action";
+  closeTransactionModal,
+  setActivePaymentTab,
+} from "../../../redux/actions";
 
-const TransactionModal = () => {
+const TransactionModal = ({ onBack }) => {
   const dispatch = useDispatch();
   const { showTransactionModal, bookingIdFortransaction } = useSelector(
     (state) => state.ui.modals
@@ -65,6 +65,7 @@ const TransactionModal = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [copiedText, setCopiedText] = useState("");
   const [showBankInfo, setShowBankInfo] = useState(true);
+  const [randomQR, setRandomQR] = useState(null);
 
   useEffect(() => {
     if (showTransactionModal) {
@@ -106,6 +107,88 @@ const TransactionModal = () => {
     }
   }, [paymentStatus, showTransactionModal]);
 
+  // Khi mở modal, lưu bookingId vào localStorage
+  useEffect(() => {
+    if (showTransactionModal && bookingIdFortransaction) {
+      localStorage.setItem("bookingIdForTransaction", bookingIdFortransaction);
+    }
+    // Khi đóng modal, xóa bookingId khỏi localStorage
+    if (!showTransactionModal) {
+      localStorage.removeItem("bookingIdForTransaction");
+    }
+  }, [showTransactionModal, bookingIdFortransaction]);
+
+  // Khi mount, nếu không có bookingIdFortransaction nhưng có trong localStorage thì tự động mở modal
+  useEffect(() => {
+    if (!showTransactionModal) {
+      const savedId = localStorage.getItem("bookingIdForTransaction");
+      if (savedId) {
+        dispatch({
+          type: "OPEN_TRANSACTION_MODAL",
+          payload: { bookingId: savedId },
+        });
+      }
+    }
+    // Không cần dependencies để chỉ chạy khi mount
+    // eslint-disable-next-line
+  }, []);
+
+  // Reset randomQR khi có qrCodeData hoặc đóng modal
+  useEffect(() => {
+    if (qrCodeData || !showTransactionModal) {
+      setRandomQR(null);
+    }
+  }, [qrCodeData, showTransactionModal]);
+
+  // Hàm sinh QR ngẫu nhiên
+  const generateRandomQR = (amount, bookingCode, method) => {
+    // Chuỗi QR có thể là JSON hoặc text, ở đây dùng JSON
+    const data = {
+      type: "test",
+      method,
+      amount,
+      bookingCode,
+      time: Date.now(),
+      random: Math.random().toString(36).substring(2, 10),
+    };
+    return JSON.stringify(data);
+  };
+
+  // Khi chọn phương thức thanh toán
+  const handleSelectPaymentMethod = (method) => {
+    if (!paymentLoading && !qrCodeData) {
+      setSelectedPaymentMethod(method);
+      // Sinh QR ngẫu nhiên tương ứng
+      let amount =
+        activePaymentTab === 0 ? amountForDepositTab : amountForFullTab;
+      setRandomQR({
+        qrData: generateRandomQR(amount, booking.bookingCode, method),
+        amount,
+        bookingCode: booking.bookingCode,
+        method,
+      });
+    }
+  };
+
+  // Khi chuyển tab thanh toán
+  const handleTabChange = (tabIndex) => {
+    if (!paymentLoading && !qrCodeData) {
+      dispatch(setActivePaymentTab(tabIndex));
+      // Sinh QR ngẫu nhiên tương ứng
+      let amount = tabIndex === 0 ? amountForDepositTab : amountForFullTab;
+      setRandomQR({
+        qrData: generateRandomQR(
+          amount,
+          booking.bookingCode,
+          selectedPaymentMethod
+        ),
+        amount,
+        bookingCode: booking.bookingCode,
+        method: selectedPaymentMethod,
+      });
+    }
+  };
+
   const handleClose = () => {
     setIsVisible(false);
     setTimeout(() => {
@@ -124,6 +207,18 @@ const TransactionModal = () => {
       setTimeout(() => setCopiedText(""), 2000);
     } catch (err) {
       console.error("Failed to copy: ", err);
+    }
+  };
+
+  const handleBack = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (typeof onBack === "function") {
+      onBack();
+    } else {
+      dispatch(closeTransactionModal());
     }
   };
 
@@ -264,12 +359,6 @@ const TransactionModal = () => {
   const handleFullOrRemainingPayment = async () => {
     if (!bookingIdFortransaction) return;
     dispatch(createFullPayment(bookingIdFortransaction, selectedPaymentMethod));
-  };
-
-  const handleTabChange = (tabIndex) => {
-    if (!paymentLoading && !qrCodeData) {
-      dispatch(setActivePaymentTab(tabIndex));
-    }
   };
 
   const handleSimulatePayment = () => {
@@ -447,11 +536,7 @@ const TransactionModal = () => {
           return (
             <div
               key={method.value}
-              onClick={() =>
-                !paymentLoading &&
-                !qrCodeData &&
-                setSelectedPaymentMethod(method.value)
-              }
+              onClick={() => handleSelectPaymentMethod(method.value)}
               className={`relative flex items-center p-2 rounded-xl border-2 cursor-pointer transition-all duration-200 transform hover:scale-102 ${
                 isSelected
                   ? `!border-${method.color}-700 bg-${method.color}-50 shadow-lg`
@@ -551,6 +636,172 @@ const TransactionModal = () => {
   );
 
   const renderQRSection = () => {
+    // Ưu tiên hiển thị QR ngẫu nhiên nếu có
+    if (!qrCodeData && randomQR) {
+      const { qrData, amount, bookingCode, method } = randomQR;
+      const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+        qrData
+      )}`;
+      return (
+        <div className="space-y-6">
+          {/* Nút trở lại */}
+          <div className="flex justify-start mb-2">
+            <button
+              onClick={() => {
+                setRandomQR(null);
+              }}
+              className="flex items-center text-blue-600 hover:text-blue-800 font-medium px-3 py-1 rounded-lg border border-blue-100 bg-white shadow-sm transition-all"
+            >
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Trở lại
+            </button>
+          </div>
+          <div className="text-center">
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white mb-4">
+              <QrCode className="w-12 h-12 mx-auto mb-3 text-white" />
+              <h3 className="text-lg font-semibold mb-2">
+                Mã QR ngẫu nhiên (Test)
+              </h3>
+              <p className="text-blue-100">
+                Quét mã để test chức năng thanh toán
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-xl inline-block shadow border border-blue-100">
+              <img
+                src={qrImage}
+                alt="Random QR Code"
+                className="mx-auto"
+                style={{ width: "180px", height: "180px" }}
+              />
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-blue-100">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 flex items-center">
+                <Banknote className="w-4 h-4 mr-2" />
+                Số tiền thanh toán
+              </span>
+              <span className="font-bold text-lg text-blue-600">
+                {formatPrice(amount)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 flex items-center">
+                <Info className="w-4 h-4 mr-2" />
+                Nội dung chuyển khoản
+              </span>
+              <span className="font-mono text-sm text-gray-900">
+                {bookingCode}
+              </span>
+            </div>
+          </div>
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 text-blue-800 text-center">
+            Đây là mã QR ngẫu nhiên để test chức năng. Khi quét sẽ hiện số tiền
+            và nội dung là mã booking.
+          </div>
+        </div>
+      );
+    }
+
+    // QR thành công khi fully_paid hoặc deposit_paid
+    if (
+      (qrCodeData &&
+        (paymentStatus === "fully_paid" || paymentStatus === "deposit_paid")) ||
+      (!qrCodeData &&
+        (booking?.paymentStatus === "fully_paid" ||
+          booking?.paymentStatus === "deposit_paid"))
+    ) {
+      // Lấy bookingCode và số tiền đã thanh toán
+      const code = booking?.bookingCode || qrCodeData?.bookingCode || "";
+      const paidAmount =
+        booking?.paymentBreakdown?.totalPaid || qrCodeData?.amount || 0;
+      const qrSuccessData = `PAID:${code}`;
+      const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+        qrSuccessData
+      )}`;
+      return (
+        <div className="space-y-6">
+          {/* Nút trở lại */}
+          <div className="flex justify-start mb-2">
+            <button
+              onClick={() => {
+                dispatch(clearQRCodeData());
+                setRandomQR(null);
+              }}
+              className="flex items-center text-green-700 hover:text-green-900 font-medium px-3 py-1 rounded-lg border border-green-100 bg-white shadow-sm transition-all"
+            >
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Trở lại
+            </button>
+          </div>
+          <div className="text-center">
+            <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-white mb-4">
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-white" />
+              <h3 className="text-lg font-semibold mb-2">
+                Thanh toán thành công!
+              </h3>
+              <p className="text-green-100">
+                Quét mã để xác nhận thanh toán thành công
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-xl inline-block shadow border border-green-200">
+              <img
+                src={qrImage}
+                alt="QR Thành công"
+                className="mx-auto"
+                style={{ width: "180px", height: "180px" }}
+              />
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-green-200">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 flex items-center">
+                <Banknote className="w-4 h-4 mr-2" />
+                Số tiền đã thanh toán
+              </span>
+              <span className="font-bold text-lg text-green-600">
+                {formatPrice(paidAmount)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 flex items-center">
+                <Info className="w-4 h-4 mr-2" />
+                Mã booking
+              </span>
+              <span className="font-mono text-sm text-gray-900">{code}</span>
+            </div>
+          </div>
+          <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-green-800 text-center">
+            Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ.
+          </div>
+        </div>
+      );
+    }
+
     if (!qrCodeData) return null;
 
     const {
@@ -754,7 +1005,19 @@ const TransactionModal = () => {
       >
         <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[70vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between py-3 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          <div className="flex items-center justify-between py-3 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
+            <div>
+              {" "}
+              <button
+                onClick={handleBack}
+                type="button"
+                className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-2xl px-2 py-1 z-10 "
+                style={{ minWidth: 0 }}
+              >
+                <ArrowLeft size={24} /> 3/3
+              </button>
+            </div>
+
             <div>
               <h2 className="text-xl font-bold">Thanh toán booking</h2>
               <p className="text-blue-100 text-sm mt-1">
@@ -763,7 +1026,7 @@ const TransactionModal = () => {
             </div>
             <button
               onClick={handleClose}
-              className="text-blue-100 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+              className="text-blue-100 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-2xl"
             >
               <X className="w-6 h-6" />
             </button>

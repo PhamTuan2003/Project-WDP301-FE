@@ -24,7 +24,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { formatPrice } from "../../../redux/validation";
-import { closeInvoiceModal } from "../../../redux/action";
+import { closeInvoiceModal } from "../../../redux/actions/uiActions";
 import { downloadInvoicePDF } from "../../../redux/asyncActions";
 import { Typography } from "@mui/material";
 

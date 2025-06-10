@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Search, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Box, Input } from "@mui/material";
-import { setReviewSearchTerm } from "../../../redux/action";
+import { setReviewSearchTerm } from "../../../redux/actions";
 import { useEffect } from "react";
 import { fetchCustomerIdFromStorage } from "../../../redux/asyncActions";
 

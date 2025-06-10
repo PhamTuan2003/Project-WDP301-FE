@@ -68,7 +68,6 @@ const ConsultationDetailsModal = ({
 }) => {
   const theme = useTheme();
   if (!consultation) return null;
-
   return (
     <Modal
       open={open}
@@ -92,11 +91,11 @@ const ConsultationDetailsModal = ({
         exit="exit"
         sx={{
           position: "absolute",
-          top: "7%",
+          top: "3%",
           left: "33%",
           transform: "translate(-50%,-50%)",
           width: { xs: "90%", sm: 550 },
-          maxHeight: "87vh",
+          maxHeight: "95vh",
           overflowY: "auto",
           bgcolor: "rgba(255,255,255,0.85)",
           backdropFilter: "blur(8px)",

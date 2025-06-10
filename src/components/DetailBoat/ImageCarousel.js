@@ -1,19 +1,22 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import { fetchYachtImages } from "../../redux/asyncActions";
 import {
-  setCurrentImageIndex,
   nextSlide,
   prevSlide,
+  setCurrentImageIndex,
   setImageHovering,
-} from "../../redux/action";
-import { fetchYachtImages } from "../../redux/asyncActions";
+} from "../../redux/actions";
 
 function ImageCarousel({ yachtId }) {
   const dispatch = useDispatch();
-  const { images, currentIndex, isHovering } = useSelector(
-    (state) => state.images
-  );
+  const {
+    images = [],
+    currentIndex = 0,
+    isHovering = false,
+  } = useSelector((state) => state.images || {});
 
   useEffect(() => {
     if (yachtId) {

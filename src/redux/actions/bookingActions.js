@@ -134,3 +134,7 @@ export const updateRooms = (rooms) => ({
   payload: rooms,
 });
 export const clearConsultation = () => ({ type: "CLEAR_CONSULTATION" });
+export const setGuestCounter = (payload) => ({
+  type: "SET_GUEST_COUNTER",
+  payload,
+});
