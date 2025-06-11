@@ -16,11 +16,11 @@ import {
   fetchReviews,
   openRegulationsWindow,
   closeRegulationsWindow,
-  openFaqWindow,
   closeFaqWindow,
   setActiveTab,
-} from "../redux/action";
-import { fetchServices, fetchYachtById } from "../redux/asyncActions";
+} from "../redux/actions";
+import { fetchServices } from "../redux/asyncActions/servicesAsyncActions";
+import { fetchYachtById } from "../redux/asyncActions/yachtAsyncActions";
 
 function DetailBoat() {
   const { id } = useParams();

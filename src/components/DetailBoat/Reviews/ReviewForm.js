@@ -3,7 +3,7 @@ import { Send } from "lucide-react";
 import Swal from "sweetalert2";
 import StarRating from "./StarRating";
 import { Box, TextField } from "@mui/material";
-import { setUserRating, setReviewDescription } from "../../../redux/action";
+import { setUserRating, setReviewDescription } from "../../../redux/actions";
 import { validateReviewForm } from "../../../redux/validation";
 import { submitReview } from "../../../redux/asyncActions";
 

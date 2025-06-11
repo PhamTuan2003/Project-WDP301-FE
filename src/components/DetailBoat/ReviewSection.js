@@ -8,8 +8,11 @@ import ReviewForm from "./Reviews/ReviewForm";
 import ReviewPagination from "./Reviews/ReviewPagination";
 import RatingOverview from "./Reviews/RatingOverview";
 import { Image } from "react-bootstrap";
-import { setReviewSearchTerm, setReviewCurrentPage } from "../../redux/action";
 import { fetchReviews } from "../../redux/asyncActions";
+import {
+  setReviewCurrentPage,
+  setReviewSearchTerm,
+} from "../../redux/actions/reviewActions";
 
 export default function ReviewSection({ yachtId }) {
   const dispatch = useDispatch();

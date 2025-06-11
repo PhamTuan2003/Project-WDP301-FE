@@ -22,7 +22,7 @@ import {
   setSelectedStars,
   setSelectedDurations,
   setSelectedServices,
-} from "../../redux/action";
+} from "../../redux/actions";
 
 const FilterSidebar = ({
   availableServices,

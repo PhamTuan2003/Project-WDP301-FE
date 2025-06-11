@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setActiveTab } from "../../redux/action";
+import { setActiveTab } from "../../redux/actions/uiActions";
 
 function Tabs() {
   const dispatch = useDispatch({});

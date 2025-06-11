@@ -12,6 +12,7 @@ import {
   Home,
   MessageSquare,
   DollarSign,
+  ArrowLeft,
 } from "lucide-react";
 import {
   customerCancelBooking,
@@ -19,11 +20,11 @@ import {
 } from "../../../redux/asyncActions";
 import { formatPrice } from "../../../redux/validation";
 import Swal from "sweetalert2";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   closeConfirmationModal,
   openTransactionModal,
-} from "../../../redux/action";
-import { motion, AnimatePresence } from "framer-motion";
+} from "../../../redux/actions";
 
 // Animation variants for modal drop-in and backdrop fade
 const backdropVariants = {
@@ -41,7 +42,7 @@ const dropInVariants = {
   exit: { y: "100vh", opacity: 0, scale: 0.8, transition: { duration: 0.2 } },
 };
 
-const ConfirmationModal = () => {
+const ConfirmationModal = ({ onBack }) => {
   const dispatch = useDispatch();
   const { showConfirmationModal, confirmationData } = useSelector(
     (state) => state.ui.modals
@@ -65,7 +66,7 @@ const ConfirmationModal = () => {
       confirmationData.guestCounter?.childrenAbove10 ??
       0
   );
-  const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
+  const totalGuests = adults + childrenUnder10 + Math.ceil(childrenAbove10 / 2);
 
   const handleProceedToPayment = () => {
     if (!bookingId) {
@@ -106,6 +107,18 @@ const ConfirmationModal = () => {
     await dispatch(customerCancelBooking(bookingId));
   };
 
+  const handleBack = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (typeof onBack === "function") {
+      onBack();
+    } else {
+      dispatch(closeConfirmationModal());
+    }
+  };
+
   const confirmAction = isDirectBooking
     ? handleProceedToPayment
     : handleConfirmAfterConsultation;
@@ -127,6 +140,8 @@ const ConfirmationModal = () => {
             backdropFilter: "blur(4px)",
           }}
         >
+          {/* Nút Quay lại */}
+
           {showSuccess && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-40">
               <div className="bg-white rounded-2xl shadow-2xl px-12 py-10 flex flex-col items-center">
@@ -149,8 +164,19 @@ const ConfirmationModal = () => {
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-8 py-5 text-white relative">
-              <div className="flex justify-between items-center">
-                <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-start">
+                  {" "}
+                  <button
+                    onClick={handleBack}
+                    type="button"
+                    className="text-white hover:text-blue-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
+                    style={{ minWidth: 0 }}
+                  >
+                    <ArrowLeft size={24} /> 2/3
+                  </button>
+                </div>
+                <div className=" items-center justify-center">
                   <h3 className="text-2xl font-bold mb-1">
                     Xác nhận thông tin đặt phòng
                   </h3>
@@ -158,13 +184,16 @@ const ConfirmationModal = () => {
                     Vui lòng kiểm tra kỹ thông tin trước khi xác nhận
                   </p>
                 </div>
-                <button
-                  onClick={handleCancelOrReject}
-                  className="text-white hover:text-blue-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
-                  disabled={submitting}
-                >
-                  <X size={24} />
-                </button>
+                <div className="flex items-center justify-end">
+                  {" "}
+                  <button
+                    onClick={handleCancelOrReject}
+                    className="text-white hover:text-blue-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
+                    disabled={submitting}
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
               {/* Decorative circles */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-y-16 translate-x-16"></div>

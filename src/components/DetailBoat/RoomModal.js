@@ -3,9 +3,9 @@ import { BedDouble, Check, Minus, Plus, User, X } from "lucide-react";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  incrementRoomQuantity,
   decrementRoomQuantity,
-} from "../../redux/action";
+  incrementRoomQuantity,
+} from "../../redux/actions/bookingActions";
 
 const RoomModal = ({ show, room, onClose }) => {
   const dispatch = useDispatch();

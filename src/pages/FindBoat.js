@@ -26,7 +26,7 @@ import {
   setSelectedStars,
   setSelectedDurations,
   setSelectedServices,
-} from "../redux/action";
+} from "../redux/actions";
 
 const priceRanges = [
   { label: "< 3 triệu", value: "under-3", min: 0, max: 3000000 },

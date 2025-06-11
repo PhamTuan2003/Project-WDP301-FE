@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { User, Minus, Plus, X } from "lucide-react";
 import { Box, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
@@ -11,15 +11,22 @@ import {
   setSelectedSchedule,
   setSelectedMaxPeople,
   clearSelection,
+  resetBookingForm,
+  setEditingBookingId,
+  clearAllErrors,
+} from "../../redux/actions/bookingActions";
+import {
   openRoomModal,
   closeRoomModal,
   openBookingModal,
   closeBookingModal,
-  resetBookingForm,
-  clearAllErrors,
-  setEditingBookingId,
-} from "../../redux/action";
-import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
+  openConfirmationModal,
+  closeConfirmationModal,
+  openTransactionModal,
+  closeTransactionModal,
+  setConfirmationData,
+} from "../../redux/actions/uiActions";
+import { fetchRoomsAndSchedules } from "../../redux/asyncActions/bookingAsyncActions";
 import ConfirmationModal from "./Booking/ConfirmationModal";
 import TransactionModal from "./Booking/TransactionModal";
 import InvoiceModal from "./Booking/InvoiceModal";
@@ -83,6 +90,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   // Check if clear button should be shown
   const showClearButton =
     selectedSchedule && rooms.some((room) => room.quantity > 0);
+
+  const [editBookingData, setEditBookingData] = useState(null);
 
   return (
     <div>
@@ -319,9 +328,22 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         show={showBookingModal}
         onClose={() => dispatch(closeBookingModal())}
         yachtData={yachtData}
+        onBack={null}
+        editData={editBookingData}
       />
-      <ConfirmationModal />
-      <TransactionModal />
+      <ConfirmationModal
+        onBack={(data) => {
+          setEditBookingData(data);
+          dispatch(openBookingModal());
+          dispatch(closeConfirmationModal());
+        }}
+      />
+      <TransactionModal
+        onBack={() => {
+          dispatch(closeTransactionModal());
+          dispatch(openBookingModal());
+        }}
+      />
       <InvoiceModal />
     </div>
   );
