@@ -11,8 +11,6 @@ import {
 import Swal from "sweetalert2";
 import { resetBookingForm } from "../actions/bookingActions";
 
-// Copy các async action booking từ asyncActions.js vào đây
-// Ví dụ:
 export const fetchRoomsAndSchedules =
   (yachtId, scheduleId) => async (dispatch) => {
     dispatch(bookingActions.fetchRoomsRequest());
