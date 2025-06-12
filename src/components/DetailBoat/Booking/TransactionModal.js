@@ -36,6 +36,13 @@ import {
   setActivePaymentTab,
 } from "../../../redux/actions";
 import Swal from "sweetalert2";
+import { BookingInfo, PaymentTabs, PaymentMethods } from "./Transaction";
+
+if (typeof window !== "undefined") {
+  const style = document.createElement("style");
+  style.innerHTML = `.swal-archivo-font { font-family: 'Archivo', sans-serif !important; }`;
+  document.head.appendChild(style);
+}
 
 const TransactionModal = ({ onBack }) => {
   const dispatch = useDispatch();
@@ -239,11 +246,18 @@ const TransactionModal = ({ onBack }) => {
 
   // Hàm kiểm tra transaction pending (giả lập, cần thay bằng API thực tế nếu có)
   const getPendingTransactionIdForBooking = async (bookingId) => {
-    // TODO: Gọi API backend để lấy transactionId pending nếu có
-    // Ví dụ: /api/v1/payments/booking/:bookingId/pending-transaction
-    // Trả về transactionId nếu có, null nếu không
-    // Ở đây giả lập luôn trả về null (bạn cần thay bằng logic thực tế)
-    return null;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:9999/api/v1/payments/booking/${bookingId}/pending-transaction`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.success ? data.data.transactionId : null;
+    } catch {
+      return null;
+    }
   };
 
   const handleBackToChooseMethod = async () => {
@@ -253,8 +267,16 @@ const TransactionModal = ({ onBack }) => {
     if (pendingTransactionId) {
       Swal.fire({
         icon: "warning",
-        title: "Đã có giao dịch đang chờ xử lý cho booking này.",
-        text: "Bạn muốn quay lại giao dịch đang chờ hay tạo giao dịch mới?",
+        title: "Bạn đang có giao dịch chưa hoàn tất",
+        html: `
+          <div style="text-align:left; font-family: 'Archivo', sans-serif;">
+            <b>Chỉ có thể tạo một giao dịch thanh toán cho mỗi booking tại một thời điểm.</b><br/>
+            <ul style="margin:8px 0 0 18px;padding:0;">
+              <li>Chọn <b>Quay lại giao dịch đang chờ</b> để tiếp tục thanh toán với phương thức cũ.</li>
+              <li>Chọn <b>Tạo giao dịch mới</b> để hủy giao dịch cũ và chọn lại phương thức thanh toán.</li>
+            </ul>
+          </div>
+        `,
         showCancelButton: true,
         confirmButtonText: "Quay lại giao dịch đang chờ",
         cancelButtonText: "Tạo giao dịch mới",
@@ -275,12 +297,20 @@ const TransactionModal = ({ onBack }) => {
           if (success) {
             setRandomQR(null);
             setShowBankInfo(true);
-            // Có thể show toast: "Đã hủy giao dịch cũ, bạn có thể tạo giao dịch mới"
+            Swal.fire({
+              icon: "success",
+              title: "Đã hủy giao dịch cũ!",
+              text: "Bạn có thể chọn lại phương thức thanh toán và tạo giao dịch mới.",
+              timer: 2000,
+              showConfirmButton: false,
+              customClass: { popup: "swal-archivo-font" },
+            });
           } else {
             Swal.fire({
               icon: "error",
               title: "Không thể hủy giao dịch cũ!",
               text: "Vui lòng thử lại hoặc liên hệ hỗ trợ.",
+              customClass: { popup: "swal-archivo-font" },
             });
           }
         }
@@ -291,6 +321,14 @@ const TransactionModal = ({ onBack }) => {
       dispatch({ type: "UPDATE_PAYMENT_STATUS", payload: "idle" });
       setRandomQR(null);
       setShowBankInfo(true);
+      Swal.fire({
+        icon: "info",
+        title: "Không có giao dịch nào đang chờ",
+        text: "Bạn có thể tạo giao dịch mới hoặc chọn phương thức thanh toán khác.",
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: { popup: "swal-archivo-font" },
+      });
     }
   };
 
@@ -300,7 +338,7 @@ const TransactionModal = ({ onBack }) => {
   if (bookingError) {
     return (
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+        className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
           isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
         }`}
       >
@@ -340,7 +378,7 @@ const TransactionModal = ({ onBack }) => {
   ) {
     return (
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+        className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
           isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
         }`}
       >
@@ -887,7 +925,7 @@ const TransactionModal = ({ onBack }) => {
                 onClick={handleSimulatePayment}
                 className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
               >
-                🧪 Mô phỏng chuyển sang invoice (sau khi đã đổi trạng thái)
+                🧪 Mô phỏng chuyển sang invoice
               </button>
             )}
         </div>
@@ -990,15 +1028,15 @@ const TransactionModal = ({ onBack }) => {
           >
             <X className="w-5 h-5" />
           </button>
+          <button
+            onClick={handleBackToChooseMethod}
+            className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+          >
+            ← Chọn lại phương thức thanh toán
+          </button>
           <div className="text-center mb-4">
             <div className="mx-auto flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
               <Banknote className="w-6 h-6 text-green-600" />
-              <button
-                onClick={handleBackToChooseMethod}
-                className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
-              >
-                ← Chọn lại phương thức thanh toán
-              </button>
             </div>
             <h3 className="font-semibold text-green-800 mb-2">
               Chờ xác nhận chuyển khoản
@@ -1096,7 +1134,7 @@ const TransactionModal = ({ onBack }) => {
                 }}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 mt-4"
               >
-                🧪 Test chuyển trạng thái thành công (Chỉ đổi trạng thái)
+                🧪 Test chuyển trạng thái thành công
               </button>
             )}
           {/* Nút mô phỏng chuyển invoice khi đã đổi trạng thái */}
@@ -1108,7 +1146,7 @@ const TransactionModal = ({ onBack }) => {
                 onClick={handleSimulatePayment}
                 className="mt-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
               >
-                🧪 Mô phỏng chuyển sang invoice (sau khi đã đổi trạng thái)
+                🧪 Mô phỏng chuyển sang invoice
               </button>
             )}
         </div>
@@ -1213,7 +1251,7 @@ const TransactionModal = ({ onBack }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
         isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
       }`}
     >
@@ -1222,7 +1260,7 @@ const TransactionModal = ({ onBack }) => {
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-[60rem] w-full max-h-[90vh] overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-[1100px] w-full h-auto">
           {/* Header */}
           <div className="flex items-center justify-between py-3 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
             <div className="flex items-center gap-2">
@@ -1283,13 +1321,14 @@ const TransactionModal = ({ onBack }) => {
           </div>
 
           {/* Content - Horizontal Layout */}
-          <div className="flex flex-row gap-4 p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-            {/* Left: Booking Info */}
-            <div className="w-full md:w-3/6 flex-shrink-0">
-              {renderBookingInfo()}
-            </div>
-            {/* Right: Payment Section */}
-            <div className="w-full flex flex-col justify-between">
+          <div className="flex flex-row gap-4 p-6 w-full h-auto">
+            {/* Left: Booking Info (4/10) */}
+            <BookingInfo booking={booking} />
+            {/* Right: Payment Section (6/10) */}
+            <div
+              className="w-6/10 md:w-6/10 flex flex-col justify-between"
+              style={{ flexBasis: "60%" }}
+            >
               {booking.paymentStatus === "fully_paid" ? (
                 <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200">
                   <div className="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
@@ -1335,8 +1374,18 @@ const TransactionModal = ({ onBack }) => {
                 </div>
               ) : !qrCodeData ? (
                 <>
-                  {renderPaymentMethods()}
-                  {renderPaymentTabs()}
+                  <PaymentMethods
+                    selectedPaymentMethod={selectedPaymentMethod}
+                    handleSelectPaymentMethod={handleSelectPaymentMethod}
+                    paymentLoading={paymentLoading}
+                    qrCodeData={qrCodeData}
+                  />
+                  <PaymentTabs
+                    activePaymentTab={activePaymentTab}
+                    handleTabChange={handleTabChange}
+                    paymentLoading={paymentLoading}
+                    qrCodeData={qrCodeData}
+                  />
                   {/* Payment Buttons */}
                   <div className="space-y-3">
                     {activePaymentTab === 0 &&
