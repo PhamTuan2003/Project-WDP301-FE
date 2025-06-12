@@ -5,22 +5,16 @@ import {
   CreditCard,
   Percent,
   QrCode,
-  Clock,
   CheckCircle,
   Info,
   Banknote,
   Smartphone,
   Calendar,
-  MapPin,
-  User,
-  Phone,
-  Mail,
   ArrowRight,
   AlertCircle,
   Loader2,
   Copy,
   ExternalLink,
-  Star,
   Building,
   Timer,
   Users,
@@ -31,6 +25,7 @@ import {
   createFullPayment,
   simulatePaymentSuccess,
   stopPaymentStatusPolling,
+  cancelTransaction,
 } from "../../../redux/asyncActions/paymentAsyncActions";
 import { fetchCustomerBookingDetail } from "../../../redux/asyncActions/bookingAsyncActions";
 import { fetchInvoiceByTransactionId } from "../../../redux/asyncActions/invoiceAsyncActions";
@@ -40,6 +35,7 @@ import {
   closeTransactionModal,
   setActivePaymentTab,
 } from "../../../redux/actions";
+import Swal from "sweetalert2";
 
 const TransactionModal = ({ onBack }) => {
   const dispatch = useDispatch();
@@ -66,6 +62,7 @@ const TransactionModal = ({ onBack }) => {
   const [copiedText, setCopiedText] = useState("");
   const [showBankInfo, setShowBankInfo] = useState(true);
   const [randomQR, setRandomQR] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1);
 
   useEffect(() => {
     if (showTransactionModal) {
@@ -103,6 +100,10 @@ const TransactionModal = ({ onBack }) => {
       const transactionId = qrCodeData?.transactionId;
       if (transactionId) {
         dispatch(fetchInvoiceByTransactionId(transactionId));
+      }
+      // Cập nhật lại booking detail để trạng thái bên trái đổi
+      if (bookingIdFortransaction) {
+        dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
       }
     }
   }, [paymentStatus, showTransactionModal]);
@@ -219,6 +220,77 @@ const TransactionModal = ({ onBack }) => {
       onBack();
     } else {
       dispatch(closeTransactionModal());
+    }
+  };
+
+  // Hàm chuyển bước
+  const goToStep = (step) => {
+    setCurrentStep(step);
+    if (step === 1) {
+      dispatch(clearQRCodeData());
+      setRandomQR(null);
+      setShowBankInfo(true);
+    } else if (step === 2) {
+      dispatch(clearQRCodeData());
+      setRandomQR(null);
+      setShowBankInfo(true);
+    }
+  };
+
+  // Hàm kiểm tra transaction pending (giả lập, cần thay bằng API thực tế nếu có)
+  const getPendingTransactionIdForBooking = async (bookingId) => {
+    // TODO: Gọi API backend để lấy transactionId pending nếu có
+    // Ví dụ: /api/v1/payments/booking/:bookingId/pending-transaction
+    // Trả về transactionId nếu có, null nếu không
+    // Ở đây giả lập luôn trả về null (bạn cần thay bằng logic thực tế)
+    return null;
+  };
+
+  const handleBackToChooseMethod = async () => {
+    const pendingTransactionId = await getPendingTransactionIdForBooking(
+      bookingIdFortransaction
+    );
+    if (pendingTransactionId) {
+      Swal.fire({
+        icon: "warning",
+        title: "Đã có giao dịch đang chờ xử lý cho booking này.",
+        text: "Bạn muốn quay lại giao dịch đang chờ hay tạo giao dịch mới?",
+        showCancelButton: true,
+        confirmButtonText: "Quay lại giao dịch đang chờ",
+        cancelButtonText: "Tạo giao dịch mới",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          dispatch({
+            type: "OPEN_TRANSACTION_MODAL",
+            payload: {
+              bookingId: bookingIdFortransaction,
+              transactionId: pendingTransactionId,
+            },
+          });
+        } else {
+          // Gọi API cancel transaction pending trước khi reset state
+          const success = await dispatch(
+            cancelTransaction(pendingTransactionId)
+          );
+          if (success) {
+            setRandomQR(null);
+            setShowBankInfo(true);
+            // Có thể show toast: "Đã hủy giao dịch cũ, bạn có thể tạo giao dịch mới"
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Không thể hủy giao dịch cũ!",
+              text: "Vui lòng thử lại hoặc liên hệ hỗ trợ.",
+            });
+          }
+        }
+      });
+    } else {
+      dispatch(clearQRCodeData());
+      dispatch({ type: "CREATE_TRANSACTION_SUCCESS", payload: null });
+      dispatch({ type: "UPDATE_PAYMENT_STATUS", payload: "idle" });
+      setRandomQR(null);
+      setShowBankInfo(true);
     }
   };
 
@@ -363,7 +435,12 @@ const TransactionModal = ({ onBack }) => {
 
   const handleSimulatePayment = () => {
     if (qrCodeData?.transactionId) {
-      dispatch(simulatePaymentSuccess(qrCodeData.transactionId));
+      dispatch(simulatePaymentSuccess(qrCodeData.transactionId)).then(() => {
+        // Sau khi mô phỏng thành công, cập nhật lại booking detail
+        if (bookingIdFortransaction) {
+          dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
+        }
+      });
     }
   };
 
@@ -396,7 +473,7 @@ const TransactionModal = ({ onBack }) => {
   const getPaymentStatusText = (status) => {
     switch (status) {
       case "fully_paid":
-        return "Đã thanh toán đầy đủ";
+        return "Đã thanh toán";
       case "deposit_paid":
         return "Đã đặt cọc";
       case "pending":
@@ -409,8 +486,8 @@ const TransactionModal = ({ onBack }) => {
   const renderBookingInfo = () => (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3 mb-6 border border-blue-100">
       <div className="flex items-center justify-between pb-3">
-        <h3 className="text-base font-semibold text-gray-900 flex items-center">
-          <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+        <h3 className="text-base  font-semibold text-gray-900 flex items-center">
+          <Calendar className="w-5 h-5 mr-2  text-blue-600" />
           Thông tin booking
         </h3>
         <span
@@ -636,7 +713,7 @@ const TransactionModal = ({ onBack }) => {
   );
 
   const renderQRSection = () => {
-    // Ưu tiên hiển thị QR ngẫu nhiên nếu có
+    console.log("qrCodeData:", qrCodeData);
     if (!qrCodeData && randomQR) {
       const { qrData, amount, bookingCode, method } = randomQR;
       const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
@@ -711,6 +788,12 @@ const TransactionModal = ({ onBack }) => {
             Đây là mã QR ngẫu nhiên để test chức năng. Khi quét sẽ hiện số tiền
             và nội dung là mã booking.
           </div>
+          <button
+            onClick={handleBackToChooseMethod}
+            className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+          >
+            ← Chọn lại phương thức thanh toán
+          </button>
         </div>
       );
     }
@@ -798,6 +881,15 @@ const TransactionModal = ({ onBack }) => {
           <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-green-800 text-center">
             Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ.
           </div>
+          {process.env.NODE_ENV === "development" &&
+            qrCodeData?.transactionId && (
+              <button
+                onClick={handleSimulatePayment}
+                className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+              >
+                🧪 Mô phỏng chuyển sang invoice (sau khi đã đổi trạng thái)
+              </button>
+            )}
         </div>
       );
     }
@@ -820,10 +912,16 @@ const TransactionModal = ({ onBack }) => {
     if (paymentMethod === "vnpay" && paymentUrl) {
       paymentContent = (
         <div className="text-center">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white mb-4">
-            <CreditCard className="w-12 h-12 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold mb-2">Thanh toán VNPay</h3>
-            <p className="text-blue-100">
+          <button
+            onClick={handleBackToChooseMethod}
+            className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+          >
+            ← Chọn lại phương thức thanh toán
+          </button>
+          <div className="bg-cyan-50 border border-cyan-300 rounded-2xl p-3 text-cyan-700 mb-4">
+            <CreditCard className="w-12 h-12 mx-auto " />
+            <h3 className="text-lg font-semibold ">Thanh toán VNPay</h3>
+            <p className="text-cyan-800 text-sm">
               Bạn sẽ được chuyển đến cổng thanh toán VNPay
             </p>
           </div>
@@ -831,7 +929,7 @@ const TransactionModal = ({ onBack }) => {
             href={paymentUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="inline-flex  items-center bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Thanh toán ngay
             <ExternalLink className="w-5 h-5 ml-2" />
@@ -848,16 +946,24 @@ const TransactionModal = ({ onBack }) => {
           momoQrUrl
         )}`;
         momoDisplay = (
-          <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl p-6 text-white">
-            <Smartphone className="w-8 h-8 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold mb-4">Quét mã MoMo</h3>
-            <div className="bg-white p-4 rounded-xl">
-              <img
-                src={qrImage}
-                alt="MoMo QR Code"
-                className="mx-auto"
-                style={{ width: "180px", height: "180px" }}
-              />
+          <div>
+            <button
+              onClick={handleBackToChooseMethod}
+              className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+            >
+              ← Chọn lại phương thức thanh toán
+            </button>
+            <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl p-3 text-white">
+              <Smartphone className="w-8 h-8 mx-auto" />
+              <h3 className="text-lg font-semibold mb-4">Quét mã MoMo</h3>
+              <div className="bg-white p-4 rounded-xl">
+                <img
+                  src={qrImage}
+                  alt="MoMo QR Code"
+                  className="mx-auto"
+                  style={{ width: "180px", height: "180px" }}
+                />
+              </div>
             </div>
           </div>
         );
@@ -875,8 +981,8 @@ const TransactionModal = ({ onBack }) => {
         );
       }
       paymentContent = <div className="text-center">{momoDisplay}</div>;
-    } else if (paymentMethod === "bank_transfer" && bankInfo) {
-      paymentContent = showBankInfo && (
+    } else if (paymentMethod === "bank_transfer" && bankInfo && showBankInfo) {
+      return (
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 relative">
           <button
             onClick={() => setShowBankInfo(false)}
@@ -887,15 +993,51 @@ const TransactionModal = ({ onBack }) => {
           <div className="text-center mb-4">
             <div className="mx-auto flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
               <Banknote className="w-6 h-6 text-green-600" />
+              <button
+                onClick={handleBackToChooseMethod}
+                className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+              >
+                ← Chọn lại phương thức thanh toán
+              </button>
             </div>
             <h3 className="font-semibold text-green-800 mb-2">
               Chờ xác nhận chuyển khoản
             </h3>
             <p className="text-sm text-green-700">
-              Chúng tôi sẽ xác nhận thanh toán của bạn sớm nhất
+              Vui lòng chuyển khoản đúng thông tin bên dưới để hệ thống tự động
+              xác nhận.
             </p>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-green-200">
+          <div className="bg-white rounded-xl p-4 border border-green-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Ngân hàng:</span>
+              <span className="font-semibold text-gray-900">
+                {bankInfo.bankName}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Số tài khoản:</span>
+              <div className="flex items-center">
+                <span className="font-mono text-base text-blue-700 font-bold mr-2">
+                  {bankInfo.accountNumber}
+                </span>
+                <button
+                  onClick={() =>
+                    copyToClipboard(bankInfo.accountNumber, "Số tài khoản")
+                  }
+                  className="text-green-600 hover:text-green-700 text-sm flex items-center"
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  {copiedText === "Số tài khoản" ? "Đã copy!" : "Copy"}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Chủ tài khoản:</span>
+              <span className="font-semibold text-gray-900">
+                {bankInfo.accountName}
+              </span>
+            </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">
                 Nội dung chuyển khoản:
@@ -910,16 +1052,71 @@ const TransactionModal = ({ onBack }) => {
                 {copiedText === "Nội dung CK" ? "Đã copy!" : "Copy"}
               </button>
             </div>
-            <p className="font-mono text-sm font-semibold text-gray-900 mt-1">
+            <p className="font-mono text-base text-orange-600 font-bold mt-1 text-right">
               {bankInfo.transferContent}
             </p>
+            {qrCodeData?.expiredAt && (
+              <div className="text-xs text-gray-500 mt-2">
+                Hạn chuyển khoản:{" "}
+                <span className="font-semibold">
+                  {new Date(qrCodeData.expiredAt).toLocaleString("vi-VN")}
+                </span>
+              </div>
+            )}
           </div>
+          <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200 text-yellow-800 text-center mt-4">
+            <Info className="w-5 h-5 inline mr-2" />
+            Sau khi chuyển khoản, hệ thống sẽ tự động xác nhận trong vòng vài
+            phút.
+          </div>
+          {/* Nút test chuyển trạng thái cho bank_transfer */}
+          {process.env.NODE_ENV === "development" &&
+            qrCodeData?.transactionId &&
+            paymentStatus === "pending" && (
+              <button
+                onClick={async () => {
+                  if (!qrCodeData?.transactionId) return;
+                  const token = localStorage.getItem("token");
+                  try {
+                    await fetch(
+                      `http://localhost:9999/api/v1/payments/transaction/${qrCodeData.transactionId}/simulate`,
+                      {
+                        method: "POST",
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+                    if (bookingIdFortransaction) {
+                      dispatch(
+                        fetchCustomerBookingDetail(bookingIdFortransaction)
+                      );
+                    }
+                  } catch (err) {}
+                }}
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 mt-4"
+              >
+                🧪 Test chuyển trạng thái thành công (Chỉ đổi trạng thái)
+              </button>
+            )}
+          {/* Nút mô phỏng chuyển invoice khi đã đổi trạng thái */}
+          {process.env.NODE_ENV === "development" &&
+            qrCodeData?.transactionId &&
+            (paymentStatus === "fully_paid" ||
+              paymentStatus === "deposit_paid") && (
+              <button
+                onClick={handleSimulatePayment}
+                className="mt-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+              >
+                🧪 Mô phỏng chuyển sang invoice (sau khi đã đổi trạng thái)
+              </button>
+            )}
         </div>
       );
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         {paymentContent}
 
         {/* Payment Status */}
@@ -935,17 +1132,17 @@ const TransactionModal = ({ onBack }) => {
         </div>
 
         {/* Payment Info */}
-        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+        <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-gray-600 flex items-center">
               <Banknote className="w-4 h-4 mr-2" />
               Số tiền thanh toán
             </span>
-            <span className="font-bold text-lg text-blue-600">
+            <span className="font-bold  rounded-xltext-lg text-blue-600">
               {formatPrice(amount)}
             </span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center  justify-between">
             <span className="text-gray-600 flex items-center">
               <Info className="w-4 h-4 mr-2" />
               Mã giao dịch
@@ -981,12 +1178,34 @@ const TransactionModal = ({ onBack }) => {
         {process.env.NODE_ENV === "development" &&
           transactionId &&
           paymentStatus === "pending" && (
-            <button
-              onClick={handleSimulatePayment}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-            >
-              🧪 Mô phỏng thanh toán thành công (Test)
-            </button>
+            <>
+              <button
+                onClick={async () => {
+                  // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
+                  if (!qrCodeData?.transactionId) return;
+                  const token = localStorage.getItem("token");
+                  try {
+                    await fetch(
+                      `http://localhost:9999/api/v1/payments/transaction/${qrCodeData.transactionId}/simulate`,
+                      {
+                        method: "POST",
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+                    if (bookingIdFortransaction) {
+                      dispatch(
+                        fetchCustomerBookingDetail(bookingIdFortransaction)
+                      );
+                    }
+                  } catch (err) {}
+                }}
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 mb-2"
+              >
+                🧪 Test đã thanh toán thành công
+              </button>
+            </>
           )}
       </div>
     );
@@ -1003,22 +1222,53 @@ const TransactionModal = ({ onBack }) => {
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[70vh] overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-[60rem] w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between py-3 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
-            <div>
-              {" "}
-              <button
-                onClick={handleBack}
-                type="button"
-                className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-2xl px-2 py-1 z-10 "
-                style={{ minWidth: 0 }}
-              >
-                <ArrowLeft size={24} /> 3/3
-              </button>
+            <div className="flex items-center gap-2">
+              {/* Nút quay lại từng bước */}
+              {currentStep > 1 && (
+                <button
+                  onClick={() => goToStep(currentStep - 1)}
+                  className="flex items-center text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-2xl px-2 py-1 z-10"
+                  style={{ minWidth: 0 }}
+                >
+                  <ArrowLeft size={24} />
+                </button>
+              )}
+              {/* Hiển thị số bước xuất hiện dần */}
+              <div className="flex items-center gap-1">
+                {[1, 2, 3].map((step) => (
+                  <button
+                    key={step}
+                    onClick={() =>
+                      step < currentStep ? goToStep(step) : undefined
+                    }
+                    disabled={step > currentStep}
+                    className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-base transition-all duration-200
+                      ${
+                        currentStep === step
+                          ? "bg-white text-blue-700 shadow"
+                          : step < currentStep
+                          ? "bg-blue-200 text-blue-700"
+                          : "bg-blue-500 text-white opacity-50"
+                      }
+                      ${
+                        step > currentStep
+                          ? "cursor-default"
+                          : "hover:bg-white/20"
+                      }
+                    `}
+                    style={{
+                      visibility: step <= currentStep ? "visible" : "hidden",
+                    }}
+                  >
+                    {step}
+                  </button>
+                ))}
+              </div>
             </div>
-
-            <div>
+            <div className="flex-1 text-center">
               <h2 className="text-xl font-bold">Thanh toán booking</h2>
               <p className="text-blue-100 text-sm mt-1">
                 Hoàn tất thanh toán để xác nhận đặt chỗ
@@ -1035,11 +1285,11 @@ const TransactionModal = ({ onBack }) => {
           {/* Content - Horizontal Layout */}
           <div className="flex flex-row gap-4 p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
             {/* Left: Booking Info */}
-            <div className="w-full md:w-2/5 flex-shrink-0">
+            <div className="w-full md:w-3/6 flex-shrink-0">
               {renderBookingInfo()}
             </div>
             {/* Right: Payment Section */}
-            <div className="w-full md:w-3/5 flex flex-col justify-between">
+            <div className="w-full flex flex-col justify-between">
               {booking.paymentStatus === "fully_paid" ? (
                 <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200">
                   <div className="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
@@ -1051,6 +1301,37 @@ const TransactionModal = ({ onBack }) => {
                   <p className="text-green-700">
                     Booking này đã được thanh toán đầy đủ.
                   </p>
+                  {process.env.NODE_ENV === "development" &&
+                    qrCodeData?.transactionId && (
+                      <button
+                        onClick={handleSimulatePayment}
+                        className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                      >
+                        🧪 Mô phỏng chuyển sang invoice
+                      </button>
+                    )}
+                </div>
+              ) : booking.paymentStatus === "deposit_paid" ? (
+                <div className="text-center p-8 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200">
+                  <div className="mx-auto flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
+                    <CheckCircle className="w-8 h-8 text-yellow-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+                    Đã đặt cọc thành công!
+                  </h3>
+                  <p className="text-yellow-700">
+                    Bạn đã thanh toán tiền cọc. Vui lòng thanh toán phần còn lại
+                    trước hạn.
+                  </p>
+                  {process.env.NODE_ENV === "development" &&
+                    qrCodeData?.transactionId && (
+                      <button
+                        onClick={handleSimulatePayment}
+                        className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                      >
+                        🧪 Mô phỏng chuyển sang invoice
+                      </button>
+                    )}
                 </div>
               ) : !qrCodeData ? (
                 <>

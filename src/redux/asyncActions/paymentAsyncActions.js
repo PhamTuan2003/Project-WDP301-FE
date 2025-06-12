@@ -9,6 +9,7 @@ import {
   fetchInvoiceFailure,
   closeTransactionModal,
   openInvoiceModal,
+  clearQRCodeData,
 } from "../actions";
 
 let pollingInterval = null;
@@ -41,31 +42,7 @@ export const createDepositPayment =
             startPaymentStatusPolling(paymentInitiationData.transactionId)
           );
         } else if (paymentMethod === "bank_transfer") {
-          Swal.fire({
-            title: "Thông tin chuyển khoản",
-            html: `
-            <p>Vui lòng thanh toán <strong>${paymentInitiationData.amount?.toLocaleString(
-              "vi-VN"
-            )}
-            VNĐ</strong> vào tài khoản:</p>
-            <p>Ngân hàng: <strong>${
-              paymentInitiationData.bankInfo?.bankName
-            }</strong></p>
-            <p>Số tài khoản: <strong>${
-              paymentInitiationData.bankInfo?.accountNumber
-            }</strong></p>
-            <p>Chủ tài khoản: <strong>${
-              paymentInitiationData.bankInfo?.accountName
-            }</strong></p>
-            <p>Nội dung CK: <strong>${
-              paymentInitiationData.bankInfo?.transferContent
-            }</strong></p>
-            <small>Hết hạn: ${new Date(
-              paymentInitiationData.expiredAt
-            ).toLocaleString("vi-VN")}</small>`,
-            icon: "info",
-            confirmButtonText: "Đã hiểu",
-          });
+          // Không hiện SweetAlert nữa vì đã có trong modal
         }
         return { success: true, data: paymentInitiationData };
       } else {
@@ -77,11 +54,44 @@ export const createDepositPayment =
       dispatch(setSubmitting(false));
       const errorMessage = error.response?.data?.message || error.message;
       dispatch(paymentActions.createTransactionFailure(errorMessage));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi tạo thanh toán cọc!",
-        text: errorMessage,
-      });
+      if (
+        errorMessage.includes(
+          "Đã có giao dịch đang chờ xử lý cho booking này"
+        ) &&
+        error.response?.data?.data?.transactionId
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi tạo thanh toán!",
+          text: errorMessage,
+          showCancelButton: true,
+          confirmButtonText: "Quay lại giao dịch đang chờ",
+          cancelButtonText: "Chọn phương thức mới",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            dispatch({
+              type: "OPEN_TRANSACTION_MODAL",
+              payload: {
+                bookingId,
+                transactionId: error.response.data.data.transactionId,
+              },
+            });
+            dispatch(
+              fetchTransactionById(error.response.data.data.transactionId)
+            );
+          } else {
+            dispatch(clearQRCodeData());
+            dispatch(paymentActions.createTransactionSuccess(null));
+            dispatch(paymentActions.updatePaymentStatus("idle"));
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi tạo thanh toán cọc!",
+          text: errorMessage,
+        });
+      }
       return { success: false, error: errorMessage };
     }
   };
@@ -114,31 +124,7 @@ export const createFullPayment =
             startPaymentStatusPolling(paymentInitiationData.transactionId)
           );
         } else if (paymentMethod === "bank_transfer") {
-          Swal.fire({
-            title: "Thông tin chuyển khoản",
-            html: `
-            <p>Vui lòng thanh toán <strong>${paymentInitiationData.amount?.toLocaleString(
-              "vi-VN"
-            )}
-            VNĐ</strong> vào tài khoản:</p>
-            <p>Ngân hàng: <strong>${
-              paymentInitiationData.bankInfo?.bankName
-            }</strong></p>
-            <p>Số tài khoản: <strong>${
-              paymentInitiationData.bankInfo?.accountNumber
-            }</strong></p>
-            <p>Chủ tài khoản: <strong>${
-              paymentInitiationData.bankInfo?.accountName
-            }</strong></p>
-            <p>Nội dung CK: <strong>${
-              paymentInitiationData.bankInfo?.transferContent
-            }</strong></p>
-            <small>Hết hạn: ${new Date(
-              paymentInitiationData.expiredAt
-            ).toLocaleString("vi-VN")}</small>`,
-            icon: "info",
-            confirmButtonText: "Đã hiểu",
-          });
+          // Không hiện SweetAlert nữa vì đã có trong modal
         }
         return { success: true, data: paymentInitiationData };
       } else {
@@ -150,11 +136,44 @@ export const createFullPayment =
       dispatch(setSubmitting(false));
       const errorMessage = error.response?.data?.message || error.message;
       dispatch(paymentActions.createTransactionFailure(errorMessage));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi tạo thanh toán!",
-        text: errorMessage,
-      });
+      if (
+        errorMessage.includes(
+          "Đã có giao dịch đang chờ xử lý cho booking này"
+        ) &&
+        error.response?.data?.data?.transactionId
+      ) {
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi tạo thanh toán!",
+          text: errorMessage,
+          showCancelButton: true,
+          confirmButtonText: "Quay lại giao dịch đang chờ",
+          cancelButtonText: "Chọn phương thức mới",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            dispatch({
+              type: "OPEN_TRANSACTION_MODAL",
+              payload: {
+                bookingId,
+                transactionId: error.response.data.data.transactionId,
+              },
+            });
+            dispatch(
+              fetchTransactionById(error.response.data.data.transactionId)
+            );
+          } else {
+            dispatch(clearQRCodeData());
+            dispatch(paymentActions.createTransactionSuccess(null));
+            dispatch(paymentActions.updatePaymentStatus("idle"));
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi tạo thanh toán cọc!",
+          text: errorMessage,
+        });
+      }
       return { success: false, error: errorMessage };
     }
   };
@@ -298,5 +317,39 @@ export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
       title: "Lỗi mô phỏng thanh toán!",
       text: errorMessage,
     });
+  }
+};
+
+export const fetchTransactionById =
+  (transactionId) => async (dispatch, getState) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:9999/api/v1/payments/transaction/${transactionId}/status`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        dispatch(paymentActions.setQRCodeData(response.data.data));
+        dispatch(paymentActions.updatePaymentStatus(response.data.data.status));
+      }
+    } catch (error) {
+      // Có thể dispatch lỗi nếu muốn
+    }
+  };
+
+export const cancelTransaction = (transactionId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(
+      `http://localhost:9999/api/v1/payments/transaction/${transactionId}/cancel`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    dispatch({ type: "CLEAR_QR_CODE_DATA" });
+    dispatch({ type: "CREATE_TRANSACTION_SUCCESS", payload: null });
+    dispatch({ type: "UPDATE_PAYMENT_STATUS", payload: "idle" });
+    return true;
+  } catch (err) {
+    return false;
   }
 };

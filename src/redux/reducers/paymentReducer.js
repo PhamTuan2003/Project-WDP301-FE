@@ -22,7 +22,7 @@ const paymentReducer = (state = paymentInitialState, action) => {
       return {
         ...state,
         loading: false,
-        currentTransaction: action.payload.transaction,
+        currentTransaction: action.payload ? action.payload.transaction : null,
         error: null,
       };
     case "CREATE_TRANSACTION_FAILURE":
