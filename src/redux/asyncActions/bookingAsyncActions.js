@@ -11,26 +11,79 @@ import {
 import Swal from "sweetalert2";
 import { resetBookingForm } from "../actions/bookingActions";
 
-export const fetchRoomsAndSchedules =
-  (yachtId, scheduleId) => async (dispatch) => {
-    dispatch(bookingActions.fetchRoomsRequest());
-    try {
-      const [roomsResponse, schedulesResponse] = await Promise.all([
-        axios.get("http://localhost:9999/api/v1/rooms", {
-          params: { yachtId, scheduleId },
-        }),
-        axios.get(`http://localhost:9999/api/v1/yachts/${yachtId}/schedules`),
-      ]);
-      dispatch(
-        bookingActions.fetchRoomsSuccess(
-          roomsResponse.data.data.rooms,
-          schedulesResponse.data.data
-        )
-      );
-    } catch (error) {
-      dispatch(bookingActions.fetchRoomsFailure(error.message));
-    }
-  };
+export const fetchRoomsAndSchedules = (yachtId, scheduleId) => async (dispatch) => {
+  dispatch(bookingActions.fetchRoomsRequest());
+  try {
+    const [roomsResponse, schedulesResponse] = await Promise.all([
+      axios.get("http://localhost:9999/api/v1/rooms", {
+        params: { yachtId, scheduleId },
+      }),
+      axios.get(`http://localhost:9999/api/v1/yachts/${yachtId}/schedules`),
+    ]);
+
+    console.log("Schedules API response:", schedulesResponse.data.data);
+
+    const formattedSchedules = schedulesResponse.data.data.map((schedule) => {
+      // Kiểm tra dữ liệu schedule.scheduleId
+      console.log("Schedule raw data:", schedule);
+
+      // Đảm bảo startDate và endDate là chuỗi hợp lệ trước khi parse
+      const startDateRaw = schedule.scheduleId?.startDate;
+      const endDateRaw = schedule.scheduleId?.endDate;
+
+      console.log("startDateRaw:", startDateRaw, "endDateRaw:", endDateRaw);
+
+      // Parse startDate và endDate thành Date object
+      const startDate = startDateRaw ? new Date(startDateRaw) : null;
+      const endDate = endDateRaw ? new Date(endDateRaw) : null;
+
+      console.log("Schedule ID:", schedule.scheduleId._id, "startDate:", startDate, "endDate:", endDate);
+
+      // Kiểm tra Date object có hợp lệ không
+      if (!startDate || isNaN(startDate.getTime()) || !endDate || isNaN(endDate.getTime())) {
+        console.error("Invalid date for schedule ID:", schedule.scheduleId._id);
+        return {
+          ...schedule,
+          durationText: schedule.durationText || "Không xác định",
+          displayText: schedule.durationText || "Không xác định",
+        };
+      }
+
+      // Format ngày: DD/MM/YYYY
+      const formatDate = (date) => {
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+      };
+
+      const formattedStartDate = formatDate(startDate);
+      const formattedEndDate = formatDate(endDate);
+
+      // Tính durationText
+      const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+      const durationNights = durationDays - 1;
+      const durationText = `${durationDays} ngày ${durationNights} đêm`;
+
+      // Tạo displayText
+      const displayText = `${durationText} (từ ${formattedStartDate} -> đến ${formattedEndDate})`;
+
+      console.log("Schedule ID:", schedule.scheduleId._id, "displayText:", displayText);
+
+      return {
+        ...schedule,
+        durationText: durationText,
+        displayText: displayText,
+      };
+    });
+
+    console.log("Formatted schedules:", formattedSchedules);
+
+    dispatch(bookingActions.fetchRoomsSuccess(roomsResponse.data.data.rooms, formattedSchedules));
+  } catch (error) {
+    dispatch(bookingActions.fetchRoomsFailure(error.message));
+  }
+};
 
 export const updateBookingOrConsultationRequest =
   (bookingId, bookingData, requestType) => async (dispatch, getState) => {

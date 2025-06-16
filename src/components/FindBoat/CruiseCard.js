@@ -119,11 +119,11 @@ const CruiseCard = ({ cruise }) => {
     price,
     launch,
     hullBody,
-    yachtTypeId,
+    rule,
     services = [],
   } = cruise;
 
-  // Price display logic: prefer cheapestPrice, fallback to price, then "Liên hệ"
+   
   const priceDisplay =
     cheapestPrice !== undefined && cheapestPrice !== null
       ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
@@ -265,7 +265,7 @@ const CruiseCard = ({ cruise }) => {
                 >
                   Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
                   {hullBody || "Không xác định"} -{" "}
-                  {yachtTypeId?.name || "Không xác định"}
+                  {rule || "Không xác định"} phòng
                 </Typography>
               </Box>
             </Stack>

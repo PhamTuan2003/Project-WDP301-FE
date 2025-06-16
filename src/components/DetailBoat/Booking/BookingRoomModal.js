@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { X, ArrowRight, Edit } from "lucide-react";
-import { Box, TextField, Modal, Typography } from "@mui/material";
+import { Box, TextField, Modal, Typography, Button } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
 
-import {
-  validateBookingForm,
-  formatPrice,
-  validateRoomSelection,
-} from "../../../redux/validation";
+import { validateBookingForm, formatPrice, validateRoomSelection } from "../../../redux/validation";
 import {
   cancelConsultationRequestById,
   createBookingOrConsultationRequest,
@@ -25,10 +21,7 @@ import {
   updateBookingForm,
   updateRooms,
 } from "../../../redux/actions/bookingActions";
-import {
-  closeBookingModal,
-  openConfirmationModal,
-} from "../../../redux/actions";
+import { closeBookingModal, openConfirmationModal } from "../../../redux/actions";
 import { setGuestCounter } from "../../../redux/actions/bookingActions";
 
 const BookingRoomModal = ({ show, yachtData, onBack }) => {
@@ -83,22 +76,15 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
 
   const prepareSharedBookingData = () => {
     let isoCheckInDate = bookingForm.checkInDate;
-    // Tính lại tổng khách thực tế từ guestCounter (KHÔNG tính trẻ em dưới 10)
     const adults = Number(guestCounter?.adults ?? 0);
     const childrenUnder10 = Number(guestCounter?.childrenUnder10 ?? 0);
     const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
-    // Tổng khách KHÔNG tính trẻ em dưới 10 tuổi
     const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
-    console.log(
-      "[BookingRoomModal] totalGuests (adults + ceil(childrenAbove10/2)):",
-      totalGuests
-    );
+    console.log("[BookingRoomModal] totalGuests (adults + ceil(childrenAbove10/2)):", totalGuests);
     if (bookingForm.checkInDate && !bookingForm.checkInDate.includes("T")) {
       try {
         const [day, month, year] = bookingForm.checkInDate.split("/");
-        isoCheckInDate = new Date(
-          `${year}-${month}-${day}T00:00:00.000Z`
-        ).toISOString();
+        isoCheckInDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString();
       } catch (e) {
         console.error("Lỗi chuyển đổi ngày:", e);
       }
@@ -139,36 +125,24 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
   const handleSubmit = async (requestType) => {
     if (!validateAllForms()) return;
     const sharedData = prepareSharedBookingData();
-    // LOG dữ liệu gửi đi
     console.log("[BookingRoomModal] handleSubmit sharedData:", sharedData);
 
     let result;
     if (editingBookingId) {
       const { bookingId, ...dataForUpdate } = sharedData;
-      result = await dispatch(
-        updateBookingOrConsultationRequest(
-          editingBookingId,
-          dataForUpdate,
-          requestType
-        )
-      );
+      result = await dispatch(updateBookingOrConsultationRequest(editingBookingId, dataForUpdate, requestType));
       dispatch(setEditingBookingId(null));
     } else {
-      result = await dispatch(
-        createBookingOrConsultationRequest(sharedData, requestType)
-      );
+      result = await dispatch(createBookingOrConsultationRequest(sharedData, requestType));
     }
 
     if (result && result.payload && result.payload.success) {
-      // Reset form booking
       dispatch(resetBookingForm());
       dispatch(clearAllErrors());
       dispatch(setEditingBookingId(null));
-      // Reset chọn phòng (RoomSelector)
       dispatch({ type: "CLEAR_SELECTION" });
       dispatch({ type: "SET_SELECTED_SCHEDULE", payload: "" });
       dispatch({ type: "SET_SELECTED_MAX_PEOPLE", payload: "all" });
-      // Refresh consultation data nếu cần
       if (yachtData?._id) {
         dispatch(fetchConsultationRequest(yachtData._id));
       }
@@ -183,10 +157,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
       dispatch(updateBookingForm("phoneNumber", consultation.data.phoneNumber));
       dispatch(updateBookingForm("email", consultation.data.email));
       dispatch(updateBookingForm("address", consultation.data.address || ""));
-      dispatch(
-        updateBookingForm("requirements", consultation.data.requirements || "")
-      );
-      // Set lại guestCounter từ dữ liệu consultation
+      dispatch(updateBookingForm("requirements", consultation.data.requirements || ""));
       const adults = consultation?.data?.adults ?? 1;
       const childrenAbove10 = consultation?.data?.childrenAbove10 ?? 0;
       const childrenUnder10 = consultation?.data?.childrenUnder10 ?? 0;
@@ -197,21 +168,16 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
           childrenAbove10,
         })
       );
-      // Format guestCountValue giống logic hiển thị của GuestCounter
       let guestCountValue = `${adults} người lớn`;
-      if (childrenAbove10 > 0)
-        guestCountValue += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
-      if (childrenUnder10 > 0)
-        guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
+      if (childrenAbove10 > 0) guestCountValue += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
+      if (childrenUnder10 > 0) guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
       dispatch(updateBookingForm("guestCount", guestCountValue));
-      // Sửa checkInDate về đúng format YYYY-MM-DD
       let checkInDateValue = "";
       if (consultation.data.checkInDate) {
         const d = new Date(consultation.data.checkInDate);
-        checkInDateValue = d.toISOString().slice(0, 10); // YYYY-MM-DD
+        checkInDateValue = d.toISOString().slice(0, 10);
       }
       dispatch(updateBookingForm("checkInDate", checkInDateValue));
-      // Update rooms
       dispatch(
         updateRooms(
           consultation.data.selectedRooms.map((room) => ({
@@ -245,16 +211,10 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
         cancelButtonText: "Không",
       }).then(async (result) => {
         if (result.isConfirmed) {
-          await dispatch(
-            cancelConsultationRequestById(consultation.data.bookingId)
-          );
-
-          // Reset form và state sau khi hủy thành công
+          await dispatch(cancelConsultationRequestById(consultation.data.bookingId));
           dispatch(resetBookingForm());
           dispatch(clearAllErrors());
           dispatch(setEditingBookingId(null));
-
-          // Set ngày hiện tại
           const today = new Date();
           const formatted = today.toLocaleDateString("vi-VN", {
             day: "2-digit",
@@ -262,10 +222,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
             year: "numeric",
           });
           dispatch(updateBookingForm("checkInDate", formatted));
-
           setShowConsultationModal(false);
-
-          // Refresh consultation data
           if (yachtData?._id) {
             dispatch(fetchConsultationRequest(yachtData._id));
           }
@@ -276,21 +233,8 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
 
   useEffect(() => {
     if (show) {
-      // Reset form mỗi khi modal được mở (trừ khi đang edit)
       if (!editingBookingId) {
-        // Không reset bookingForm ở đây để giữ lại dữ liệu khi đóng mở modal
-        // dispatch(resetBookingForm());
-        // dispatch(clearAllErrors());
-        // Set ngày hiện tại nếu cần
-        // const today = new Date();
-        // const formatted = today.toLocaleDateString("vi-VN", {
-        //   day: "2-digit",
-        //   month: "2-digit",
-        //   year: "numeric",
-        // });
-        // dispatch(updateBookingForm("checkInDate", formatted));
       }
-      // Fetch consultation nếu có yachtData
       if (yachtData?._id) {
         dispatch(fetchConsultationRequest(yachtData._id));
       }
@@ -302,62 +246,80 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
       e.preventDefault();
       e.stopPropagation();
     }
-    // KHÔNG reset form khi đóng modal
     dispatch(closeBookingModal());
   };
 
-  // Tính tổng max_people của các phòng đã chọn
   const selectedRooms = rooms.filter((r) => r.quantity > 0);
-  const maxPeople = selectedRooms.reduce(
-    (sum, r) => sum + (r.max_people || 0),
-    0
-  );
-  // Lấy số lượng người lớn/trẻ em từ guestCounter
+  const maxPeople = selectedRooms.reduce((sum, r) => sum + (r.max_people || 0), 0);
   const { guestCounter } = useSelector((state) => state.booking);
-  const totalGuests =
-    guestCounter.adults +
-    guestCounter.childrenUnder10 +
-    Math.ceil(guestCounter.childrenAbove10 / 2);
+  const totalGuests = guestCounter.adults + guestCounter.childrenUnder10 + Math.ceil(guestCounter.childrenAbove10 / 2);
   const overLimit = maxPeople && totalGuests > maxPeople;
 
   if (!show) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Box
+        sx={{
+          position: "fixed",
+          inset: 0,
+          bgcolor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 50,
+        }}
+      >
         <Box
-          className="rounded-3xl max-w-4xl mt-16 w-full mx-4 max-h-[80vh] p-5 overflow-y-auto"
           sx={{
-            bgcolor: (theme) => theme.palette.background.paper,
-            borderColor: (theme) => theme.palette.divider,
+            bgcolor: "background.paper",
+            borderRadius: (theme) => theme.shape.borderRadius / 2,
+            maxWidth: "64rem",
+            width: "100%",
+            mx: 2,
+            maxHeight: "80vh",
+            p: 3,
+            overflowY: "auto",
             boxShadow: (theme) => theme.shadows[1],
+            border: (theme) => `1px solid ${theme.palette.divider}`,
           }}
         >
-          <div className="flex justify-between items-center p-3 border-b relative">
-            <p>1/3</p>
-            <h2 className="text-xl font-bold text-gray-800 mx-auto">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: 2,
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+              position: "relative",
+            }}
+          >
+            <Typography sx={{ color: "text.primary" }}>1/3</Typography>
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary", mx: "auto" }}>
               {editingBookingId ? "Chỉnh sửa yêu cầu" : "Đặt phòng"}
-            </h2>
-            <button
+            </Typography>
+            <Button
               onClick={handleCloseModal}
-              type="button"
-              className="text-gray-500 hover:text-gray-700 transition-colors"
+              sx={{
+                color: "text.secondary",
+                "&:hover": { color: "text.primary" },
+                minWidth: 0,
+              }}
             >
               <X size={24} />
-            </button>
-          </div>
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-3">
+            </Button>
+          </Box>
+          <Box sx={{ p: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <TextField
                 fullWidth
                 label="Ngày nhận phòng"
                 type="date"
                 value={
-                  bookingForm.checkInDate &&
-                  bookingForm.checkInDate.includes("/")
-                    ? `${bookingForm.checkInDate.split("/")[2]}-${
-                        bookingForm.checkInDate.split("/")[1]
-                      }-${bookingForm.checkInDate.split("/")[0]}`
+                  bookingForm.checkInDate && bookingForm.checkInDate.includes("/")
+                    ? `${bookingForm.checkInDate.split("/")[2]}-${bookingForm.checkInDate.split("/")[1]}-${
+                        bookingForm.checkInDate.split("/")[0]
+                      }`
                     : bookingForm.checkInDate || ""
                 }
                 onChange={(e) => {
@@ -379,27 +341,25 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                 error={!!bookingErrors.checkInDate}
                 helperText={bookingErrors.checkInDate}
                 sx={{
-                  fontFamily: "Archivo, sans-serif",
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "32px",
-                    fontFamily: "Archivo, sans-serif",
-                    "& fieldset": { borderColor: "#d1d5db" },
-                    "&:hover fieldset": { borderColor: "#14b8a6" },
-                    "&.Mui-focused fieldset": { borderColor: "#14b8a6" },
-                  },
                   "& .MuiInputLabel-root": {
-                    color: "#374151",
-                    "&.Mui-focused": { color: "#14b8a6" },
+                    color: "text.secondary",
+                    "&.Mui-focused": { color: "primary.main" },
+                  },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: (theme) => theme.shape.borderRadius / 2,
+                    "& fieldset": { borderColor: "divider" },
+                    "&:hover fieldset": { borderColor: "primary.main" },
+                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
                   },
                 }}
               />
               <GuestCounter maxPeople={maxPeople} />
-            </div>
+            </Box>
             {overLimit && (
-              <div className="text-red-600 text-xs mt-2 font-medium">
-                Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople})
-                của các phòng đã chọn. 2 trẻ em tính là 1 người lớn.
-              </div>
+              <Typography sx={{ color: "error.main", fontSize: "0.75rem", mt: 1, fontWeight: "medium" }}>
+                Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople}) của các phòng đã chọn. 2 trẻ em tính là
+                1 người lớn.
+              </Typography>
             )}
             <TextField
               fullWidth
@@ -411,16 +371,15 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
               required
               variant="outlined"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "32px",
-                  "& fieldset": { borderColor: "#d1d5db" },
-                  "&:hover fieldset": { borderColor: "#14b8a6" },
-                  "&.Mui-focused fieldset": { borderColor: "#14b8a6" },
-                },
                 "& .MuiInputLabel-root": {
-                  color: "#374151",
-                  fontFamily: "Archivo, sans-serif",
-                  "&.Mui-focused": { color: "#14b8a6" },
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "primary.main" },
+                },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: (theme) => theme.shape.borderRadius / 2,
+                  "& fieldset": { borderColor: "divider" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
                 },
               }}
             />
@@ -434,17 +393,15 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
               required
               variant="outlined"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "32px",
-                  fontFamily: "Archivo, sans-serif",
-                  "& fieldset": { borderColor: "#d1d5db" },
-                  "&:hover fieldset": { borderColor: "#14b8a6" },
-                  "&.Mui-focused fieldset": { borderColor: "#14b8a6" },
-                },
                 "& .MuiInputLabel-root": {
-                  color: "#374151",
-                  fontFamily: "Archivo, sans-serif",
-                  "&.Mui-focused": { color: "#14b8a6" },
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "primary.main" },
+                },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: (theme) => theme.shape.borderRadius / 2,
+                  "& fieldset": { borderColor: "divider" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
                 },
               }}
             />
@@ -459,17 +416,15 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
               required
               variant="outlined"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "32px",
-                  fontFamily: "Archivo, sans-serif",
-                  "& fieldset": { borderColor: "#d1d5db" },
-                  "&:hover fieldset": { borderColor: "#14b8a6" },
-                  "&.Mui-focused fieldset": { borderColor: "#14b8a6" },
-                },
                 "& .MuiInputLabel-root": {
-                  color: "#374151",
-                  fontFamily: "Archivo, sans-serif",
-                  "&.Mui-focused": { color: "#14b8a6" },
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "primary.main" },
+                },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: (theme) => theme.shape.borderRadius / 2,
+                  "& fieldset": { borderColor: "divider" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
                 },
               }}
             />
@@ -480,81 +435,125 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
               multiline
               rows={4}
               value={bookingForm.requirements}
-              onChange={(e) =>
-                handleInputChange("requirements", e.target.value)
-              }
+              onChange={(e) => handleInputChange("requirements", e.target.value)}
               variant="outlined"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "32px",
-                  fontFamily: "Archivo, sans-serif",
-                  "& fieldset": { borderColor: "#d1d5db" },
-                  "&:hover fieldset": { borderColor: "#14b8a6" },
-                  "&.Mui-focused fieldset": { borderColor: "#14b8a6" },
-                },
                 "& .MuiInputLabel-root": {
-                  color: "#374151",
-                  fontFamily: "Archivo, sans-serif",
-                  "&.Mui-focused": { color: "#14b8a6" },
+                  color: "text.secondary",
+                  "&.Mui-focused": { color: "primary.main" },
+                },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: (theme) => theme.shape.borderRadius / 5,
+                  "& fieldset": { borderColor: "divider" },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                  "&.Mui-focused fieldset": { borderColor: "primary.main" },
                 },
               }}
             />
-            <div className="flex items-center pt-4 border-t">
-              <div className="flex w-1/3 items-center">
-                <span className="text-lg font-bold text-gray-800">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                pt: 2,
+                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 2,
+              }}
+            >
+              <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary" }}>
                   Tổng tiền
-                </span>
-                <span className="ml-2 text-xl font-bold text-teal-600">
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
                   {formatPrice(totalPrice)}
-                </span>
-              </div>
-              <div className="flex w-2/3 justify-end space-x-3 pt-2">
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  flex: 2,
+                  display: "flex",
+                  gap: 2,
+                  justifyContent: "flex-end",
+                  flexDirection: { xs: "column", sm: "row" },
+                }}
+              >
                 {editingBookingId ? (
-                  <button
+                  <Button
                     onClick={() => handleSubmit("consultation_requested")}
                     disabled={submitting}
-                    className="flex-1 py-3 px-4 border border-yellow-400 text-yellow-700 rounded-3xl hover:bg-yellow-50 font-medium transition-colors"
+                    variant="outlined"
+                    sx={{
+                      flex: 1,
+                      borderRadius: (theme) => theme.shape.borderRadius / 2,
+                      textTransform: "none",
+                      borderColor: "#f59e0b",
+                      color: "#f59e0b",
+                      "&:hover": {
+                        borderColor: "#d97706",
+                        color: "#d97706",
+                        bgcolor: "background.default",
+                      },
+                    }}
                   >
-                    <p className="flex items-center mx-auto justify-center gap-2">
-                      {submitting ? "Đang cập nhật..." : "Cập nhật yêu cầu"}
-                    </p>
-                  </button>
+                    {submitting ? "Đang cập nhật..." : "Cập nhật yêu cầu"}
+                  </Button>
                 ) : hasConsultation ? (
-                  <button
+                  <Button
                     onClick={() => setShowConsultationModal(true)}
                     disabled={submitting}
-                    className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
+                    variant="outlined"
+                    sx={{
+                      flex: 1,
+                      borderRadius: (theme) => theme.shape.borderRadius / 2,
+                      textTransform: "none",
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": { bgcolor: "background.default" },
+                    }}
                   >
-                    <p className="flex items-center mx-auto justify-center gap-2">
-                      Xem yêu cầu đã gửi
-                    </p>
-                  </button>
+                    Xem yêu cầu đã gửi
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => handleSubmit("consultation_requested")}
                     disabled={submitting}
-                    className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-3xl hover:bg-gray-50 font-medium transition-colors"
+                    variant="outlined"
+                    sx={{
+                      flex: 1,
+                      borderRadius: (theme) => theme.shape.borderRadius / 2,
+                      textTransform: "none",
+                      borderColor: "divider",
+                      color: "text.primary",
+                      "&:hover": { bgcolor: "background.default" },
+                    }}
                   >
-                    <p className="flex items-center mx-auto justify-center gap-2">
-                      {submitting ? "Đang xử lý..." : "Đăng ký tư vấn"}
-                    </p>
-                  </button>
+                    {submitting ? "Đang xử lý..." : "Đăng ký tư vấn"}
+                  </Button>
                 )}
-                <button
+                <Button
                   onClick={() => handleSubmit("pending_payment")}
                   disabled={submitting}
-                  className="flex-1 py-3 px-4 bg-teal-400 text-white rounded-3xl hover:bg-teal-500 font-medium transition-colors"
+                  variant="contained"
+                  sx={{
+                    flex: 1,
+                    py: 1.5,
+                    borderRadius: (theme) => theme.shape.borderRadius / 2,
+                    textTransform: "none",
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    "&:hover": { bgcolor: "primary.dark" },
+                    display: "flex",
+                    gap: 1,
+                  }}
                 >
-                  <p className="flex items-center mx-auto justify-center gap-2">
-                    {submitting ? "Đang xử lý..." : "Đặt ngay"}
-                    <ArrowRight />
-                  </p>
-                </button>
-              </div>
-            </div>
-          </div>
+                  {submitting ? "Đang xử lý..." : "Đặt ngay"}
+                  <ArrowRight />
+                </Button>
+              </Box>
+            </Box>
+          </Box>
         </Box>
-      </div>
+      </Box>
       <ConsultationDetailsModal
         open={showConsultationModal}
         onClose={() => setShowConsultationModal(false)}
