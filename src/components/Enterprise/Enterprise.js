@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Paper,
-  Typography,
-  Stack,
-  TextField,
-  MenuItem,
-  Button,
-  Box,
-} from "@mui/material";
+import { Paper, Typography, Stack, TextField, MenuItem, Button, Box } from "@mui/material";
 import { Link } from "react-router-dom";
 
 const partnerImages = [
@@ -38,13 +30,7 @@ const customerLogos = [
 ];
 
 const searchOptions = {
-  cruise: [
-    "Tất cả du thuyền",
-    "Heritage",
-    "Ambassador",
-    "Grand Pioneers",
-    "Capella",
-  ],
+  cruise: ["Tất cả du thuyền", "Heritage", "Ambassador", "Grand Pioneers", "Capella"],
   location: ["Tất cả địa điểm", "Vịnh Hạ Long", "Vịnh Lan Hạ", "Cát Bà"],
   guest: ["Tất cả mọi giá", "< 3 triệu", "3-5 triệu", "> 5 triệu"],
 };
@@ -98,14 +84,9 @@ export default function Enterprise() {
             sx={{ color: "text.secondary" }}
             fontFamily={"Archivo, sans-serif"}
           >
-            Hơn 100 tour du thuyền hạng sang, chất lượng tốt sẵn sàng cho bạn
-            chọn
+            Hơn 100 tour du thuyền hạng sang, chất lượng tốt sẵn sàng cho bạn chọn
           </Typography>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={2}
-            width="100%"
-          >
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} width="100%">
             <TextField
               select
               size="small"
@@ -217,8 +198,7 @@ export default function Enterprise() {
                 width: { xs: "100%", sm: "auto" },
                 py: 1,
                 bgcolor: "primary.main",
-                color: (theme) =>
-                  theme.palette.getContrastText(theme.palette.primary.main),
+                color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
                 borderRadius: "32px",
                 "&:hover": { bgcolor: "primary.dark" },
                 fontFamily: "Archivo, sans-serif",
@@ -268,14 +248,11 @@ export default function Enterprise() {
             }}
             fontFamily={"Archivo, sans-serif"}
           >
-            Với sự trải nghiệm thực tế, Công ty TNHH Du lịch và Dịch vụ Longwave
-            mong muốn đưa du thuyền Hạ Long trở thành một lựa chọn đầu tiên cho
-            doanh nghiệp. Nhiều chương trình du lịch hấp dẫn, đa dạng được kết
-            hợp sẽ đem đến cho quý doanh nghiệp sự hài lòng và thuận tiện. Du
-            thuyền Hạ Long cũng sẽ là một món quà tri ân vô cùng ý nghĩa dành
-            cho nhân viên của quý doanh nghiệp. Bên cạnh đó, du thuyền Hạ Long
-            còn rất phù hợp cho những cuộc hội thảo, hợp tác đầu tư hay giao lưu
-            của quý doanh nghiệp.
+            Với sự trải nghiệm thực tế, Công ty TNHH Du lịch và Dịch vụ Longwave mong muốn đưa du thuyền Hạ Long trở
+            thành một lựa chọn đầu tiên cho doanh nghiệp. Nhiều chương trình du lịch hấp dẫn, đa dạng được kết hợp sẽ
+            đem đến cho quý doanh nghiệp sự hài lòng và thuận tiện. Du thuyền Hạ Long cũng sẽ là một món quà tri ân vô
+            cùng ý nghĩa dành cho nhân viên của quý doanh nghiệp. Bên cạnh đó, du thuyền Hạ Long còn rất phù hợp cho
+            những cuộc hội thảo, hợp tác đầu tư hay giao lưu của quý doanh nghiệp.
           </Typography>
           <Button
             variant="contained"
@@ -286,8 +263,7 @@ export default function Enterprise() {
               alignItems: "center",
               gap: 1,
               bgcolor: "primary.main",
-              color: (theme) =>
-                theme.palette.getContrastText(theme.palette.primary.main),
+              color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
               borderRadius: 26,
               fontWeight: 600,
               fontSize: 16,
@@ -326,12 +302,7 @@ export default function Enterprise() {
               borderColor: (theme) => theme.palette.divider,
             }}
           >
-            <Box
-              component="img"
-              src={partnerImages[0].img}
-              alt="schedule"
-              sx={{ width: 62, borderRadius: 10 }}
-            />
+            <Box component="img" src={partnerImages[0].img} alt="schedule" sx={{ width: 62, borderRadius: 10 }} />
             <Box>
               <Typography
                 fontFamily={"Archivo, sans-serif"}
@@ -367,12 +338,7 @@ export default function Enterprise() {
               borderColor: (theme) => theme.palette.divider,
             }}
           >
-            <Box
-              component="img"
-              src={partnerImages[1].img}
-              alt="diverse"
-              sx={{ width: 62, borderRadius: 10 }}
-            />
+            <Box component="img" src={partnerImages[1].img} alt="diverse" sx={{ width: 62, borderRadius: 10 }} />
             <Box>
               <Typography
                 sx={{
@@ -408,12 +374,7 @@ export default function Enterprise() {
               borderColor: (theme) => theme.palette.divider,
             }}
           >
-            <Box
-              component="img"
-              src={partnerImages[2].img}
-              alt="flexible"
-              sx={{ width: 62, borderRadius: 10 }}
-            />
+            <Box component="img" src={partnerImages[2].img} alt="flexible" sx={{ width: 62, borderRadius: 10 }} />
             <Box>
               <Typography
                 sx={{
@@ -441,8 +402,7 @@ export default function Enterprise() {
       <Box
         sx={{
           mt: 8,
-          bgcolor: (theme) =>
-            theme.palette.mode === "light" ? "#eafeff" : "#1b242a",
+          bgcolor: (theme) => (theme.palette.mode === "light" ? "#eafeff" : "#1b242a"),
           p: { xs: 4, md: 6 },
         }}
       >
@@ -490,8 +450,7 @@ export default function Enterprise() {
                 }}
                 fontFamily={"Archivo, sans-serif"}
               >
-                Longwave mang đến một trải nghiệm hoàn toàn mới, trải nghiệm
-                đẳng cấp 5 sao cho khách hàng
+                Longwave mang đến một trải nghiệm hoàn toàn mới, trải nghiệm đẳng cấp 5 sao cho khách hàng
               </Typography>
             </Box>
           </Box>
