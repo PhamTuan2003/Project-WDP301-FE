@@ -6,7 +6,6 @@ import {
   openTransactionModal,
   openConfirmationModal,
   closeConfirmationModal,
-  openInvoiceModal,
 } from "../actions/uiActions";
 import Swal from "sweetalert2";
 import { resetBookingForm } from "../actions/bookingActions";
@@ -21,35 +20,22 @@ export const fetchRoomsAndSchedules = (yachtId, scheduleId) => async (dispatch) 
       axios.get(`http://localhost:9999/api/v1/yachts/${yachtId}/schedules`),
     ]);
 
-    console.log("Schedules API response:", schedulesResponse.data.data);
-
     const formattedSchedules = schedulesResponse.data.data.map((schedule) => {
-      // Kiểm tra dữ liệu schedule.scheduleId
-      console.log("Schedule raw data:", schedule);
-
-      // Đảm bảo startDate và endDate là chuỗi hợp lệ trước khi parse
       const startDateRaw = schedule.scheduleId?.startDate;
       const endDateRaw = schedule.scheduleId?.endDate;
 
-      console.log("startDateRaw:", startDateRaw, "endDateRaw:", endDateRaw);
-
-      // Parse startDate và endDate thành Date object
       const startDate = startDateRaw ? new Date(startDateRaw) : null;
       const endDate = endDateRaw ? new Date(endDateRaw) : null;
 
-      console.log("Schedule ID:", schedule.scheduleId._id, "startDate:", startDate, "endDate:", endDate);
-
-      // Kiểm tra Date object có hợp lệ không
       if (!startDate || isNaN(startDate.getTime()) || !endDate || isNaN(endDate.getTime())) {
-        console.error("Invalid date for schedule ID:", schedule.scheduleId._id);
+        console.error("Invalid date for schedule ID:", schedule.scheduleId?._id);
         return {
           ...schedule,
-          durationText: schedule.durationText || "Không xác định",
-          displayText: schedule.durationText || "Không xác định",
+          durationText: "Không xác định",
+          displayText: "Không xác định",
         };
       }
 
-      // Format ngày: DD/MM/YYYY
       const formatDate = (date) => {
         const day = String(date.getDate()).padStart(2, "0");
         const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -60,15 +46,11 @@ export const fetchRoomsAndSchedules = (yachtId, scheduleId) => async (dispatch) 
       const formattedStartDate = formatDate(startDate);
       const formattedEndDate = formatDate(endDate);
 
-      // Tính durationText
       const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
       const durationNights = durationDays - 1;
       const durationText = `${durationDays} ngày ${durationNights} đêm`;
-
-      // Tạo displayText
-      const displayText = `${durationText} (từ ${formattedStartDate} -> đến ${formattedEndDate})`;
-
-      console.log("Schedule ID:", schedule.scheduleId._id, "displayText:", displayText);
+      //lịch trình X ngày Y đêm (từ ngày/tháng/năm đến ngày/tháng/năm
+      const displayText = `${durationText} (từ ${formattedStartDate} đến ${formattedEndDate})`;
 
       return {
         ...schedule,
@@ -76,8 +58,6 @@ export const fetchRoomsAndSchedules = (yachtId, scheduleId) => async (dispatch) 
         displayText: displayText,
       };
     });
-
-    console.log("Formatted schedules:", formattedSchedules);
 
     dispatch(bookingActions.fetchRoomsSuccess(roomsResponse.data.data.rooms, formattedSchedules));
   } catch (error) {
@@ -98,24 +78,14 @@ export const updateBookingOrConsultationRequest =
         scheduleId: selectedSchedule || bookingData.scheduleId || null,
         requestType: requestType,
       };
-      console.log(
-        "[updateBookingOrConsultationRequest] Payload gửi lên:",
-        requestPayload
-      );
-      const response = await axios.put(
-        `http://localhost:9999/api/v1/bookings/request/${bookingId}`,
-        requestPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(
-        "[updateBookingOrConsultationRequest] Response trả về:",
-        response.data
-      );
+      console.log("[updateBookingOrConsultationRequest] Payload gửi lên:", requestPayload);
+      const response = await axios.put(`http://localhost:9999/api/v1/bookings/request/${bookingId}`, requestPayload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("[updateBookingOrConsultationRequest] Response trả về:", response.data);
       if (response.data.success) {
         const updatedBookingOrder = response.data.data;
         dispatch(bookingActions.genericBookingSuccess(updatedBookingOrder));
@@ -133,10 +103,7 @@ export const updateBookingOrConsultationRequest =
               updatedBookingOrder.paymentBreakdown?.depositAmount > 0
                 ? updatedBookingOrder.paymentBreakdown.depositAmount
                 : updatedBookingOrder.amount,
-            paymentTypeForConfirmation:
-              updatedBookingOrder.paymentBreakdown?.depositAmount > 0
-                ? "deposit"
-                : "full",
+            paymentTypeForConfirmation: updatedBookingOrder.paymentBreakdown?.depositAmount > 0 ? "deposit" : "full",
             adults: guestCounter.adults,
             childrenUnder10: guestCounter.childrenUnder10,
             childrenAbove10: guestCounter.childrenAbove10,
@@ -169,127 +136,99 @@ export const updateBookingOrConsultationRequest =
     }
   };
 
-export const createBookingOrConsultationRequest =
-  (bookingData, requestType) => async (dispatch, getState) => {
-    dispatch(bookingActions.genericBookingRequest());
-    dispatch(setSubmitting(true));
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Không tìm thấy token xác thực.");
-      }
-      const { selectedSchedule } = getState().booking;
-      const requiredFields = [
-        "yachtId",
-        "fullName",
-        "email",
-        "phoneNumber",
-        "guestCount",
-        "checkInDate",
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => !bookingData[field]
-      );
-      if (missingFields.length > 0) {
-        throw new Error(
-          `Thiếu thông tin bắt buộc: ${missingFields.join(", ")}`
-        );
-      }
-      if (
-        !bookingData.selectedRooms ||
-        bookingData.selectedRooms.length === 0
-      ) {
-        throw new Error("Vui lòng chọn ít nhất một phòng.");
-      }
-      if (
-        requestType === "pending_payment" &&
-        (!bookingData.totalPrice || bookingData.totalPrice <= 0)
-      ) {
-        throw new Error("Tổng giá phải lớn hơn 0 cho đặt trực tiếp.");
-      }
-      const requestPayload = {
-        ...bookingData,
-        selectedRooms: bookingData.selectedRooms.map((room) => ({
-          id: room.id || room._id,
-          name: room.name,
-          quantity: room.quantity,
-          price: room.price,
-          description: room.description || "",
-          area: room.area || 0,
-          avatar: room.avatar || "",
-          max_people: room.max_people || 1,
-          beds: room.beds || 1,
-          image: room.image || room.avatar || "",
-        })),
-        scheduleId: selectedSchedule || bookingData.scheduleId || null,
-        requestType: requestType,
-      };
-      const response = await axios.post(
-        "http://localhost:9999/api/v1/bookings/request",
-        requestPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.data.success) {
-        const createdBookingOrder = response.data.data;
-        dispatch(bookingActions.genericBookingSuccess(createdBookingOrder));
-        dispatch(setSubmitting(false));
-        dispatch(closeBookingModal());
-        if (requestType === "pending_payment") {
-          const { guestCounter } = getState().booking;
-          const confirmationModalData = {
-            ...bookingData,
-            bookingId: createdBookingOrder.bookingId || createdBookingOrder._id,
-            bookingCode: createdBookingOrder.bookingCode,
-            scheduleId: selectedSchedule || bookingData.scheduleId || null,
-            isDirectBooking: true,
-            amountToPay:
-              createdBookingOrder.paymentBreakdown?.depositAmount > 0
-                ? createdBookingOrder.paymentBreakdown.depositAmount
-                : createdBookingOrder.amount,
-            paymentTypeForConfirmation:
-              createdBookingOrder.paymentBreakdown?.depositAmount > 0
-                ? "deposit"
-                : "full",
-            adults: guestCounter.adults,
-            childrenUnder10: guestCounter.childrenUnder10,
-            childrenAbove10: guestCounter.childrenAbove10,
-          };
-          dispatch(openConfirmationModal(confirmationModalData));
-        } else {
-          Swal.fire({
-            icon: "success",
-            title: "Đăng ký tư vấn thành công!",
-            text: "Chúng tôi sẽ liên hệ với bạn để tư vấn chi tiết.",
-            showConfirmButton: false,
-            timer: 2500,
-          });
-          dispatch(closeBookingModal());
-          dispatch(resetBookingForm());
-        }
-        return { success: true, data: createdBookingOrder };
-      } else {
-        throw new Error(
-          response.data.message || `Yêu cầu (${requestType}) thất bại.`
-        );
-      }
-    } catch (error) {
-      dispatch(setSubmitting(false));
-      const errorMessage =
-        error.response?.data?.message || error.message || "Yêu cầu thất bại.";
-      dispatch(bookingActions.genericBookingFailure(errorMessage));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi!",
-        text: errorMessage,
-      });
-      return { success: false, error: errorMessage };
+export const createBookingOrConsultationRequest = (bookingData, requestType) => async (dispatch, getState) => {
+  dispatch(bookingActions.genericBookingRequest());
+  dispatch(setSubmitting(true));
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Không tìm thấy token xác thực.");
     }
-  };
+    const { selectedSchedule } = getState().booking;
+    const requiredFields = ["yachtId", "fullName", "email", "phoneNumber", "guestCount", "checkInDate"];
+    const missingFields = requiredFields.filter((field) => !bookingData[field]);
+    if (missingFields.length > 0) {
+      throw new Error(`Thiếu thông tin bắt buộc: ${missingFields.join(", ")}`);
+    }
+    if (!bookingData.selectedRooms || bookingData.selectedRooms.length === 0) {
+      throw new Error("Vui lòng chọn ít nhất một phòng.");
+    }
+    if (requestType === "pending_payment" && (!bookingData.totalPrice || bookingData.totalPrice <= 0)) {
+      throw new Error("Tổng giá phải lớn hơn 0 cho đặt trực tiếp.");
+    }
+    const requestPayload = {
+      ...bookingData,
+      selectedRooms: bookingData.selectedRooms.map((room) => ({
+        id: room.id || room._id,
+        name: room.name,
+        quantity: room.quantity,
+        price: room.price,
+        description: room.description || "",
+        area: room.area || 0,
+        avatar: room.avatar || "",
+        max_people: room.max_people || 1,
+        beds: room.beds || 1,
+        image: room.image || room.avatar || "",
+      })),
+      scheduleId: selectedSchedule || bookingData.scheduleId || null,
+      requestType: requestType,
+    };
+    const response = await axios.post("http://localhost:9999/api/v1/bookings/request", requestPayload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (response.data.success) {
+      const createdBookingOrder = response.data.data;
+      dispatch(bookingActions.genericBookingSuccess(createdBookingOrder));
+      dispatch(setSubmitting(false));
+      dispatch(closeBookingModal());
+      if (requestType === "pending_payment") {
+        const { guestCounter } = getState().booking;
+        const confirmationModalData = {
+          ...bookingData,
+          bookingId: createdBookingOrder.bookingId || createdBookingOrder._id,
+          bookingCode: createdBookingOrder.bookingCode,
+          scheduleId: selectedSchedule || bookingData.scheduleId || null,
+          isDirectBooking: true,
+          amountToPay:
+            createdBookingOrder.paymentBreakdown?.depositAmount > 0
+              ? createdBookingOrder.paymentBreakdown.depositAmount
+              : createdBookingOrder.amount,
+          paymentTypeForConfirmation: createdBookingOrder.paymentBreakdown?.depositAmount > 0 ? "deposit" : "full",
+          adults: guestCounter.adults,
+          childrenUnder10: guestCounter.childrenUnder10,
+          childrenAbove10: guestCounter.childrenAbove10,
+        };
+        dispatch(openConfirmationModal(confirmationModalData));
+      } else {
+        Swal.fire({
+          icon: "success",
+          title: "Đăng ký tư vấn thành công!",
+          text: "Chúng tôi sẽ liên hệ với bạn để tư vấn chi tiết.",
+          showConfirmButton: false,
+          timer: 2500,
+        });
+        dispatch(closeBookingModal());
+        dispatch(resetBookingForm());
+      }
+      return { success: true, data: createdBookingOrder };
+    } else {
+      throw new Error(response.data.message || `Yêu cầu (${requestType}) thất bại.`);
+    }
+  } catch (error) {
+    dispatch(setSubmitting(false));
+    const errorMessage = error.response?.data?.message || error.message || "Yêu cầu thất bại.";
+    dispatch(bookingActions.genericBookingFailure(errorMessage));
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi!",
+      text: errorMessage,
+    });
+    return { success: false, error: errorMessage };
+  }
+};
 
 export const fetchConsultationRequest = (yachtId) => async (dispatch) => {
   dispatch({ type: "FETCH_CONSULTATION_REQUEST" });
@@ -298,16 +237,13 @@ export const fetchConsultationRequest = (yachtId) => async (dispatch) => {
     if (!token) {
       throw new Error("Không tìm thấy token xác thực.");
     }
-    const response = await axios.get(
-      "http://localhost:9999/api/v1/bookings/consultation",
-      {
-        params: { yachtId },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.get("http://localhost:9999/api/v1/bookings/consultation", {
+      params: { yachtId },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
     if (response.data.success) {
       dispatch({
         type: "FETCH_CONSULTATION_SUCCESS",
@@ -334,91 +270,82 @@ export const fetchConsultationRequest = (yachtId) => async (dispatch) => {
   }
 };
 
-export const cancelConsultationRequestById =
-  (bookingId) => async (dispatch) => {
-    dispatch(setSubmitting(true));
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Không tìm thấy token xác thực.");
-      const response = await axios.delete(
-        `http://localhost:9999/api/v1/bookings/consultation/${bookingId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.data.success) {
-        dispatch(bookingActions.clearConsultation());
-        dispatch(setSubmitting(false));
-        dispatch(resetBookingForm());
+export const cancelConsultationRequestById = (bookingId) => async (dispatch) => {
+  dispatch(setSubmitting(true));
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
+    const response = await axios.delete(`http://localhost:9999/api/v1/bookings/consultation/${bookingId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.data.success) {
+      dispatch(bookingActions.clearConsultation());
+      dispatch(setSubmitting(false));
+      dispatch(resetBookingForm());
+      Swal.fire({
+        icon: "success",
+        title: "Đã hủy yêu cầu tư vấn!",
+        text: "Bạn có thể gửi một yêu cầu mới nếu muốn.",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+      return { success: true };
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    dispatch(setSubmitting(false));
+    const errorMessage = error.response?.data?.message || error.message;
+    Swal.fire({ icon: "error", title: "Lỗi!", text: errorMessage });
+    return { success: false, error: errorMessage };
+  }
+};
+
+export const customerConfirmConsultation = (bookingId) => async (dispatch, getState) => {
+  dispatch(setSubmitting(true));
+  dispatch(bookingActions.confirmConsultationRequest());
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
+    const response = await axios.post(
+      `http://localhost:9999/api/v1/bookings/${bookingId}/confirm-consultation`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (response.data.success) {
+      const updatedBookingData = response.data.data;
+      dispatch(bookingActions.confirmConsultationSuccess(updatedBookingData));
+      dispatch(setSubmitting(false));
+      dispatch(closeConfirmationModal());
+      const bookingDetailResult = await dispatch(fetchCustomerBookingDetail(bookingId));
+      if (bookingDetailResult.success) {
+        dispatch(openTransactionModal(bookingId));
         Swal.fire({
           icon: "success",
-          title: "Đã hủy yêu cầu tư vấn!",
-          text: "Bạn có thể gửi một yêu cầu mới nếu muốn.",
-          showConfirmButton: false,
-          timer: 2500,
+          title: "Đã xác nhận tư vấn!",
+          text: "Booking đã được cập nhật. Vui lòng tiến hành thanh toán.",
+          confirmButtonText: "OK",
         });
-        return { success: true };
+        dispatch(resetBookingForm());
+        return { success: true, data: updatedBookingData };
       } else {
-        throw new Error(response.data.message);
+        throw new Error("Không thể lấy thông tin chi tiết booking sau khi xác nhận tư vấn.");
       }
-    } catch (error) {
-      dispatch(setSubmitting(false));
-      const errorMessage = error.response?.data?.message || error.message;
-      Swal.fire({ icon: "error", title: "Lỗi!", text: errorMessage });
-      return { success: false, error: errorMessage };
+    } else {
+      throw new Error(response.data.message || "Xác nhận booking sau tư vấn thất bại.");
     }
-  };
-
-export const customerConfirmConsultation =
-  (bookingId) => async (dispatch, getState) => {
-    dispatch(setSubmitting(true));
-    dispatch(bookingActions.confirmConsultationRequest());
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Không tìm thấy token xác thực.");
-      const response = await axios.post(
-        `http://localhost:9999/api/v1/bookings/${bookingId}/confirm-consultation`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.data.success) {
-        const updatedBookingData = response.data.data;
-        dispatch(bookingActions.confirmConsultationSuccess(updatedBookingData));
-        dispatch(setSubmitting(false));
-        dispatch(closeConfirmationModal());
-        const bookingDetailResult = await dispatch(
-          fetchCustomerBookingDetail(bookingId)
-        );
-        if (bookingDetailResult.success) {
-          dispatch(openTransactionModal(bookingId));
-          Swal.fire({
-            icon: "success",
-            title: "Đã xác nhận tư vấn!",
-            text: "Booking đã được cập nhật. Vui lòng tiến hành thanh toán.",
-            confirmButtonText: "OK",
-          });
-          dispatch(resetBookingForm());
-          return { success: true, data: updatedBookingData };
-        } else {
-          throw new Error(
-            "Không thể lấy thông tin chi tiết booking sau khi xác nhận tư vấn."
-          );
-        }
-      } else {
-        throw new Error(
-          response.data.message || "Xác nhận booking sau tư vấn thất bại."
-        );
-      }
-    } catch (error) {
-      dispatch(setSubmitting(false));
-      const errorMessage = error.response?.data?.message || error.message;
-      dispatch(bookingActions.confirmConsultationFailure(errorMessage));
-      Swal.fire({
-        icon: "error",
-        title: "Lỗi xác nhận!",
-        text: errorMessage,
-      });
-      return { success: false, error: errorMessage };
-    }
-  };
+  } catch (error) {
+    dispatch(setSubmitting(false));
+    const errorMessage = error.response?.data?.message || error.message;
+    dispatch(bookingActions.confirmConsultationFailure(errorMessage));
+    Swal.fire({
+      icon: "error",
+      title: "Lỗi xác nhận!",
+      text: errorMessage,
+    });
+    return { success: false, error: errorMessage };
+  }
+};
 
 export const customerCancelBooking = (bookingId) => async (dispatch) => {
   dispatch(setSubmitting(true));
@@ -431,9 +358,7 @@ export const customerCancelBooking = (bookingId) => async (dispatch) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (response.data.success) {
-      dispatch(
-        bookingActions.updateBookingStatusInList(bookingId, "cancelled")
-      );
+      dispatch(bookingActions.updateBookingStatusInList(bookingId, "cancelled"));
       dispatch(closeConfirmationModal());
       dispatch(closeBookingModal());
       dispatch(setSubmitting(false));
@@ -460,10 +385,9 @@ export const fetchCustomerBookings = () => async (dispatch) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Không tìm thấy token xác thực.");
-    const response = await axios.get(
-      "http://localhost:9999/api/v1/bookings/my-bookings",
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const response = await axios.get("http://localhost:9999/api/v1/bookings/my-bookings", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (response.data.success) {
       dispatch({
         type: "FETCH_CUSTOMER_BOOKINGS_SUCCESS",
@@ -488,15 +412,12 @@ export const fetchCustomerBookingDetail = (bookingId) => async (dispatch) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Không tìm thấy token xác thực.");
-    const response = await axios.get(
-      `http://localhost:9999/api/v1/bookings/${bookingId}/my-detail`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.get(`http://localhost:9999/api/v1/bookings/${bookingId}/my-detail`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
     if (response.data.success) {
       dispatch(bookingActions.fetchBookingDetailSuccess(response.data.data));
       return { success: true, data: response.data.data };

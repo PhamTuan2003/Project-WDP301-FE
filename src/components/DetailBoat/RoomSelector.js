@@ -20,11 +20,8 @@ import {
   closeRoomModal,
   openBookingModal,
   closeBookingModal,
-  // openConfirmationModal,
   closeConfirmationModal,
-  // openTransactionModal,
   closeTransactionModal,
-  //setConfirmationData,
 } from "../../redux/actions/uiActions";
 import { fetchRoomsAndSchedules } from "../../redux/asyncActions/bookingAsyncActions";
 import ConfirmationModal from "./Booking/ConfirmationModal";
@@ -138,7 +135,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
           </Button>
         </div>
 
-        {/* Danh sách chọn lịch trình */}
+        {/* Danh sách chọn lịch trình (hiển thị chi tiết ngày tháng nào) */}
         <FormControl fullWidth variant="outlined" margin="normal" sx={{ mb: 3 }}>
           <InputLabel>Chọn lịch trình</InputLabel>
           <Select
@@ -153,11 +150,14 @@ function RoomSelector({ yachtId, yachtData = {} }) {
               color: (theme) => theme.palette.primary.main,
             }}
           >
-            {schedules.map((schedule) => (
-              <MenuItem key={schedule._id} value={schedule._id}>
-                {schedule.displayText || schedule.durationText || "Không xác định"}
-              </MenuItem>
-            ))}
+            {schedules
+              .slice() // Tạo bản sao để không mutate state gốc
+              .sort((a, b) => new Date(a.scheduleId.startDate) - new Date(b.scheduleId.startDate))
+              .map((schedule) => (
+                <MenuItem key={schedule._id} value={schedule._id}>
+                  {schedule.displayText || "Không xác định"}
+                </MenuItem>
+              ))}
           </Select>
         </FormControl>
 
