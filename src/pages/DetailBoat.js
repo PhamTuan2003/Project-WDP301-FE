@@ -144,7 +144,7 @@ function DetailBoat() {
         <div className="flex flex-col md:flex-row mt-10 gap-6">
           <div className="md:w-8/12">
             {/* Đặc điểm nổi bật của YACHT */}
-            <div id="features" className="scroll-mt-32" ref={(el) => (sectionRefs.current.features = el)}>
+            <div id="features" className="scroll-mt-44" ref={(el) => (sectionRefs.current.features = el)}>
               <h2 className="text-4xl font-bold light:text-gray-900 dark:text.primary">Đặc điểm nổi bật</h2>
               <img src="../icons/heading-border.webp" alt="Divider" className="my-6" />
               <div className="space-y-6">
@@ -170,12 +170,12 @@ function DetailBoat() {
             </div>
 
             {/* Phòng & Giá để đặt phòng của YACHT */}
-            <div id="rooms" className="mt-16 scroll-mt-32" ref={(el) => (sectionRefs.current.rooms = el)}>
+            <div id="rooms" className="mt-16 scroll-mt-44" ref={(el) => (sectionRefs.current.rooms = el)}>
               <RoomSelector yachtId={id} yachtData={currentYacht} />
             </div>
 
             {/* Giới thiệu của YACHT */}
-            <div id="introduction" className="mt-16 scroll-mt-32" ref={(el) => (sectionRefs.current.introduction = el)}>
+            <div id="introduction" className="mt-16 scroll-mt-44" ref={(el) => (sectionRefs.current.introduction = el)}>
               <h2 className="text-4xl font-bold light:text-gray-900 dark:text.primary">Giới thiệu</h2>
               <img src="../icons/heading-border.webp" alt="Divider" className="my-6" />
               <div className="text-base">

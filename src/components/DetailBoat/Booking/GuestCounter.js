@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Minus, Plus } from "lucide-react";
 import { Box, Typography, Button } from "@mui/material";
-import { setGuestCounterOpen, updateAdults, updateChildren } from "../../../redux/actions/bookingActions";
+import { setGuestCounterOpen, updateAdults } from "../../../redux/actions/bookingActions";
 
 const GuestCounter = ({ maxPeople }) => {
   const dispatch = useDispatch();

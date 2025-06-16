@@ -16,33 +16,11 @@ const ReviewHeader = ({ totalReviews, isAuthenticated, scrollToForm }) => {
     dispatch(setReviewSearchTerm(e.target.value));
   };
 
-  // Fallback lấy customer từ localStorage nếu Redux chưa có
-  const getCustomerFromStorage = () => {
-    try {
-      const customerData = localStorage.getItem("customer");
-      if (customerData) {
-        const parsedCustomer = JSON.parse(customerData);
-        return {
-          accountId: parsedCustomer.accountId || parsedCustomer._id,
-          customerId: parsedCustomer.id,
-          fullName: parsedCustomer.fullName,
-          username: parsedCustomer.username,
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error("Error retrieving customer from localStorage:", error);
-      return null;
-    }
-  };
-
   useEffect(() => {
     if (!customer) {
       dispatch(fetchCustomerIdFromStorage());
     }
   }, [dispatch, customer]);
-
-  const currentCustomer = customer || getCustomerFromStorage();
 
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>

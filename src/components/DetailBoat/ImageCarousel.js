@@ -4,11 +4,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { setCurrentImageIndex, nextSlide, prevSlide, setImageHovering } from "../../redux/actions";
 import { fetchYachtImages } from "../../redux/asyncActions";
 import { Box, IconButton, useTheme } from "@mui/material";
+import { initialState } from "../../redux/reducers/imageReducer"; // Import initialState
 
 function ImageCarousel({ yachtId }) {
   const dispatch = useDispatch();
-  const { images = [], currentIndex = 0, isHovering = false } = useSelector((state) => state.images || {});
-  const theme = useTheme();
+  const { images = [], currentIndex = 0, isHovering = false, loading, error } = useSelector(
+    (state) => state.images || initialState
+  ); // Sử dụng initialState làm fallback
 
   useEffect(() => {
     if (yachtId) {
@@ -30,36 +32,31 @@ function ImageCarousel({ yachtId }) {
   const leftIndex = (currentIndex - 1 + images.length) % images.length;
   const rightIndex = (currentIndex + 1) % images.length;
 
-  // Tạo mảng thumbnail xoay vòng: [thumb1, thumb2, thumb3 (active), thumb4, thumb5]
   const getThumbnailIndexes = () => {
     const thumbIndexes = [];
-    // thumb1: 2 ảnh trước currentIndex
     thumbIndexes.push((currentIndex - 2 + images.length) % images.length);
-    // thumb2: 1 ảnh trước currentIndex
     thumbIndexes.push((currentIndex - 1 + images.length) % images.length);
-    // thumb3: currentIndex (giữa, active)
     thumbIndexes.push(currentIndex);
-    // thumb4: 1 ảnh sau currentIndex
     thumbIndexes.push((currentIndex + 1) % images.length);
-    // thumb5: 2 ảnh sau currentIndex
     thumbIndexes.push((currentIndex + 2) % images.length);
     return thumbIndexes;
   };
 
   const thumbnailIndexes = getThumbnailIndexes();
 
+  if (loading) return <Box sx={{ width: "100%", mt: 5, textAlign: "center" }}>Đang tải ảnh...</Box>;
+  if (error) return <Box sx={{ width: "100%", mt: 5, textAlign: "center" }}>Lỗi: {error}</Box>;
   if (!images || images.length === 0) {
     return (
       <Box sx={{ width: "100%", mt: 5, textAlign: "center" }}>
-        <p>Không có ảnh để hiển thị. Kiểm tra dữ liệu từ API fetchYachtImages.</p>
+        Không có ảnh để hiển thị. Kiểm tra dữ liệu từ API fetchYachtImages.
       </Box>
     );
   }
 
   return (
     <Box sx={{ width: "100%", mt: 5, overflow: "hidden" }}>
-      <Box sx={{ display: "flex", px: 3 }}>
-        {/* Cột trái */}
+      <Box sx={{ display: "flex", px: 2 }}>
         <Box
           sx={{
             width: "16.67%",
@@ -90,8 +87,8 @@ function ImageCarousel({ yachtId }) {
                 sx={{
                   objectFit: "cover",
                   width: "100%",
-                  borderTopLeftRadius: 24,
-                  borderBottomLeftRadius: 24,
+                  borderTopLeftRadius: (theme) => theme.shape.borderRadius / 2,
+                  borderBottomLeftRadius: (theme) => theme.shape.borderRadius / 2,
                   height: "500px",
                 }}
               />
@@ -105,16 +102,15 @@ function ImageCarousel({ yachtId }) {
                 zIndex: 20,
                 bgcolor: "background.paper",
                 "&:hover": { bgcolor: "action.hover" },
-                boxShadow: theme.shadows[1],
+                boxShadow: (theme) => theme.shadows[1],
               }}
               aria-label="Previous slide"
             >
-              <ChevronLeft style={{ height: 24, width: 24, color: theme.palette.text.primary }} />
+              <ChevronLeft sx={{ height: 24, width: 24, color: "text.primary" }} />
             </IconButton>
           )}
         </Box>
 
-        {/* Cột giữa */}
         <Box
           sx={{
             width: "66.67%",
@@ -135,7 +131,7 @@ function ImageCarousel({ yachtId }) {
                 top: 0,
                 left: 0,
                 width: "100%",
-                px: 3,
+                px: 2,
                 transition: "opacity 0.5s ease-in-out",
                 opacity: index === currentIndex ? 1 : 0,
                 zIndex: index === currentIndex ? 10 : 0,
@@ -166,7 +162,7 @@ function ImageCarousel({ yachtId }) {
           >
             {thumbnailIndexes.map((thumbIndex, displayIndex) => (
               <Box
-                key={displayIndex} // Dùng displayIndex làm key để tránh trùng
+                key={displayIndex}
                 onClick={() => dispatch(setCurrentImageIndex(thumbIndex))}
                 sx={{
                   height: 64,
@@ -175,7 +171,7 @@ function ImageCarousel({ yachtId }) {
                   cursor: "pointer",
                   border: 3,
                   borderColor: thumbIndex === currentIndex ? "primary.contrastText" : "transparent",
-                  borderRadius: 1,
+                  borderRadius: (theme) => theme.shape.borderRadius / 2,
                   opacity: thumbIndex === currentIndex ? 1 : 0.6,
                   transition: "opacity 0.5s ease-in-out",
                 }}
@@ -188,7 +184,7 @@ function ImageCarousel({ yachtId }) {
                     objectFit: "cover",
                     width: "100%",
                     height: "100%",
-                    borderRadius: 0.5,
+                    borderRadius: (theme) => theme.shape.borderRadius / 4,
                   }}
                 />
               </Box>
@@ -196,7 +192,6 @@ function ImageCarousel({ yachtId }) {
           </Box>
         </Box>
 
-        {/* Cột phải */}
         <Box
           sx={{
             width: "16.67%",
@@ -227,8 +222,8 @@ function ImageCarousel({ yachtId }) {
                 sx={{
                   objectFit: "cover",
                   width: "100%",
-                  borderTopRightRadius: 24,
-                  borderBottomRightRadius: 24,
+                  borderTopRightRadius: (theme) => theme.shape.borderRadius / 2,
+                  borderBottomRightRadius: (theme) => theme.shape.borderRadius / 2,
                   height: "500px",
                 }}
               />
@@ -242,11 +237,11 @@ function ImageCarousel({ yachtId }) {
                 zIndex: 20,
                 bgcolor: "background.paper",
                 "&:hover": { bgcolor: "action.hover" },
-                boxShadow: theme.shadows[1],
+                boxShadow: (theme) => theme.shadows[1],
               }}
               aria-label="Next slide"
             >
-              <ChevronRight style={{ height: 24, width: 24, color: theme.palette.text.primary }} />
+              <ChevronRight sx={{ height: 24, width: 24, color: "text.primary" }} />
             </IconButton>
           )}
         </Box>

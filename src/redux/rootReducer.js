@@ -16,7 +16,7 @@ import {
 const rootReducer = combineReducers({
   yacht: yachtReducer,
   services: servicerReducer,
-  image: imageReducer,
+  images: imageReducer, //thay image thành images :))))
   ui: uiReducer,
   booking: bookingReducer,
   reviews: reviewsReducer,

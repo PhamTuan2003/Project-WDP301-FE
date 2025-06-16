@@ -78,6 +78,11 @@ const RoomModal = ({ show, room, onClose }) => {
                 </Typography>
               </Box>
             </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+              <Typography sx={{ fontSize: "1.125rem", fontWeight: "bold", color: "text.secondary" }}>
+                Các dịch vụ phòng có sẵn &darr;
+              </Typography>
+            </Box>
             <Box sx={{ my: 3 }}>
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
                 {amenities.map((amenity, index) => (
