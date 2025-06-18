@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   Card,
   CardMedia,
@@ -10,8 +11,7 @@ import {
   Chip,
   Badge,
 } from "@mui/material";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 import StarOutline from "@mui/icons-material/StarOutline";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -21,8 +21,8 @@ const HotSaleBadge = ({ children, ...props }) => (
   <Badge {...props}>{children}</Badge>
 );
 
-// Custom FeatureChip
-const FeatureChip = (props) => (
+// Custom ServiceChip
+const ServiceChip = (props) => (
   <Chip
     {...props}
     sx={{
@@ -39,92 +39,72 @@ const FeatureChip = (props) => (
 const CruiseCard = ({ cruise }) => {
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
-  const [duration, setDuration] = useState("Unknown");
-  const [features, setFeatures] = useState([]);
-  const yachtId = cruise._id;
+  const [firstImage, setFirstImage] = useState(null); // State for the first image
+  const yachtId = cruise?._id;
+  const { selectedDurations } = useSelector((state) => state.filters || {});
 
+  // Fetch feedback data (ratings and reviews)
   useEffect(() => {
-    const fetchAdditionalData = async () => {
+    const fetchFeedbacks = async () => {
       try {
-        // 1. Lấy số sao và số lượng đánh giá từ feedbacks
-        try {
-          const feedbacksResponse = await axios.get(
-            `http://localhost:9999/api/v1/yachts/${yachtId}/feedbacks`
-          );
-          const feedbacks = Array.isArray(feedbacksResponse.data?.data)
-            ? feedbacksResponse.data.data
-            : [];
-          const avg =
-            feedbacks.length > 0
-              ? (
-                  feedbacks.reduce((sum, fb) => sum + (fb.starRating || 0), 0) /
-                  feedbacks.length
-                ).toFixed(1)
-              : 0;
-          setAvgRating(avg);
-          setReviewCount(feedbacks.length);
-        } catch (err) {
-          console.error(
-            `Lỗi khi lấy feedbacks cho yacht ${yachtId}:`,
-            err.message
-          );
-        }
-
-        // 2. Lấy thời gian từ schedules
-        try {
-          const schedulesResponse = await axios.get(
-            `http://localhost:9999/api/v1/yachts/${yachtId}/schedules`
-          );
-          const schedules = Array.isArray(schedulesResponse.data?.data)
-            ? schedulesResponse.data.data
-            : [];
-          if (schedules.length > 0 && schedules[0]?.scheduleId) {
-            const firstSchedule = schedules[0].scheduleId;
-            const startDate = new Date(firstSchedule.startDate);
-            const endDate = new Date(firstSchedule.endDate);
-            if (!isNaN(startDate) && !isNaN(endDate)) {
-              const durationDays = Math.ceil(
-                (endDate - startDate) / (1000 * 60 * 60 * 24)
-              );
-              setDuration(`${durationDays} ngày ${durationDays - 1} đêm`);
-            }
-          }
-        } catch (err) {
-          console.error(
-            `Lỗi khi lấy schedules cho yacht ${yachtId}:`,
-            err.message
-          );
-        }
-
-        // 3. Lấy tiện ích từ services
-        try {
-          const servicesResponse = await axios.get(
-            "http://localhost:9999/api/v1/yachts/services"
-          );
-          const services = Array.isArray(servicesResponse.data?.data)
-            ? servicesResponse.data.data
-            : [];
-          const yachtServices = services
-            .filter((service) => service.yachtId?._id === yachtId)
-            .map((service) => service.serviceId?.serviceName)
-            .filter(Boolean);
-          setFeatures(yachtServices);
-        } catch (err) {
-          console.error(
-            `Lỗi khi lấy services cho yacht ${yachtId}:`,
-            err.message
-          );
-        }
+        const feedbacksResponse = await axios.get(
+          `http://localhost:9999/api/v1/yachts/${yachtId}/feedbacks`
+        );
+        const feedbacks = Array.isArray(feedbacksResponse.data?.data)
+          ? feedbacksResponse.data.data
+          : [];
+        const avg =
+          feedbacks.length > 0
+            ? (
+                feedbacks.reduce((sum, fb) => sum + (fb.starRating || 0), 0) /
+                feedbacks.length
+              ).toFixed(1)
+            : 0;
+        setAvgRating(avg);
+        setReviewCount(feedbacks.length);
       } catch (err) {
         console.error(
-          "Lỗi tổng quát khi lấy dữ liệu cho CruiseCard:",
+          `Lỗi khi lấy feedbacks cho yacht ${yachtId}:`,
           err.message
         );
       }
     };
 
-    fetchAdditionalData();
+    if (yachtId) {
+      fetchFeedbacks();
+    }
   }, [yachtId]);
+
+  // Fetch the first image from YachtImage collection
+  useEffect(() => {
+    const fetchFirstImage = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:9999/api/v1/yachtImages/yacht/${yachtId}`
+        );
+        const images = response.data.data || [];
+        if (images.length > 0) {
+          setFirstImage(images[0]); // Set the first image from the imageUrl array
+        } else {
+          setFirstImage(
+            `https://via.placeholder.com/300x200?text=${encodeURIComponent(
+              cruise.name
+            )}`
+          ); // Fallback placeholder image
+        }
+      } catch (err) {
+        setFirstImage(
+          `https://via.placeholder.com/300x200?text=${encodeURIComponent(
+            cruise.name
+          )}`
+        ); // Fallback on error
+      }
+    };
+
+    if (yachtId) {
+      fetchFirstImage();
+    }
+  }, [yachtId, cruise.name]);
 
   // Defensive check for cruise prop
   if (!cruise || typeof cruise !== "object" || !cruise._id) {
@@ -135,7 +115,6 @@ const CruiseCard = ({ cruise }) => {
   const {
     _id: id,
     name = "Unknown Cruise",
-    image,
     cheapestPrice,
     price,
     launch,
@@ -144,6 +123,7 @@ const CruiseCard = ({ cruise }) => {
     services = [],
   } = cruise;
 
+  // Price display logic: prefer cheapestPrice, fallback to price, then "Liên hệ"
   const priceDisplay =
     cheapestPrice !== undefined && cheapestPrice !== null
       ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
@@ -152,20 +132,19 @@ const CruiseCard = ({ cruise }) => {
       : "Liên hệ";
 
   return (
-    <Link to="/boat-detail" style={{ textDecoration: "none" }}>
-      {" "}
+    <Link to={`/boat-detail/${yachtId}`} style={{ textDecoration: "none" }}>
       <Card
         key={id}
         sx={{
           display: "flex",
           flexDirection: { xs: "row", md: "row" },
           borderRadius: "32px",
-          bgcolor: (theme) => theme.palette.background.paper,
           width: "100%",
           alignItems: "center",
           cursor: "pointer",
           transition: "transform 0.2s",
           border: "1px solid",
+          bgcolor: (theme) => theme.palette.background.paper,
           borderColor: (theme) => theme.palette.divider,
           boxShadow: (theme) => theme.shadows[1],
         }}
@@ -181,12 +160,7 @@ const CruiseCard = ({ cruise }) => {
           <CardMedia
             component="img"
             height={200}
-            image={
-              image ||
-              `https://via.placeholder.com/300x200?text=${encodeURIComponent(
-                name
-              )}`
-            }
+            image={firstImage} // Use the fetched first image
             alt={name}
             sx={{
               width: "352px",
@@ -257,7 +231,7 @@ const CruiseCard = ({ cruise }) => {
                 boxShadow: (theme) => theme.shadows[1],
               }}
             >
-              {departurePoint && `Du thuyền ${departurePoint}`}
+              Du thuyền {name}
             </Typography>
             <Typography
               fontFamily="Archivo, sans-serif"
@@ -277,23 +251,7 @@ const CruiseCard = ({ cruise }) => {
               sx={{ mb: 1.5 }}
             >
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                <CalendarTodayIcon
-                  sx={{
-                    fontSize: "1rem",
-                    mr: 0.5,
-                    color: "text.secondary",
-                  }}
-                />
-                <Typography
-                  fontFamily="Archivo, sans-serif"
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  {duration}
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <LocationOnIcon
+                <DirectionsBoatIcon
                   sx={{
                     fontSize: "1rem",
                     mr: 0.5,
@@ -306,12 +264,12 @@ const CruiseCard = ({ cruise }) => {
                   color="text.secondary"
                 >
                   Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
-                  {hullBody || "Không xác định"} -{" "}
-                  {yachtTypeId?.name || "Không xác định"}
+                  {hullBody || "Không xác định"} - {rule || "Không xác định"}{" "}
+                  phòng
                 </Typography>
               </Box>
             </Stack>
-            {/* Features */}
+            {/* Services */}
             <Stack
               direction="row"
               spacing={1}
@@ -324,11 +282,11 @@ const CruiseCard = ({ cruise }) => {
                 gap: "5px 0",
               }}
             >
-              {features.slice(0, 5).map((feature, index) => (
-                <FeatureChip key={index} label={feature} size="small" />
+              {services.slice(0, 5).map((service, index) => (
+                <ServiceChip key={index} label={service} size="small" />
               ))}
-              {features.length > 5 && (
-                <FeatureChip label={`+${features.length - 5}`} size="small" />
+              {services.length > 5 && (
+                <ServiceChip label={`+${services.length - 5}`} size="small" />
               )}
             </Stack>
           </Box>
@@ -353,7 +311,7 @@ const CruiseCard = ({ cruise }) => {
                 }}
                 fontFamily="Archivo, sans-serif"
               >
-                {priceDisplay}
+                {priceDisplay} / khách
               </Typography>
               <Button
                 variant="contained"

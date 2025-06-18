@@ -36,7 +36,6 @@ import {
   setActivePaymentTab,
 } from "../../../redux/actions";
 import Swal from "sweetalert2";
-import { BookingInfo, PaymentTabs, PaymentMethods } from "./Transaction";
 
 if (typeof window !== "undefined") {
   const style = document.createElement("style");
@@ -1323,7 +1322,117 @@ const TransactionModal = ({ onBack }) => {
           {/* Content - Horizontal Layout */}
           <div className="flex flex-row gap-4 p-6 w-full h-auto">
             {/* Left: Booking Info (4/10) */}
-            <BookingInfo booking={booking} />
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3 mb-6 border border-blue-100">
+              <div className="flex items-center justify-between pb-3">
+                <h3 className="text-base  font-semibold text-gray-900 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2  text-blue-600" />
+                  Thông tin booking
+                </h3>
+                <span
+                  className={`px-2 rounded-full bg-white border border-gray-600 text-xs font-medium ${getPaymentStatusColor(
+                    booking.paymentStatus
+                  )}`}
+                >
+                  {getPaymentStatusText(booking.paymentStatus)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 border-t border-blue-100 gap-2">
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center">
+                    <Building className="w-4 h-4 mr-2" />
+                    Mã booking
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {booking.bookingCode}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center">
+                    <Banknote className="w-4 h-4 mr-2" />
+                    Tổng tiền
+                  </span>
+                  <span className="font-bold text-lg text-blue-600">
+                    {formatPrice(
+                      booking.paymentBreakdown?.totalAmount ||
+                        booking.amount ||
+                        0
+                    )}
+                  </span>
+                </div>
+
+                {booking.paymentBreakdown?.totalPaid > 0 && (
+                  <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                    <span className="text-gray-600 flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Đã thanh toán
+                    </span>
+                    <span className="font-semibold text-green-600">
+                      {formatPrice(booking.paymentBreakdown.totalPaid)}
+                    </span>
+                  </div>
+                )}
+
+                {booking.paymentBreakdown?.depositAmount > 0 &&
+                  booking.paymentStatus !== "deposit_paid" &&
+                  booking.paymentStatus !== "fully_paid" && (
+                    <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                      <span className="text-gray-600 flex items-center">
+                        <Percent className="w-4 h-4 mr-2" />
+                        Tiền cọc
+                      </span>
+                      <span className="font-semibold text-orange-600">
+                        {formatPrice(booking.paymentBreakdown.depositAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                {booking.paymentStatus === "deposit_paid" &&
+                  booking.paymentBreakdown?.remainingAmount > 0 && (
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-gray-600 flex items-center">
+                        <Timer className="w-4 h-4 mr-2" />
+                        Còn lại
+                      </span>
+                      <span className="font-semibold text-red-600">
+                        {formatPrice(booking.paymentBreakdown.remainingAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center">
+                    <Users className="w-4 h-4 mr-2" />
+                    Số khách
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {totalGuests} khách
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center">
+                    <Building className="w-4 h-4 mr-2" />
+                    Số phòng đặt
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {totalRooms} phòng
+                  </span>
+                </div>
+                {bookedRooms.length > 0 && (
+                  <div className="py-2">
+                    <ul className="text-sm text-gray-700 list-disc ml-6">
+                      {bookedRooms.map((room, idx) => (
+                        <li key={room._id || idx}>
+                          {room.roomId?.name || room.name || "Phòng"} x{" "}
+                          {room.quantity}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
             {/* Right: Payment Section (6/10) */}
             <div
               className="w-6/10 md:w-6/10 flex flex-col justify-between"
@@ -1374,18 +1483,139 @@ const TransactionModal = ({ onBack }) => {
                 </div>
               ) : !qrCodeData ? (
                 <>
-                  <PaymentMethods
-                    selectedPaymentMethod={selectedPaymentMethod}
-                    handleSelectPaymentMethod={handleSelectPaymentMethod}
-                    paymentLoading={paymentLoading}
-                    qrCodeData={qrCodeData}
-                  />
-                  <PaymentTabs
-                    activePaymentTab={activePaymentTab}
-                    handleTabChange={handleTabChange}
-                    paymentLoading={paymentLoading}
-                    qrCodeData={qrCodeData}
-                  />
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-900 pb-2">
+                      Chọn phương thức thanh toán
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        {
+                          value: "bank_transfer",
+                          label: "Chuyển khoản ngân hàng",
+                          icon: Banknote,
+                          color: "blue",
+                        },
+                        {
+                          value: "vnpay",
+                          label: "VNPay",
+                          icon: CreditCard,
+                          color: "cyan",
+                        },
+                        {
+                          value: "momo",
+                          label: "MoMo",
+                          icon: Smartphone,
+                          color: "red",
+                        },
+                      ].map((method) => {
+                        const Icon = method.icon;
+                        const isSelected =
+                          selectedPaymentMethod === method.value;
+                        return (
+                          <div
+                            key={method.value}
+                            onClick={() =>
+                              handleSelectPaymentMethod(method.value)
+                            }
+                            className={`relative flex items-center p-2 rounded-xl border-2 cursor-pointer transition-all duration-200 transform hover:scale-102 ${
+                              isSelected
+                                ? `!border-${method.color}-700 bg-${method.color}-50 shadow-lg`
+                                : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
+                            } ${
+                              paymentLoading || qrCodeData
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                          >
+                            <div
+                              className={`flex items-center justify-center w-10 h-10 rounded-lg mr-3 ${
+                                isSelected
+                                  ? `text-${method.color}-500 bg-${method.color}`
+                                  : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <span
+                              className={`font-medium ${
+                                isSelected
+                                  ? `text-${method.color}-700`
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              {method.label}
+                            </span>
+                            {isSelected && (
+                              <div
+                                className={`absolute right-4 w-5 h-5 bg-${method.color}-500 rounded-full flex items-center justify-center`}
+                              >
+                                <CheckCircle className={`w-3 h-3 text-white`} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* payment Tabs */}
+                  <div className="mb-6">
+                    <div className="flex bg-gray-100 rounded-3xl p-2">
+                      {booking.paymentStatus !== "deposit_paid" &&
+                        booking.paymentStatus !== "fully_paid" &&
+                        depositAmountValue > 0 && (
+                          <button
+                            className={`flex-1 px-2 rounded-3xl text-sm font-medium transition-all duration-200 ${
+                              activePaymentTab === 0
+                                ? "bg-white text-orange-600 border border-orange-600 shadow-md transform scale-105"
+                                : "text-gray-600 hover:text-gray-800"
+                            } ${
+                              paymentLoading || qrCodeData
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                            onClick={() => handleTabChange(0)}
+                            disabled={paymentLoading || qrCodeData}
+                          >
+                            <div className="flex items-center justify-center">
+                              <Percent className="w-4 h-4 mr-2" />
+                              Thanh toán cọc (20%)
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatPrice(depositAmountValue)}
+                            </div>
+                          </button>
+                        )}
+
+                      {booking.paymentStatus !== "fully_paid" &&
+                        amountForFullTab > 0 && (
+                          <button
+                            className={`flex-1 px-2 rounded-3xl text-sm font-medium transition-all duration-200 ${
+                              activePaymentTab === 1
+                                ? "bg-white text-green-600 border border-green-600 shadow-md transform scale-105"
+                                : "text-gray-600 hover:text-gray-800"
+                            } ${
+                              paymentLoading || qrCodeData
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                            onClick={() => handleTabChange(1)}
+                            disabled={paymentLoading || qrCodeData}
+                          >
+                            <div className="flex items-center justify-center">
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              {booking.paymentStatus === "deposit_paid"
+                                ? "Thanh toán còn lại"
+                                : "Thanh toán toàn bộ"}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatPrice(amountForFullTab)}
+                            </div>
+                          </button>
+                        )}
+                    </div>
+                  </div>
+
                   {/* Payment Buttons */}
                   <div className="space-y-3">
                     {activePaymentTab === 0 &&

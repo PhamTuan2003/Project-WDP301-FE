@@ -1,29 +1,18 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Link as RouterLink } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Divider,
-  CircularProgress,
-  Chip,
-  Link,
-} from "@mui/material";
+import { Link } from "react-router-dom";
+import { Box } from "@mui/material";
+import ReviewHeader from "./Reviews/ReviewHeader";
+import ReviewList from "./Reviews/ReviewList";
+import ReviewForm from "./Reviews/ReviewForm";
+import ReviewPagination from "./Reviews/ReviewPagination";
+import RatingOverview from "./Reviews/RatingOverview";
 import { Image } from "react-bootstrap";
+import { fetchReviews } from "../../redux/asyncActions";
 import {
   setReviewCurrentPage,
   setReviewSearchTerm,
 } from "../../redux/actions/reviewActions";
-import { fetchReviews } from "../../redux/asyncActions";
-import ReviewHeader from "./Reviews/ReviewHeader";
-import { ratingData, reviewsData } from "../../data/reviewData";
-import RatingOverview from "./Reviews/RatingOverview";
-import ReviewList from "./Reviews/ReviewList";
-import ReviewPagination from "./Reviews/ReviewPagination";
-import RatingOverview from "./Reviews/RatingOverview";
-import { Image } from "react-bootstrap";
-import { setReviewSearchTerm, setReviewCurrentPage } from "../../redux/action";
-import { fetchReviews } from "../../redux/asyncActions";
 
 export default function ReviewSection({ yachtId }) {
   const dispatch = useDispatch();
@@ -75,8 +64,8 @@ export default function ReviewSection({ yachtId }) {
           </Box>
           <ReviewPagination
             currentPage={currentPage}
-            totalPages={3}
-            onPageChange={setCurrentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => dispatch(setReviewCurrentPage(page))}
           />
         </div>
         <hr className="p-2" />

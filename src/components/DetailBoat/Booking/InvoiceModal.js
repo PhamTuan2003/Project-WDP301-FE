@@ -628,13 +628,6 @@ const InvoiceModal = () => {
         <div className="bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
           <div className="flex justify-end gap-3">
             <button
-              onClick={handlePrint}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 flex items-center space-x-2 font-medium"
-            >
-              <Printer size={16} />
-              <span>In hóa đơn</span>
-            </button>
-            <button
               onClick={handleDownloadPDF}
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center space-x-2 font-medium shadow-lg hover:shadow-xl"
             >
