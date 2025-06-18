@@ -24,6 +24,7 @@
     "bootstrap": "^5.3.3",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.16.0",
     "html2pdf.js": "^0.10.3",
     "i18next": "^23.12.2",
