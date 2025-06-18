@@ -16,7 +16,7 @@ import {
   setDeparturePoint,
   setPriceRange,
   setCurrentPage,
-} from "../../redux/action";
+} from "../../redux/actions";
 
 export default function Banner() {
   const dispatch = useDispatch();

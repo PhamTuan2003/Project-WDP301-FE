@@ -38,7 +38,7 @@ export default function Partners() {
         >
           Đối tác cùng các Hãng Du thuyền Lớn
         </Typography>
-        
+
         <Grid container spacing={3} justifyContent="center" alignItems="center">
           {partners.map((logo, idx) => (
             <Grid
@@ -55,8 +55,6 @@ export default function Partners() {
                   p: 2,
                   backgroundColor: (theme) =>
                     theme.palette.mode === "light" ? "transparent" : theme.palette.background.paper,
-                  boxShadow: (theme) => (theme.palette.mode === "light" ? "none" : theme.shadows[1]),
-                  border: (theme) => (theme.palette.mode === "light" ? "none" : `1px solid ${theme.palette.divider}`),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -68,11 +66,14 @@ export default function Partners() {
                   image={logo}
                   alt={`logo-${idx}`}
                   sx={{
-                    width: "100%",
-                    maxWidth: 150,
+                    height: 54,
+                    width: "auto",
                     objectFit: "contain",
-                    filter: (theme) =>
-                      theme.palette.mode === "light" ? "grayscale(100%)" : "grayscale(50%) brightness(120%)",
+                    borderRadius: 8,
+                    bgcolor: "#fff",
+                    p: 1,
+                    border: "1px solid",
+                    borderColor: (theme) => theme.palette.divider,
                   }}
                 />
               </Card>

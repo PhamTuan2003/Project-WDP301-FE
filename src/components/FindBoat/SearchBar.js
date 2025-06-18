@@ -16,7 +16,7 @@ import {
   setSearchTerm,
   setDeparturePoint,
   setPriceRange,
-} from "../../redux/action";
+} from "../../redux/actions";
 
 const SearchBar = ({ uniqueDeparturePoints, priceRanges, setCurrentPage }) => {
   const dispatch = useDispatch();

@@ -137,13 +137,19 @@ const CruiseCard = ({ cruise }) => {
     name = "Unknown Cruise",
     image,
     cheapestPrice,
-    locationId,
+    price,
+    launch,
+    hullBody,
+    rule,
+    services = [],
   } = cruise;
 
-  const priceDisplay = cheapestPrice
-    ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
-    : "Liên hệ";
-  const departurePoint = locationId?.name || "Unknown";
+  const priceDisplay =
+    cheapestPrice !== undefined && cheapestPrice !== null
+      ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
+      : price !== undefined && price !== null
+      ? `${price.toLocaleString("vi-VN")}đ`
+      : "Liên hệ";
 
   return (
     <Link to="/boat-detail" style={{ textDecoration: "none" }}>
@@ -299,7 +305,9 @@ const CruiseCard = ({ cruise }) => {
                   variant="body2"
                   color="text.secondary"
                 >
-                  {departurePoint}
+                  Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
+                  {hullBody || "Không xác định"} -{" "}
+                  {yachtTypeId?.name || "Không xác định"}
                 </Typography>
               </Box>
             </Stack>
