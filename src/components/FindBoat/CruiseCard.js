@@ -119,7 +119,7 @@ const CruiseCard = ({ cruise }) => {
     price,
     launch,
     hullBody,
-    yachtTypeId,
+    rule,
     services = [],
   } = cruise;
 
@@ -264,8 +264,8 @@ const CruiseCard = ({ cruise }) => {
                   color="text.secondary"
                 >
                   Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
-                  {hullBody || "Không xác định"} -{" "}
-                  {yachtTypeId?.name || "Không xác định"}
+                  {hullBody || "Không xác định"} - {rule || "Không xác định"}{" "}
+                  phòng
                 </Typography>
               </Box>
             </Stack>

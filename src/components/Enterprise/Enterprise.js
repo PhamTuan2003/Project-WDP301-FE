@@ -68,10 +68,22 @@ export default function Enterprise() {
             boxShadow: (theme) => theme.shadows[3],
           }}
         >
-          <Typography variant="h6" fontWeight={700} align="center" sx={{ color: "primary.main" }}>
+          <Typography
+            fontFamily={"Archivo, sans-serif"}
+            variant="h6"
+            fontWeight={700}
+            align="center"
+            sx={{ color: "primary.main" }}
+          >
             Bạn lựa chọn du thuyền Hạ Long nào?
           </Typography>
-          <Typography variant="body2" align="center" mb={2} sx={{ color: "text.secondary" }}>
+          <Typography
+            variant="body2"
+            align="center"
+            mb={2}
+            sx={{ color: "text.secondary" }}
+            fontFamily={"Archivo, sans-serif"}
+          >
             Hơn 100 tour du thuyền hạng sang, chất lượng tốt sẵn sàng cho bạn chọn
           </Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} width="100%">
@@ -88,14 +100,23 @@ export default function Enterprise() {
                   "& fieldset": {
                     borderColor: (theme) => theme.palette.divider,
                   },
+                  fontFamily: "Archivo, sans-serif",
                 },
+                fontFamily: "Archivo, sans-serif",
                 "& .MuiInputLabel-root": { color: "text.secondary" },
                 "& .MuiInputBase-input": { color: "text.primary" },
                 "& .MuiSelect-icon": { color: "text.primary" },
               }}
             >
               {searchOptions.cruise.map((option) => (
-                <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
+                <MenuItem
+                  key={option}
+                  value={option}
+                  sx={{
+                    color: "text.primary",
+                    fontFamily: "Archivo, sans-serif",
+                  }}
+                >
                   {option}
                 </MenuItem>
               ))}
@@ -113,6 +134,7 @@ export default function Enterprise() {
                   "& fieldset": {
                     borderColor: (theme) => theme.palette.divider,
                   },
+                  fontFamily: "Archivo, sans-serif",
                 },
                 "& .MuiInputLabel-root": { color: "text.secondary" },
                 "& .MuiInputBase-input": { color: "text.primary" },
@@ -120,7 +142,14 @@ export default function Enterprise() {
               }}
             >
               {searchOptions.location.map((option) => (
-                <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
+                <MenuItem
+                  key={option}
+                  value={option}
+                  sx={{
+                    color: "text.primary",
+                    fontFamily: "Archivo, sans-serif",
+                  }}
+                >
                   {option}
                 </MenuItem>
               ))}
@@ -138,6 +167,7 @@ export default function Enterprise() {
                   "& fieldset": {
                     borderColor: (theme) => theme.palette.divider,
                   },
+                  fontFamily: "Archivo, sans-serif",
                 },
                 "& .MuiInputLabel-root": { color: "text.secondary" },
                 "& .MuiInputBase-input": { color: "text.primary" },
@@ -145,7 +175,14 @@ export default function Enterprise() {
               }}
             >
               {searchOptions.guest.map((option) => (
-                <MenuItem key={option} value={option} sx={{ color: "text.primary" }}>
+                <MenuItem
+                  key={option}
+                  value={option}
+                  sx={{
+                    color: "text.primary",
+                    fontFamily: "Archivo, sans-serif",
+                  }}
+                >
                   {option}
                 </MenuItem>
               ))}
@@ -164,6 +201,7 @@ export default function Enterprise() {
                 color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
                 borderRadius: "32px",
                 "&:hover": { bgcolor: "primary.dark" },
+                fontFamily: "Archivo, sans-serif",
               }}
             >
               Tìm kiếm
@@ -186,22 +224,35 @@ export default function Enterprise() {
           justifyContent: "center",
         }}
       >
-
         <Box sx={{ flex: "1 1 350px", minWidth: 320, maxWidth: 570 }}>
           <Typography
             variant="h2"
-            sx={{ color: "text.primary", fontWeight: 700, fontSize: 28, mb: 2, lineHeight: 1.2 }}
+            fontFamily={"Archivo, sans-serif"}
+            sx={{
+              color: "text.primary",
+              fontWeight: 700,
+              fontSize: 28,
+              mb: 2,
+              lineHeight: 1.2,
+            }}
           >
             Longwave - Tour Du thuyền Hạ Long: <br />
             Kết nối doanh nghiệp, khám phá vẻ đẹp tự nhiên
           </Typography>
-          <Typography sx={{ color: "text.primary", fontSize: 17, lineHeight: 1.7, mb: 2.5 }}>
-            Với sự trải nghiệm thực tế, Công ty TNHH Du lịch và Dịch vụ Longwave mong muốn đưa du thuyền Hạ
-            Long trở thành một lựa chọn đầu tiên cho doanh nghiệp. Nhiều chương trình du lịch hấp dẫn, đa dạng
-            được kết hợp sẽ đem đến cho quý doanh nghiệp sự hài lòng và thuận tiện. Du thuyền Hạ Long cũng sẽ
-            là một món quà tri ân vô cùng ý nghĩa dành cho nhân viên của quý doanh nghiệp. Bên cạnh đó, du
-            thuyền Hạ Long còn rất phù hợp cho những cuộc hội thảo, hợp tác đầu tư hay giao lưu của quý doanh
-            nghiệp.
+          <Typography
+            sx={{
+              color: "text.primary",
+              fontSize: 17,
+              lineHeight: 1.7,
+              mb: 2.5,
+            }}
+            fontFamily={"Archivo, sans-serif"}
+          >
+            Với sự trải nghiệm thực tế, Công ty TNHH Du lịch và Dịch vụ Longwave mong muốn đưa du thuyền Hạ Long trở
+            thành một lựa chọn đầu tiên cho doanh nghiệp. Nhiều chương trình du lịch hấp dẫn, đa dạng được kết hợp sẽ
+            đem đến cho quý doanh nghiệp sự hài lòng và thuận tiện. Du thuyền Hạ Long cũng sẽ là một món quà tri ân vô
+            cùng ý nghĩa dành cho nhân viên của quý doanh nghiệp. Bên cạnh đó, du thuyền Hạ Long còn rất phù hợp cho
+            những cuộc hội thảo, hợp tác đầu tư hay giao lưu của quý doanh nghiệp.
           </Typography>
           <Button
             variant="contained"
@@ -219,13 +270,23 @@ export default function Enterprise() {
               p: "12px 28px",
               boxShadow: (theme) => theme.shadows[1],
               "&:hover": { bgcolor: "primary.dark" },
+              "&:active": { bgcolor: "primary.light" },
+              fontFamily: "Archivo, sans-serif",
             }}
           >
             Liên hệ với Longwave <span style={{ fontSize: 20 }}>→</span>
           </Button>
         </Box>
         {/* Các box nhỏ bên phải + ảnh */}
-        <Box sx={{ flex: "1 1 260px", minWidth: 260, display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <Box
+          sx={{
+            flex: "1 1 260px",
+            minWidth: 260,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2.5,
+          }}
+        >
           {/* Lịch trình phù hợp */}
           <Box
             sx={{
@@ -241,17 +302,23 @@ export default function Enterprise() {
               borderColor: (theme) => theme.palette.divider,
             }}
           >
-            <Box
-              component="img"
-              src={partnerImages[0].img}
-              alt="schedule"
-              sx={{ width: 62, borderRadius: 10 }}
-            />
+            <Box component="img" src={partnerImages[0].img} alt="schedule" sx={{ width: 62, borderRadius: 10 }} />
             <Box>
-              <Typography sx={{ fontSize: 16, color: "text.primary", fontWeight: "bold", mb: 1 }}>
+              <Typography
+                fontFamily={"Archivo, sans-serif"}
+                sx={{
+                  fontSize: 16,
+                  color: "text.primary",
+                  fontWeight: "bold",
+                  mb: 1,
+                }}
+              >
                 {partnerImages[0].title}
               </Typography>
-              <Typography sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.5 }}>
+              <Typography
+                fontFamily={"Archivo, sans-serif"}
+                sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.5 }}
+              >
                 {partnerImages[0].desc}
               </Typography>
             </Box>
@@ -271,17 +338,23 @@ export default function Enterprise() {
               borderColor: (theme) => theme.palette.divider,
             }}
           >
-            <Box
-              component="img"
-              src={partnerImages[1].img}
-              alt="diverse"
-              sx={{ width: 62, borderRadius: 10 }}
-            />
+            <Box component="img" src={partnerImages[1].img} alt="diverse" sx={{ width: 62, borderRadius: 10 }} />
             <Box>
-              <Typography sx={{ fontSize: 16, color: "text.primary", fontWeight: "bold", mb: 1 }}>
+              <Typography
+                sx={{
+                  fontSize: 16,
+                  color: "text.primary",
+                  fontWeight: "bold",
+                  mb: 1,
+                }}
+                fontFamily={"Archivo, sans-serif"}
+              >
                 {partnerImages[1].title}
               </Typography>
-              <Typography sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.5 }}>
+              <Typography
+                fontFamily={"Archivo, sans-serif"}
+                sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.5 }}
+              >
                 {partnerImages[1].desc}
               </Typography>
             </Box>
@@ -301,17 +374,23 @@ export default function Enterprise() {
               borderColor: (theme) => theme.palette.divider,
             }}
           >
-            <Box
-              component="img"
-              src={partnerImages[2].img}
-              alt="flexible"
-              sx={{ width: 62, borderRadius: 10 }}
-            />
+            <Box component="img" src={partnerImages[2].img} alt="flexible" sx={{ width: 62, borderRadius: 10 }} />
             <Box>
-              <Typography sx={{ fontSize: 16, color: "text.primary", fontWeight: "bold", mb: 1 }}>
+              <Typography
+                sx={{
+                  fontSize: 16,
+                  color: "text.primary",
+                  fontWeight: "bold",
+                  mb: 1,
+                }}
+                fontFamily={"Archivo, sans-serif"}
+              >
                 {partnerImages[2].title}
               </Typography>
-              <Typography sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.5 }}>
+              <Typography
+                fontFamily={"Archivo, sans-serif"}
+                sx={{ color: "text.secondary", fontSize: 15, lineHeight: 1.5 }}
+              >
                 {partnerImages[2].desc}
               </Typography>
             </Box>
@@ -349,6 +428,7 @@ export default function Enterprise() {
                   fontSize: 28,
                   color: "text.primary",
                 }}
+                fontFamily={"Archivo, sans-serif"}
               >
                 Khách hàng của Longwave
               </Typography>
@@ -368,6 +448,7 @@ export default function Enterprise() {
                   color: "text.primary",
                   fontWeight: 500,
                 }}
+                fontFamily={"Archivo, sans-serif"}
               >
                 Longwave mang đến một trải nghiệm hoàn toàn mới, trải nghiệm đẳng cấp 5 sao cho khách hàng
               </Typography>

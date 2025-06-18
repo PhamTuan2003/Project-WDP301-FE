@@ -1,9 +1,9 @@
-import { Input } from "@mui/material";
+import { useSelector, useDispatch } from "react-redux";
 import { Search, Star } from "lucide-react";
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { setReviewSearchTerm } from "../../../redux/action";
+import { Box, Input } from "@mui/material";
+import { setReviewSearchTerm } from "../../../redux/actions";
+import { useEffect } from "react";
 import { fetchCustomerIdFromStorage } from "../../../redux/asyncActions";
 
 const ReviewHeader = ({ totalReviews, isAuthenticated }) => {

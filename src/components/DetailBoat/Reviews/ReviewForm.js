@@ -1,10 +1,11 @@
-import { Box, TextField } from "@mui/material";
+import { useSelector, useDispatch } from "react-redux";
 import { Send } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
-import { setReviewDescription, setUserRating } from "../../../redux/action";
-import { submitReview } from "../../../redux/asyncActions";
 import StarRating from "./StarRating";
+import { Box, TextField } from "@mui/material";
+import { setUserRating, setReviewDescription } from "../../../redux/actions";
+import { validateReviewForm } from "../../../redux/validation";
+import { submitReview } from "../../../redux/asyncActions";
 
 const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
   const dispatch = useDispatch();

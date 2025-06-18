@@ -1,9 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { User, Minus, Plus, X } from "lucide-react";
-import { Box, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import {
+  Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Typography,
+} from "@mui/material";
 import RoomModal from "./RoomModal";
-import CharterBoatModal from "./Booking/CharterBoatModal";
+
 import BookingRoomModal from "./Booking/BookingRoomModal";
 import {
   incrementRoomQuantity,
@@ -11,14 +19,22 @@ import {
   setSelectedSchedule,
   setSelectedMaxPeople,
   clearSelection,
+  resetBookingForm,
+  setEditingBookingId,
+  clearAllErrors,
+} from "../../redux/actions/bookingActions";
+import {
   openRoomModal,
   closeRoomModal,
   openBookingModal,
   closeBookingModal,
-  openCharterModal,
-  closeCharterModal,
-} from "../../redux/action";
-import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
+  closeConfirmationModal,
+  closeTransactionModal,
+} from "../../redux/actions/uiActions";
+import { fetchRoomsAndSchedules } from "../../redux/asyncActions/bookingAsyncActions";
+import ConfirmationModal from "./Booking/ConfirmationModal";
+import TransactionModal from "./Booking/TransactionModal";
+import InvoiceModal from "./Booking/InvoiceModal";
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -27,18 +43,15 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   const {
     rooms,
     schedules,
+    loading,
+    error,
     selectedSchedule,
     selectedMaxPeople,
     maxPeopleOptions,
-    loading,
-    error,
   } = useSelector((state) => state.booking);
-  const {
-    showRoomModal,
-    showBookingModal,
-    showCharterModal,
-    selectedRoomForModal,
-  } = useSelector((state) => state.ui.modals);
+  const { showRoomModal, showBookingModal, selectedRoomForModal } = useSelector(
+    (state) => state.ui.modals
+  );
 
   // Fetch rooms and schedules when yachtId or selectedSchedule changes
   useEffect(() => {
@@ -51,11 +64,10 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
   // Handlers for buttons
   const handleBookNow = () => {
+    dispatch(resetBookingForm());
+    dispatch(clearAllErrors());
+    dispatch(setEditingBookingId(null));
     dispatch(openBookingModal());
-  };
-
-  const handleCharterBoat = () => {
-    dispatch(openCharterModal());
   };
 
   const handleClearSelection = () => {
@@ -80,9 +92,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     return rooms.filter((room) => room.quantity > 0);
   };
 
-  // Check if clear button should be shown
-  const showClearButton =
-    selectedSchedule && rooms.some((room) => room.quantity > 0);
+  const [editBookingData, setEditBookingData] = useState(null);
 
   return (
     <div>
@@ -92,26 +102,60 @@ function RoomSelector({ yachtId, yachtData = {} }) {
       <img src="../icons/heading-border.webp" alt="Divider" className="my-6" />
       <Box
         sx={{
-          backgroundImage: "url('../images/background2.jpg')",
+          bgcolor: (theme) => theme.palette.background.paper,
           padding: 5,
           borderRadius: "30px",
           boxShadow: 3,
         }}
       >
-        {/* Clear Selection Button */}
-        {showClearButton && (
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={handleClearSelection}
-              className="flex items-center gap-2 capitalize rounded-full px-4 py-2 border bg-gradient-to-t from-slate-50 to-slate-300 text-gray-800 hover:bg-gray-400 hover:shadow-2xl shadow-md"
-            >
-              <X size={20} />
-              <span>Xoá lựa chọn</span>
-            </button>
-          </div>
-        )}
+        {/* Luôn hiển thị nút "Xoá lựa chọn" */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={handleClearSelection}
+            variant="outlined"
+            startIcon={<X size={20} />}
+            sx={{
+              fontFamily: (theme) => theme.typography.fontFamily,
+              borderRadius: "20px",
+              textTransform: "none",
+              borderColor: (theme) => theme.palette.purple.main, // Viền tím
+              color: (theme) => theme.palette.purple.main, // Chữ tím
+              position: "relative", // Để tạo hiệu ứng lan tỏa
+              overflow: "hidden", // Ẩn phần lan tỏa thừa
+              "&:hover": {
+                borderColor: (theme) => theme.palette.purple.dark, // Viền đậm hơn khi hover
+                color: (theme) => theme.palette.purple.dark, // Chữ đậm hơn khi hover
+                backgroundColor: (theme) => theme.palette.background.default, // Hover nhẹ
+                boxShadow: (theme) => theme.shadows[2], // Hiệu ứng shadow khi hover
+                transform: "translateY(-1px)", // Nâng nhẹ
+              },
+              "&:active::after": {
+                // Hiệu ứng lan tỏa khi click
+                content: '""',
+                position: "absolute",
+                width: "100px",
+                height: "100px",
+                background: (theme) => theme.palette.purple.main,
+                borderRadius: "50%",
+                opacity: 0.3,
+                animation: "ripple 0.6s linear",
+                transform: "scale(0)",
+                pointerEvents: "none",
+              },
+              "@keyframes ripple": {
+                // Animation lan tỏa
+                to: {
+                  transform: "scale(4)",
+                  opacity: 0,
+                },
+              },
+            }}
+          >
+            Xoá lựa chọn
+          </Button>
+        </div>
 
-        {/* Schedule Selection */}
+        {/* Danh sách chọn lịch trình (hiển thị chi tiết ngày tháng nào) */}
         <FormControl
           fullWidth
           variant="outlined"
@@ -131,11 +175,18 @@ function RoomSelector({ yachtId, yachtData = {} }) {
               color: (theme) => theme.palette.primary.main,
             }}
           >
-            {schedules.map((schedule) => (
-              <MenuItem key={schedule._id} value={schedule._id}>
-                {schedule.durationText}
-              </MenuItem>
-            ))}
+            {schedules
+              .slice() // Tạo bản sao để không mutate state gốc
+              .sort(
+                (a, b) =>
+                  new Date(a.scheduleId.startDate) -
+                  new Date(b.scheduleId.startDate)
+              )
+              .map((schedule) => (
+                <MenuItem key={schedule._id} value={schedule._id}>
+                  {schedule.displayText || "Không xác định"}
+                </MenuItem>
+              ))}
           </Select>
         </FormControl>
 
@@ -155,7 +206,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                 color: (theme) => theme.palette.primary.main,
               }}
             >
-              <MenuItem value="all">Tất cả</MenuItem>
+              <MenuItem value="all">Hiển thị tất cả</MenuItem>
               {maxPeopleOptions.map((maxPeople) => (
                 <MenuItem key={maxPeople} value={maxPeople}>
                   {maxPeople} {maxPeople > 1 ? "người" : "người"}
@@ -173,106 +224,282 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
         {selectedSchedule && (
           <>
-            {loading && <div>Đang tải phòng...</div>}
+            {loading && (
+              <Typography sx={{ color: "text.primary", p: 2 }}>
+                Đang tải phòng...
+              </Typography>
+            )}
             {!loading && !error && filteredRooms.length === 0 && (
-              <div>Không tìm thấy phòng phù hợp với lựa chọn này</div>
+              <Typography sx={{ color: "text.primary", p: 2 }}>
+                Không tìm thấy phòng phù hợp với lựa chọn này
+              </Typography>
             )}
             {filteredRooms.length > 0 && (
-              <div className="flex flex-col gap-10">
-                <div className="space-y-4">
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {filteredRooms.map((room) => (
                     <Box
                       key={room.id}
-                      className="bg-white p-4 rounded-[30px] shadow-sm flex justify-between items-center border"
                       sx={{
-                        bgcolor: (theme) => theme.palette.background.paper,
-                        borderColor: (theme) => theme.palette.divider,
+                        bgcolor: "background.paper",
+                        p: 2,
+                        borderRadius: (theme) => theme.shape.borderRadius / 5,
                         boxShadow: (theme) => theme.shadows[1],
+                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: { xs: "wrap", sm: "nowrap" },
+                        gap: 2,
                       }}
                     >
                       <Box
-                        className="flex"
-                        sx={{ color: (theme) => theme.palette.text.primary }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          color: "text.primary",
+                        }}
                       >
-                        <img
+                        <Box
+                          component="img"
                           src={room.image}
                           alt={room.name}
-                          className="w-16 h-16 rounded-2xl object-cover"
+                          sx={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: 2,
+                            objectFit: "cover",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleOpenRoomModal(room)}
                         />
-                        <div className="ml-3 flex flex-col items-start gap-2">
-                          <h3
-                            className="font-bold text-base underline cursor-pointer"
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              fontWeight: "bold",
+                              fontSize: "1rem",
+                              textDecoration: "underline",
+                              cursor: "pointer",
+                              color: "text.primary",
+                              "&:hover": { color: "primary.main" },
+                            }}
                             onClick={() => handleOpenRoomModal(room)}
                           >
                             {room.name}
-                          </h3>
-                          <div className="flex items-center text-gray-500 gap-4 text-sm">
-                            <span className="flex items-center mr-4">
-                              <svg
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 3,
+                              color: "text.secondary",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Box
+                                component="svg"
+                                sx={{
+                                  width: 16,
+                                  height: 16,
+                                  fill: "currentColor",
+                                }}
                                 viewBox="0 0 24 24"
-                                className="w-4 h-4 mr-1 fill-current"
                               >
                                 <path d="M10,2H14A2,2 0 0,1 16,4V6H20A2,2 0 0,1 22,8V19A2,2 0 0,1 20,21H4C2.89,21 2,20.1 2,19V8C2,6.89 2.89,6 4,6H8V4C8,2.89 8.89,2 10,2M14,6V4H10V6H14Z" />
-                              </svg>
-                              {room.area} m²
-                            </span>
-                            <span className="flex items-center">
-                              <svg
+                              </Box>
+                              {room.area} m{"\u00B2"} {/*mét vuông*/}
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Box
+                                component="svg"
+                                sx={{
+                                  width: 16,
+                                  height: 16,
+                                  fill: "currentColor",
+                                }}
                                 viewBox="0 0 24 24"
-                                className="w-4 h-4 mr-1 fill-current"
                               >
                                 <path d="M19,7H5C3.89,7 3,7.89 3,9V17H5V13H19V17H21V9C21,7.89 20.11,7 19,7M19,11H5V9H19V11Z" />
-                              </svg>
+                              </Box>
                               Tối đa: {room.beds} <User size={15} />
-                            </span>
-                          </div>
-                        </div>
+                            </Box>
+                          </Box>
+                        </Box>
                       </Box>
-                      <div className="flex items-center gap-2">
-                        <div className="text-teal-600 text-lg font-bold">
-                          {room.price.toLocaleString()} đ
-                        </div>
-                        <div className="text-gray-400 text-xs font-semibold">
-                          /khách
-                        </div>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          flexShrink: 0,
+                        }}
+                      >
                         <Box
-                          className="border border-gray-300 rounded-3xl flex items-center"
                           sx={{
-                            bgcolor: (theme) => theme.palette.background.paper,
-                            borderColor: (theme) => theme.palette.divider,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "row",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                color: "primary.main",
+                                fontSize: "1.125rem",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {room.price.toLocaleString()}đ{" "}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                color: "primary.main",
+                                fontSize: "1.125rem",
+                                fontWeight: "medium",
+                              }}
+                            >
+                              {" "}
+                              / khách
+                            </Typography>
+                          </Box>
+                          <Button
+                            onClick={() => handleOpenRoomModal(room)}
+                            variant="outlined"
+                            sx={{
+                              borderRadius: (theme) =>
+                                theme.shape.borderRadius / 2,
+                              textTransform: "none",
+                              borderColor: "divider",
+                              color: "text.primary",
+                              "&:hover": { bgcolor: "background.default" },
+                              mt: 1, // Khoảng cách trên cho nút
+                            }}
+                          >
+                            Chọn dịch vụ
+                          </Button>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            border: (theme) =>
+                              `1px solid ${theme.palette.divider}`,
+                            borderRadius: (theme) =>
+                              theme.shape.borderRadius / 2,
+                            bgcolor: "background.paper",
                             boxShadow: (theme) => theme.shadows[1],
                           }}
                         >
-                          <button
+                          <Button
                             onClick={() =>
                               dispatch(decrementRoomQuantity(room.id))
                             }
-                            className="w-8 h-8 rounded-md flex items-center justify-center"
+                            sx={{
+                              minWidth: 32,
+                              height: 32,
+                              borderRadius: "50%",
+                              color: "text.primary",
+                              "&:hover": { bgcolor: "background.default" },
+                            }}
                           >
                             <Minus size={16} />
-                          </button>
-                          <span className="mx-3 w-4 text-center">
+                          </Button>
+                          <Typography
+                            sx={{
+                              mx: 1,
+                              width: "auto",
+                              textAlign: "center",
+                              color: "text.primary",
+                            }}
+                          >
                             {room.quantity}
-                          </span>
-                          <button
+                          </Typography>
+                          <Button
                             onClick={() =>
                               dispatch(incrementRoomQuantity(room.id))
                             }
-                            className="w-8 h-8 rounded-md flex items-center justify-center"
+                            sx={{
+                              minWidth: 32,
+                              height: 32,
+                              borderRadius: "50%",
+                              color: "text.primary",
+                              "&:hover": { bgcolor: "background.default" },
+                            }}
                           >
                             <Plus size={16} />
-                          </button>
+                          </Button>
                         </Box>
-                      </div>
+                      </Box>
                     </Box>
                   ))}
-                </div>
-                <div className="mt-6 rounded-lg p-4 shadow-sm flex justify-between items-center">
-                  <div className="flex items-center gap-2 bg-slate-300 p-3 rounded-2xl">
-                    <p className="text-base text-gray-500 font-medium">
+                </Box>
+                <Box
+                  sx={{
+                    mt: 4,
+                    p: 3,
+                    borderRadius: (theme) => theme.shape.borderRadius / 2,
+                    boxShadow: (theme) => theme.shadows[1],
+                    bgcolor: "background.paper",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: { xs: "wrap", sm: "nowrap" },
+                    gap: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      bgcolor: "background.default",
+                      p: 2,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "1rem",
+                        fontWeight: "medium",
+                      }}
+                    >
                       Tổng tiền:
-                    </p>
-                    <p className="text-xl text-teal-600 font-bold">
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: "primary.main",
+                        fontSize: "1.25rem",
+                        fontWeight: "bold",
+                      }}
+                    >
                       {rooms
                         .reduce(
                           (sum, room) => sum + room.price * room.quantity,
@@ -280,39 +507,45 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         )
                         .toLocaleString()}{" "}
                       đ
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={handleCharterBoat}
-                      className="bg-white border border-teal-400 text-teal-800 font-semibold rounded-full px-4 py-2 flex items-center hover:bg-teal-800 hover:text-white"
-                    >
-                      Thuê trọn tàu
-                    </button>
-                    <button
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Button
                       onClick={handleBookNow}
-                      className="bg-teal-400 border border-teal-400 text-teal-800 font-semibold rounded-full px-4 py-2 flex items-center hover:bg-teal-800 hover:text-white"
+                      variant="contained"
+                      sx={{
+                        borderRadius: (theme) => theme.shape.borderRadius / 2,
+                        textTransform: "none",
+                        bgcolor: "primary.main",
+                        color: "primary.contrastText",
+                        px: 3,
+                        py: 1,
+                        display: "flex",
+                        gap: 1,
+                        "&:hover": { bgcolor: "primary.dark" },
+                      }}
                     >
-                      <span className="mr-1">Đặt ngay</span>
-                      <svg
-                        className="w-4 h-4"
+                      <span style={{ fontSize: "1.05rem" }}>Đặt ngay</span>
+                      <Box
+                        component="svg"
+                        sx={{ width: 16, height: 16, fill: "currentColor" }}
                         viewBox="0 0 24 24"
-                        fill="currentColor"
                       >
                         <path
                           d="M5 12h14M12 5l7 7-7 7"
                           stroke="currentColor"
                           strokeWidth="2"
                         />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                      </Box>
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
             )}
           </>
         )}
       </Box>
+
       <RoomModal
         show={showRoomModal}
         room={selectedRoomForModal}
@@ -320,17 +553,36 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         onIncrement={(roomId) => dispatch(incrementRoomQuantity(roomId))}
         onDecrement={(roomId) => dispatch(decrementRoomQuantity(roomId))}
       />
-      <CharterBoatModal
-        show={showCharterModal}
-        onClose={() => dispatch(closeCharterModal())}
-        yachtData={yachtData}
-      />
+
+      {/* chọn phòng */}
       <BookingRoomModal
         show={showBookingModal}
         onClose={() => dispatch(closeBookingModal())}
         selectedRooms={getSelectedRooms()}
         yachtData={yachtData}
+        onBack={null}
+        editData={editBookingData}
       />
+
+      {/* Modal xác nhận */}
+      <ConfirmationModal
+        onBack={(data) => {
+          setEditBookingData(data);
+          dispatch(openBookingModal());
+          dispatch(closeConfirmationModal());
+        }}
+      />
+
+      {/* Modal giao dịch */}
+      <TransactionModal
+        onBack={() => {
+          dispatch(closeTransactionModal());
+          dispatch(openBookingModal());
+        }}
+      />
+
+      {/* Modal hoá đơn */}
+      <InvoiceModal />
     </div>
   );
 }
