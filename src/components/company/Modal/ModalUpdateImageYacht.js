@@ -4,6 +4,8 @@ import { Button } from "react-bootstrap";
 import { FcPlus } from "react-icons/fc";
 import { toast } from "react-toastify";
 import { updateYachtImage } from "../../../services/ApiServices";
+import { FaRegImage, FaSave, FaTimes } from "react-icons/fa";
+
 const ModalUpdateImageYacht = (props) => {
   const { show, setShow, dataUpdate } = props;
   const [image, setImage] = useState("");
@@ -33,15 +35,28 @@ const ModalUpdateImageYacht = (props) => {
   };
   return (
     <div>
-      <Modal show={show} onHide={handleClose} backdrop="static" className="modal-add-new-yacht" autoFocus>
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Yacht</Modal.Title>
+      <Modal
+        show={show}
+        onHide={handleClose}
+        backdrop="static"
+        className="modal-add-new-yacht"
+        autoFocus
+        centered
+      >
+        <Modal.Header closeButton className="bg-indigo-50 rounded-t-2xl">
+          <Modal.Title>
+            <div className="flex items-center gap-2 text-indigo-700 font-bold text-lg">
+              <FaRegImage className="text-2xl" /> Update Yacht Image
+            </div>
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <div className="col-mad-12">
-            <label style={{ width: "fit-content" }} className="form-label label-upload" htmlFor="labelCreateImage">
-              {" "}
-              <FcPlus /> Upload File IMAGE
+        <Modal.Body className="bg-gray-50">
+          <div>
+            <label
+              className="flex items-center gap-2 font-semibold mb-1 cursor-pointer"
+              htmlFor="labelCreateImage"
+            >
+              <FaRegImage className="text-indigo-500" /> Upload Image
             </label>
             <input
               type="file"
@@ -51,18 +66,33 @@ const ModalUpdateImageYacht = (props) => {
               name="image"
               onChange={(event) => handelUploadImage(event)}
             />
-          </div>
-          <div className="col-md-12 img-preview">
-            {previewImage ? <img src={previewImage} /> : <span>Preview Avartar</span>}
+            <div className="flex items-center gap-4 mt-2">
+              {previewImage ? (
+                <img
+                  src={previewImage}
+                  className="w-20 h-20 object-cover rounded-xl border-2 border-indigo-400 shadow"
+                />
+              ) : (
+                <span className="text-gray-400">Preview Avatar</span>
+              )}
+            </div>
           </div>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleUpdateYachtImage}>
-            Save
-          </Button>
+        <Modal.Footer className="bg-indigo-50 rounded-b-2xl flex gap-2">
+          <button
+            className="flex items-center gap-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded-lg transition"
+            onClick={handleClose}
+            type="button"
+          >
+            <FaTimes /> Close
+          </button>
+          <button
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition"
+            onClick={handleUpdateYachtImage}
+            type="button"
+          >
+            <FaSave /> Save
+          </button>
         </Modal.Footer>
       </Modal>
     </div>

@@ -5,7 +5,7 @@ import { GoArrowDown } from "react-icons/go";
 import { GoArrowUp } from "react-icons/go";
 import ReactPaginate from "react-paginate";
 const ViewFeedback = () => {
-  const idCompany = useSelector((state) => state.account.account.idCompany);
+  const idCompany = useSelector((state) => state?.account?.idCompany);
   const [listFeedback, setListFeedback] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
@@ -22,7 +22,9 @@ const ViewFeedback = () => {
   };
 
   const handleSortByStarDown = () => {
-    const newListFeed = [...listFeedback].sort((a, b) => a.starRating - b.starRating);
+    const newListFeed = [...listFeedback].sort(
+      (a, b) => a.starRating - b.starRating
+    );
     setListFeedback(newListFeed);
   };
 
@@ -40,7 +42,9 @@ const ViewFeedback = () => {
   };
 
   const handleSortByStarUp = () => {
-    const newListFeed = [...listFeedback].sort((a, b) => b.starRating - a.starRating);
+    const newListFeed = [...listFeedback].sort(
+      (a, b) => b.starRating - a.starRating
+    );
     setListFeedback(newListFeed);
   };
 
@@ -60,7 +64,10 @@ const ViewFeedback = () => {
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
-  const displayedFeedback = listFeedback.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const displayedFeedback = listFeedback.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
 
   return (
     <>
@@ -71,13 +78,25 @@ const ViewFeedback = () => {
             <tr>
               <th>
                 Star
-                <GoArrowDown onClick={handleSortByStarDown} style={{ cursor: "pointer" }} />
-                <GoArrowUp onClick={handleSortByStarUp} style={{ cursor: "pointer" }} />
+                <GoArrowDown
+                  onClick={handleSortByStarDown}
+                  style={{ cursor: "pointer" }}
+                />
+                <GoArrowUp
+                  onClick={handleSortByStarUp}
+                  style={{ cursor: "pointer" }}
+                />
               </th>
               <th>
                 Name Customer
-                <GoArrowDown onClick={handleSortByNameDown} style={{ cursor: "pointer" }} />
-                <GoArrowUp onClick={handleSortByNameUp} style={{ cursor: "pointer" }} />
+                <GoArrowDown
+                  onClick={handleSortByNameDown}
+                  style={{ cursor: "pointer" }}
+                />
+                <GoArrowUp
+                  onClick={handleSortByNameUp}
+                  style={{ cursor: "pointer" }}
+                />
               </th>
               <th>Describe</th>
               <th>Phone</th>
