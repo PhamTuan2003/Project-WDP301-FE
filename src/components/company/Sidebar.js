@@ -7,8 +7,8 @@ import { Menu, MenuItem, ProSidebar, SidebarContent, SidebarFooter, SidebarHeade
 import "react-pro-sidebar/dist/css/styles.css";
 import { useDispatch } from "react-redux";
 import { Link, NavLink } from "react-router-dom";
-import sidebarBg from "../../assets/sidebar.jpg";
-import { doLogout } from "../../redux/action/UserAction";
+import { doLogout } from "../../redux/actions/UserAction.js";
+
 const Sidebar = (props) => {
   const { collapsed, toggled, handleToggleSidebar } = props;
 
@@ -20,7 +20,7 @@ const Sidebar = (props) => {
   return (
     <div>
       <ProSidebar
-        image={sidebarBg}
+        image={"/images/sidebar.jpg"}
         collapsed={collapsed}
         toggled={toggled}
         breakPoint="md"

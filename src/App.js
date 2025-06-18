@@ -24,6 +24,14 @@ import { initializeAuth } from "./redux/asyncActions";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 
+//COMPANY
+import Dashboard from './components/company/Dashboard';
+import ManageCompany from './components/company/ManageCompany';
+import ProfileCompany from './components/company/Profile';
+import ViewBooking from './components/company/ViewBooking';
+import ViewYacht from './components/company/ViewYacht';
+import ProtectedRoute from './components/routers/ProtectedRoute';
+
 function App() {
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
   const dispatch = useDispatch();
@@ -66,6 +74,18 @@ function App() {
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
           {/* Add thêm nếu có thêm */}
+
+          <Route path="/manage-company" element={
+          <ProtectedRoute>
+            <ManageCompany />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="booking" element={<ViewBooking />} />
+          <Route path="view-yacht" element={<ViewYacht />} />
+          <Route path="profile" element={<ProfileCompany />} />
+        </Route>
+        
         </Routes>
         <Footer />
       </Router>
