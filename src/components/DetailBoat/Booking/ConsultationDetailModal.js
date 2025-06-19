@@ -9,7 +9,6 @@ import {
   Stack,
   Chip,
   Card,
-  CardContent,
   Button,
   useTheme,
 } from "@mui/material";
@@ -235,6 +234,38 @@ const ConsultationDetailsModal = ({
               </Typography>
             </MotionCard>
           ))}
+        </Stack>
+
+        {/* Selected services */}
+        <Typography
+          fontFamily="Archivo, sans-serif"
+          variant="subtitle1"
+          color="#0e4f4f"
+          fontWeight={600}
+          mt={3}
+          mb={1}
+        >
+          Dịch vụ đã chọn
+        </Typography>
+        <Stack spacing={1}>
+          {consultation.selectedServices &&
+          consultation.selectedServices.length > 0 ? (
+            consultation.selectedServices.map((sv, i) => (
+              <Typography
+                key={sv._id || sv.id || i}
+                fontFamily="Archivo, sans-serif"
+                fontSize="0.95rem"
+                color="text.secondary"
+              >
+                - {sv.name || sv.serviceName}{" "}
+                {sv.price ? `(${formatPrice(sv.price)})` : ""}
+              </Typography>
+            ))
+          ) : (
+            <Typography fontFamily="Archivo, sans-serif" color="text.secondary">
+              Không có dịch vụ nào được chọn
+            </Typography>
+          )}
         </Stack>
 
         {/* Tổng tiền */}

@@ -40,6 +40,8 @@ const bookingInitialState = {
   },
   hasConsultation: false,
   editingBookingId: null,
+  selectedRoomServices: {},
+  selectedServices: [],
 };
 
 const bookingReducer = (state = bookingInitialState, action) => {
@@ -59,7 +61,9 @@ const bookingReducer = (state = bookingInitialState, action) => {
         description: room.description || "Phòng thoải mái với view đẹp",
       }));
       // Sử dụng schedules trực tiếp từ payload (bao gồm displayText) - không cần tạo return lại
-      const maxPeopleOptions = [...new Set(processedRooms.map((r) => r.beds))].sort((a, b) => a - b);
+      const maxPeopleOptions = [
+        ...new Set(processedRooms.map((r) => r.beds)),
+      ].sort((a, b) => a - b);
       return {
         ...state,
         loading: false,
@@ -74,24 +78,34 @@ const bookingReducer = (state = bookingInitialState, action) => {
       return { ...state, loading: false, error: action.payload };
     case "INCREMENT_ROOM_QUANTITY": {
       const updatedRoomsInc = state.rooms.map((room) =>
-        room.id === action.payload ? { ...room, quantity: (room.quantity || 0) + 1 } : room
+        room.id === action.payload
+          ? { ...room, quantity: (room.quantity || 0) + 1 }
+          : room
       );
       return {
         ...state,
         rooms: updatedRoomsInc,
-        totalPrice: updatedRoomsInc.reduce((sum, r) => sum + r.price * r.quantity, 0),
+        totalPrice: updatedRoomsInc.reduce(
+          (sum, r) => sum + r.price * r.quantity,
+          0
+        ),
       };
     }
     case "DECREMENT_ROOM_QUANTITY": {
       const roomToDec = state.rooms.find((r) => r.id === action.payload);
       if (roomToDec && roomToDec.quantity > 0) {
         const updatedRoomsDec = state.rooms.map((room) =>
-          room.id === action.payload ? { ...room, quantity: room.quantity - 1 } : room
+          room.id === action.payload
+            ? { ...room, quantity: room.quantity - 1 }
+            : room
         );
         return {
           ...state,
           rooms: updatedRoomsDec,
-          totalPrice: updatedRoomsDec.reduce((sum, r) => sum + r.price * r.quantity, 0),
+          totalPrice: updatedRoomsDec.reduce(
+            (sum, r) => sum + r.price * r.quantity,
+            0
+          ),
         };
       }
       return state;
@@ -126,7 +140,10 @@ const bookingReducer = (state = bookingInitialState, action) => {
       };
     }
     case "UPDATE_CHILDREN": {
-      const newChildren = Math.max(0, state.guestCounter.children + action.payload);
+      const newChildren = Math.max(
+        0,
+        state.guestCounter.children + action.payload
+      );
       const guestTextChildren = `${state.guestCounter.adults} Người lớn - ${newChildren} - Trẻ em`;
       return {
         ...state,
@@ -135,7 +152,10 @@ const bookingReducer = (state = bookingInitialState, action) => {
       };
     }
     case "UPDATE_CHILDREN_UNDER_10": {
-      const newChildrenUnder10 = Math.max(0, state.guestCounter.childrenUnder10 + action.payload);
+      const newChildrenUnder10 = Math.max(
+        0,
+        state.guestCounter.childrenUnder10 + action.payload
+      );
       return {
         ...state,
         guestCounter: {
@@ -145,7 +165,10 @@ const bookingReducer = (state = bookingInitialState, action) => {
       };
     }
     case "UPDATE_CHILDREN_ABOVE_10": {
-      const newChildrenAbove10 = Math.max(0, state.guestCounter.childrenAbove10 + action.payload);
+      const newChildrenAbove10 = Math.max(
+        0,
+        state.guestCounter.childrenAbove10 + action.payload
+      );
       return {
         ...state,
         guestCounter: {
@@ -315,7 +338,10 @@ const bookingReducer = (state = bookingInitialState, action) => {
       return {
         ...state,
         rooms: action.payload,
-        totalPrice: action.payload.reduce((sum, r) => sum + r.price * r.quantity, 0),
+        totalPrice: action.payload.reduce(
+          (sum, r) => sum + r.price * r.quantity,
+          0
+        ),
       };
     case "CLEAR_CONSULTATION":
       return {
@@ -362,6 +388,24 @@ const bookingReducer = (state = bookingInitialState, action) => {
           ...state.guestCounter,
           ...action.payload,
         },
+      };
+    case "SET_ROOM_SERVICES": {
+      const { roomId, services } = action.payload;
+      const updatedServices = { ...state.selectedRoomServices };
+      if (!services || services.length === 0) {
+        delete updatedServices[roomId];
+      } else {
+        updatedServices[roomId] = services;
+      }
+      return {
+        ...state,
+        selectedRoomServices: updatedServices,
+      };
+    }
+    case "SET_SELECTED_SERVICES":
+      return {
+        ...state,
+        selectedServices: action.payload,
       };
     default:
       return state;

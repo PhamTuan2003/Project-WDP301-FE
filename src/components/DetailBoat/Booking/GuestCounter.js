@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Minus, Plus } from "lucide-react";
 import { Box, Typography, Button } from "@mui/material";
-import { setGuestCounterOpen, updateAdults } from "../../../redux/actions/bookingActions";
+import {
+  setGuestCounterOpen,
+  updateAdults,
+} from "../../../redux/actions/bookingActions";
 
 const GuestCounter = ({ maxPeople }) => {
   const dispatch = useDispatch();
@@ -17,7 +20,11 @@ const GuestCounter = ({ maxPeople }) => {
   const overLimit = maxPeople && totalGuests > maxPeople;
 
   const handleUpdateAdults = (delta) => {
-    if (delta > 0 && maxPeople && adults + delta + Math.ceil(childrenAbove10 / 2) > maxPeople) {
+    if (
+      delta > 0 &&
+      maxPeople &&
+      adults + delta + Math.ceil(childrenAbove10 / 2) > maxPeople
+    ) {
       setError(
         `Tổng số khách không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi tính là 1 người lớn.`
       );
@@ -35,7 +42,11 @@ const GuestCounter = ({ maxPeople }) => {
     dispatch({ type: "UPDATE_CHILDREN_UNDER_10", payload: delta });
   };
   const handleUpdateChildrenAbove10 = (delta) => {
-    if (delta > 0 && maxPeople && adults + Math.ceil((childrenAbove10 + delta) / 2) > maxPeople) {
+    if (
+      delta > 0 &&
+      maxPeople &&
+      adults + Math.ceil((childrenAbove10 + delta) / 2) > maxPeople
+    ) {
       setError(
         `Tổng số khách không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi tính là 1 người lớn.`
       );
@@ -58,11 +69,16 @@ const GuestCounter = ({ maxPeople }) => {
           justifyContent: "space-between",
           alignItems: "center",
           cursor: "pointer",
+          fontFamily: "Archivo, sans-serif",
           boxShadow: (theme) => theme.shadows[1],
           "&:hover": { borderColor: "primary.main" },
         }}
       >
-        <Typography sx={{ color: "text.primary" }}>{guestCount}</Typography>
+        <Typography
+          sx={{ color: "text.primary", fontFamily: "Archivo, sans-serif" }}
+        >
+          {guestCount}
+        </Typography>
         <Box
           component="svg"
           sx={{
@@ -71,12 +87,18 @@ const GuestCounter = ({ maxPeople }) => {
             color: "text.secondary",
             transform: isOpen ? "rotate(180deg)" : "none",
             transition: "transform 0.2s",
+            fontFamily: "Archivo, sans-serif",
           }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </Box>
       </Box>
       {isOpen && (
@@ -93,10 +115,26 @@ const GuestCounter = ({ maxPeople }) => {
             boxShadow: (theme) => theme.shadows[1],
             p: 3,
             zIndex: 50,
+            fontFamily: "Archivo, sans-serif",
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-            <Typography sx={{ fontWeight: "medium", color: "text.primary" }}>Người lớn</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 1,
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: "medium",
+                color: "text.primary",
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
+              Người lớn
+            </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Button
                 onClick={() => handleUpdateAdults(-1)}
@@ -107,13 +145,24 @@ const GuestCounter = ({ maxPeople }) => {
                   borderRadius: "50%",
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                   color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
                   "&:disabled": { opacity: 0.5 },
                 }}
               >
                 <Minus size={16} />
               </Button>
-              <Typography sx={{ mx: 2, width: 16, textAlign: "center", color: "text.primary" }}>{adults}</Typography>
+              <Typography
+                sx={{
+                  mx: 2,
+                  width: 16,
+                  textAlign: "center",
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
+                {adults}
+              </Typography>
               <Button
                 onClick={() => handleUpdateAdults(1)}
                 sx={{
@@ -122,6 +171,7 @@ const GuestCounter = ({ maxPeople }) => {
                   borderRadius: "50%",
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                   color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
                 }}
               >
@@ -129,9 +179,25 @@ const GuestCounter = ({ maxPeople }) => {
               </Button>
             </Box>
           </Box>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-            <Typography sx={{ fontWeight: "medium", color: "text.primary" }}>
-              Trẻ em <span style={{ color: "error.main", fontSize: "0.75rem" }}>(dưới 10 tuổi)</span>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 1,
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: "medium",
+                color: "text.primary",
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
+              Trẻ em{" "}
+              <span style={{ color: "error.main", fontSize: "0.75rem" }}>
+                (dưới 10 tuổi)
+              </span>
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Button
@@ -149,7 +215,15 @@ const GuestCounter = ({ maxPeople }) => {
               >
                 <Minus size={16} />
               </Button>
-              <Typography sx={{ mx: 2, width: 16, textAlign: "center", color: "text.primary" }}>
+              <Typography
+                sx={{
+                  mx: 2,
+                  width: 16,
+                  textAlign: "center",
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
                 {childrenUnder10}
               </Typography>
               <Button
@@ -160,6 +234,7 @@ const GuestCounter = ({ maxPeople }) => {
                   borderRadius: "50%",
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                   color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
                 }}
               >
@@ -167,12 +242,37 @@ const GuestCounter = ({ maxPeople }) => {
               </Button>
             </Box>
           </Box>
-          <Typography sx={{ fontSize: "0.75rem", color: "error.main", ml: 1, mb: 1 }}>
+          <Typography
+            sx={{
+              fontSize: "0.75rem",
+              color: "error.main",
+              ml: 1,
+              mb: 1,
+              fontFamily: "Archivo, sans-serif",
+            }}
+          >
             Không tính vào tổng sức chứa (tối đa 20)
           </Typography>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-            <Typography sx={{ fontWeight: "medium", color: "text.primary" }}>
-              Trẻ em <span style={{ color: "error.main", fontSize: "0.75rem" }}>(từ 10 tuổi)</span>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 1,
+              fontFamily: "Archivo, sans-serif",
+            }}
+          >
+            <Typography
+              sx={{
+                fontWeight: "medium",
+                color: "text.primary",
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
+              Trẻ em{" "}
+              <span style={{ color: "error.main", fontSize: "0.75rem" }}>
+                (từ 10 tuổi)
+              </span>
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Button
@@ -184,13 +284,22 @@ const GuestCounter = ({ maxPeople }) => {
                   borderRadius: "50%",
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                   color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
                   "&:disabled": { opacity: 0.5 },
                 }}
               >
                 <Minus size={16} />
               </Button>
-              <Typography sx={{ mx: 2, width: 16, textAlign: "center", color: "text.primary" }}>
+              <Typography
+                sx={{
+                  mx: 2,
+                  width: 16,
+                  textAlign: "center",
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
                 {childrenAbove10}
               </Typography>
               <Button
@@ -201,6 +310,7 @@ const GuestCounter = ({ maxPeople }) => {
                   borderRadius: "50%",
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                   color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
                 }}
               >
@@ -208,25 +318,55 @@ const GuestCounter = ({ maxPeople }) => {
               </Button>
             </Box>
           </Box>
-          <Typography sx={{ fontSize: "0.75rem", color: "error.main", ml: 1, mb: 1 }}>
+          <Typography
+            sx={{
+              fontSize: "0.75rem",
+              color: "error.main",
+              ml: 1,
+              mb: 1,
+              fontFamily: "Archivo, sans-serif",
+            }}
+          >
             2 trẻ em từ 10 tuổi tính là 1 người lớn
           </Typography>
           {error && (
-            <Typography sx={{ color: "error.main", fontSize: "0.75rem", mt: 1, fontWeight: "medium" }}>
+            <Typography
+              sx={{
+                color: "error.main",
+                fontSize: "0.75rem",
+                mt: 1,
+                fontWeight: "medium",
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
               {error}
             </Typography>
           )}
           {overLimit && (
-            <Typography sx={{ color: "error.main", fontSize: "0.75rem", mt: 1, fontWeight: "medium" }}>
-              Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople}) của các phòng đã chọn. 2 trẻ em tính là 1
-              người lớn.
+            <Typography
+              sx={{
+                color: "error.main",
+                fontSize: "0.75rem",
+                mt: 1,
+                fontWeight: "medium",
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
+              Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople})
+              của các phòng đã chọn. 2 trẻ em tính là 1 người lớn.
             </Typography>
           )}
-          <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, my: 1 }} />
+          <Box
+            sx={{
+              borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+              my: 1,
+            }}
+          />
           <Button
             onClick={() => {
               let guestCountText = `${adults} người lớn`;
-              if (childrenAbove10 > 0) guestCountText += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
+              if (childrenAbove10 > 0)
+                guestCountText += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
               if (childrenUnder10 > 0)
                 guestCountText += `, ${childrenUnder10} trẻ em dưới 10 tuổi (không tính vào tổng khách)`;
               dispatch({
@@ -244,6 +384,7 @@ const GuestCounter = ({ maxPeople }) => {
               color: "primary.contrastText",
               borderRadius: (theme) => theme.shape.borderRadius / 2,
               fontWeight: "medium",
+              fontFamily: "Archivo, sans-serif",
               "&:hover": { bgcolor: "primary.dark" },
             }}
           >

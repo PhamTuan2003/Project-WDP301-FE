@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { X, ArrowRight, Edit } from "lucide-react";
-import { Box, TextField, Modal, Typography, Button } from "@mui/material";
+import { X, ArrowRight } from "lucide-react";
+import { Box, TextField, Typography, Button } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
 
-import { validateBookingForm, formatPrice, validateRoomSelection } from "../../../redux/validation";
+import {
+  validateBookingForm,
+  formatPrice,
+  validateRoomSelection,
+} from "../../../redux/validation";
 import {
   cancelConsultationRequestById,
   createBookingOrConsultationRequest,
@@ -21,10 +25,10 @@ import {
   updateBookingForm,
   updateRooms,
 } from "../../../redux/actions/bookingActions";
-import { closeBookingModal, openConfirmationModal } from "../../../redux/actions";
+import { closeBookingModal } from "../../../redux/actions";
 import { setGuestCounter } from "../../../redux/actions/bookingActions";
 
-const BookingRoomModal = ({ show, yachtData, onBack }) => {
+const BookingRoomModal = ({ show, yachtData }) => {
   const dispatch = useDispatch();
   const {
     bookingForm,
@@ -36,6 +40,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
     consultation,
     hasConsultation,
     editingBookingId,
+    selectedRoomServices,
   } = useSelector((state) => state.booking);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   useEffect(() => {
@@ -80,11 +85,16 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
     const childrenUnder10 = Number(guestCounter?.childrenUnder10 ?? 0);
     const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
     const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
-    console.log("[BookingRoomModal] totalGuests (adults + ceil(childrenAbove10/2)):", totalGuests);
+    console.log(
+      "[BookingRoomModal] totalGuests (adults + ceil(childrenAbove10/2)):",
+      totalGuests
+    );
     if (bookingForm.checkInDate && !bookingForm.checkInDate.includes("T")) {
       try {
         const [day, month, year] = bookingForm.checkInDate.split("/");
-        isoCheckInDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`).toISOString();
+        isoCheckInDate = new Date(
+          `${year}-${month}-${day}T00:00:00.000Z`
+        ).toISOString();
       } catch (e) {
         console.error("Lỗi chuyển đổi ngày:", e);
       }
@@ -125,15 +135,22 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
   const handleSubmit = async (requestType) => {
     if (!validateAllForms()) return;
     const sharedData = prepareSharedBookingData();
-    console.log("[BookingRoomModal] handleSubmit sharedData:", sharedData);
 
     let result;
     if (editingBookingId) {
       const { bookingId, ...dataForUpdate } = sharedData;
-      result = await dispatch(updateBookingOrConsultationRequest(editingBookingId, dataForUpdate, requestType));
+      result = await dispatch(
+        updateBookingOrConsultationRequest(
+          editingBookingId,
+          dataForUpdate,
+          requestType
+        )
+      );
       dispatch(setEditingBookingId(null));
     } else {
-      result = await dispatch(createBookingOrConsultationRequest(sharedData, requestType));
+      result = await dispatch(
+        createBookingOrConsultationRequest(sharedData, requestType)
+      );
     }
 
     if (result && result.payload && result.payload.success) {
@@ -157,7 +174,9 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
       dispatch(updateBookingForm("phoneNumber", consultation.data.phoneNumber));
       dispatch(updateBookingForm("email", consultation.data.email));
       dispatch(updateBookingForm("address", consultation.data.address || ""));
-      dispatch(updateBookingForm("requirements", consultation.data.requirements || ""));
+      dispatch(
+        updateBookingForm("requirements", consultation.data.requirements || "")
+      );
       const adults = consultation?.data?.adults ?? 1;
       const childrenAbove10 = consultation?.data?.childrenAbove10 ?? 0;
       const childrenUnder10 = consultation?.data?.childrenUnder10 ?? 0;
@@ -169,8 +188,10 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
         })
       );
       let guestCountValue = `${adults} người lớn`;
-      if (childrenAbove10 > 0) guestCountValue += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
-      if (childrenUnder10 > 0) guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
+      if (childrenAbove10 > 0)
+        guestCountValue += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
+      if (childrenUnder10 > 0)
+        guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
       dispatch(updateBookingForm("guestCount", guestCountValue));
       let checkInDateValue = "";
       if (consultation.data.checkInDate) {
@@ -211,7 +232,9 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
         cancelButtonText: "Không",
       }).then(async (result) => {
         if (result.isConfirmed) {
-          await dispatch(cancelConsultationRequestById(consultation.data.bookingId));
+          await dispatch(
+            cancelConsultationRequestById(consultation.data.bookingId)
+          );
           dispatch(resetBookingForm());
           dispatch(clearAllErrors());
           dispatch(setEditingBookingId(null));
@@ -250,9 +273,15 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
   };
 
   const selectedRooms = rooms.filter((r) => r.quantity > 0);
-  const maxPeople = selectedRooms.reduce((sum, r) => sum + (r.max_people || 0), 0);
+  const maxPeople = selectedRooms.reduce(
+    (sum, r) => sum + (r.max_people || 0),
+    0
+  );
   const { guestCounter } = useSelector((state) => state.booking);
-  const totalGuests = guestCounter.adults + guestCounter.childrenUnder10 + Math.ceil(guestCounter.childrenAbove10 / 2);
+  const totalGuests =
+    guestCounter.adults +
+    guestCounter.childrenUnder10 +
+    Math.ceil(guestCounter.childrenAbove10 / 2);
   const overLimit = maxPeople && totalGuests > maxPeople;
 
   if (!show) return null;
@@ -268,17 +297,19 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
           alignItems: "center",
           justifyContent: "center",
           zIndex: 50,
+          fontFamily: "Archivo, sans-serif",
+          mt: 7,
         }}
       >
         <Box
           sx={{
             bgcolor: "background.paper",
-            borderRadius: (theme) => theme.shape.borderRadius / 2,
-            maxWidth: "64rem",
+            borderRadius: (theme) => theme.shape.borderRadius / 5,
+            maxWidth: "56rem",
             width: "100%",
             mx: 2,
             maxHeight: "80vh",
-            p: 3,
+            p: 2,
             overflowY: "auto",
             boxShadow: (theme) => theme.shadows[1],
             border: (theme) => `1px solid ${theme.palette.divider}`,
@@ -289,13 +320,17 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              p: 2,
+              px: 2,
+              py: 1,
               borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
               position: "relative",
             }}
           >
-            <Typography sx={{ color: "text.primary" }}>1/3</Typography>
-            <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary", mx: "auto" }}>
+            <Typography
+              fontFamily={"Archivo, sans-serif"}
+              variant="h6"
+              sx={{ fontWeight: "bold", color: "text.primary", mx: "auto" }}
+            >
               {editingBookingId ? "Chỉnh sửa yêu cầu" : "Đặt phòng"}
             </Typography>
             <Button
@@ -310,57 +345,155 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
             </Button>
           </Box>
           <Box sx={{ p: 4, display: "flex", flexDirection: "column", gap: 3 }}>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-              <TextField
-                fullWidth
-                label="Ngày nhận phòng"
-                type="date"
-                value={
-                  bookingForm.checkInDate && bookingForm.checkInDate.includes("/")
-                    ? `${bookingForm.checkInDate.split("/")[2]}-${bookingForm.checkInDate.split("/")[1]}-${
-                        bookingForm.checkInDate.split("/")[0]
-                      }`
-                    : bookingForm.checkInDate || ""
-                }
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const formattedForDisplay = val
-                    ? new Date(val + "T00:00:00").toLocaleDateString("vi-VN", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })
-                    : "";
-                  handleInputChange("checkInDate", formattedForDisplay);
-                }}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  min: new Date().toISOString().split("T")[0],
-                }}
-                variant="outlined"
-                error={!!bookingErrors.checkInDate}
-                helperText={bookingErrors.checkInDate}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {" "}
+                <TextField
+                  fullWidth
+                  label="Ngày nhận phòng"
+                  type="date"
+                  value={
+                    bookingForm.checkInDate &&
+                    bookingForm.checkInDate.includes("/")
+                      ? `${bookingForm.checkInDate.split("/")[2]}-${
+                          bookingForm.checkInDate.split("/")[1]
+                        }-${bookingForm.checkInDate.split("/")[0]}`
+                      : bookingForm.checkInDate || ""
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const formattedForDisplay = val
+                      ? new Date(val + "T00:00:00").toLocaleDateString(
+                          "vi-VN",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }
+                        )
+                      : "";
+                    handleInputChange("checkInDate", formattedForDisplay);
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{
+                    min: new Date().toISOString().split("T")[0],
+                  }}
+                  variant="outlined"
+                  error={!!bookingErrors.checkInDate}
+                  helperText={bookingErrors.checkInDate}
+                  sx={{
+                    "& .MuiInputLabel-root": {
+                      color: "text.secondary",
+                      "&.Mui-focused": { color: "primary.main" },
+                      fontFamily: "Archivo, sans-serif",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: (theme) => theme.shape.borderRadius / 2,
+                      "& fieldset": { borderColor: "divider" },
+                      "&:hover fieldset": { borderColor: "primary.main" },
+                      "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                      fontFamily: "Archivo, sans-serif",
+                    },
+                  }}
+                />
+                <GuestCounter maxPeople={maxPeople} />
+              </Box>
+              {/* Hiển thị chi tiết phòng và dịch vụ */}
+              <Box
                 sx={{
-                  "& .MuiInputLabel-root": {
-                    color: "text.secondary",
-                    "&.Mui-focused": { color: "primary.main" },
-                  },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: (theme) => theme.shape.borderRadius / 2,
-                    "& fieldset": { borderColor: "divider" },
-                    "&:hover fieldset": { borderColor: "primary.main" },
-                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
-                  },
+                  bgcolor: "background.paper",
+                  p: 2,
+                  borderRadius: 2,
+                  boxShadow: (theme) => theme.shadows[1],
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
                 }}
-              />
-              <GuestCounter maxPeople={maxPeople} />
+              >
+                {selectedRooms.map((room) => {
+                  const services = selectedRoomServices[room.id] || [];
+                  return (
+                    <Box key={room.id} sx={{ mb: 1 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: "bold",
+                          fontSize: "1rem",
+                          color: "text.primary",
+                          fontFamily: "Archivo, sans-serif",
+                        }}
+                      >
+                        {room.name} x {room.quantity}:{" "}
+                        {room.price.toLocaleString()}đ/phòng
+                      </Typography>
+                      {services.length > 0 && (
+                        <Box sx={{ ml: 2 }}>
+                          {services.map((sv, idx) => (
+                            <Typography
+                              key={sv.id || idx}
+                              sx={{
+                                fontSize: "0.95rem",
+                                color: "text.secondary",
+                                fontFamily: "Archivo, sans-serif",
+                              }}
+                            >
+                              - Dịch vụ: {sv.name} x {room.quantity}:{" "}
+                              {(sv.price * room.quantity).toLocaleString()}đ (
+                              {sv.price.toLocaleString()}đ/người)
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+                {/* Tổng phụ */}
+                <Box sx={{ mt: 1, ml: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      color: "text.primary",
+                      fontFamily: "Archivo, sans-serif",
+                    }}
+                  >
+                    Tổng tiền phòng:{" "}
+                    {selectedRooms
+                      .reduce(
+                        (sum, room) => sum + room.price * room.quantity,
+                        0
+                      )
+                      .toLocaleString()}{" "}
+                    đ
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      color: "text.primary",
+                      fontFamily: "Archivo, sans-serif",
+                    }}
+                  >
+                    Tổng tiền dịch vụ:{" "}
+                    {selectedRooms
+                      .reduce(
+                        (sum, room) =>
+                          sum +
+                          (selectedRoomServices[room.id]?.reduce(
+                            (s, sv) => s + sv.price * room.quantity,
+                            0
+                          ) || 0),
+                        0
+                      )
+                      .toLocaleString()}{" "}
+                    đ
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-            {overLimit && (
-              <Typography sx={{ color: "error.main", fontSize: "0.75rem", mt: 1, fontWeight: "medium" }}>
-                Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople}) của các phòng đã chọn. 2 trẻ em tính là
-                1 người lớn.
-              </Typography>
-            )}
+
             <TextField
               fullWidth
               label="Họ và tên"
@@ -374,6 +507,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                 "& .MuiInputLabel-root": {
                   color: "text.secondary",
                   "&.Mui-focused": { color: "primary.main" },
+                  fontFamily: "Archivo, sans-serif",
                 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: (theme) => theme.shape.borderRadius / 2,
@@ -396,6 +530,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                 "& .MuiInputLabel-root": {
                   color: "text.secondary",
                   "&.Mui-focused": { color: "primary.main" },
+                  fontFamily: "Archivo, sans-serif",
                 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: (theme) => theme.shape.borderRadius / 2,
@@ -419,6 +554,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                 "& .MuiInputLabel-root": {
                   color: "text.secondary",
                   "&.Mui-focused": { color: "primary.main" },
+                  fontFamily: "Archivo, sans-serif",
                 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: (theme) => theme.shape.borderRadius / 2,
@@ -435,12 +571,15 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
               multiline
               rows={4}
               value={bookingForm.requirements}
-              onChange={(e) => handleInputChange("requirements", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("requirements", e.target.value)
+              }
               variant="outlined"
               sx={{
                 "& .MuiInputLabel-root": {
                   color: "text.secondary",
                   "&.Mui-focused": { color: "primary.main" },
+                  fontFamily: "Archivo, sans-serif",
                 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: (theme) => theme.shape.borderRadius / 5,
@@ -450,6 +589,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                 },
               }}
             />
+
             <Box
               sx={{
                 display: "flex",
@@ -460,12 +600,34 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                 gap: 2,
               }}
             >
-              <Box sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary" }}>
+              <Box
+                sx={{ flex: 1, display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <Typography
+                  fontFamily={"Archivo, sans-serif"}
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "text.primary" }}
+                >
                   Tổng tiền
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "primary.main" }}>
-                  {formatPrice(totalPrice)}
+                <Typography
+                  fontFamily={"Archivo, sans-serif"}
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "primary.main" }}
+                >
+                  {selectedRooms
+                    .reduce(
+                      (sum, room) =>
+                        sum +
+                        room.price * room.quantity +
+                        (selectedRoomServices[room.id]?.reduce(
+                          (s, sv) => s + sv.price * room.quantity,
+                          0
+                        ) || 0),
+                      0
+                    )
+                    .toLocaleString()}{" "}
+                  đ
                 </Typography>
               </Box>
               <Box
@@ -508,6 +670,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                       textTransform: "none",
                       borderColor: "divider",
                       color: "text.primary",
+                      fontFamily: "Archivo, sans-serif",
                       "&:hover": { bgcolor: "background.default" },
                     }}
                   >
@@ -524,6 +687,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                       textTransform: "none",
                       borderColor: "divider",
                       color: "text.primary",
+                      fontFamily: "Archivo, sans-serif",
                       "&:hover": { bgcolor: "background.default" },
                     }}
                   >
@@ -541,6 +705,7 @@ const BookingRoomModal = ({ show, yachtData, onBack }) => {
                     textTransform: "none",
                     bgcolor: "primary.main",
                     color: "primary.contrastText",
+                    fontFamily: "Archivo, sans-serif",
                     "&:hover": { bgcolor: "primary.dark" },
                     display: "flex",
                     gap: 1,
