@@ -3,7 +3,14 @@ import { ImProfile } from "react-icons/im";
 import { MdDashboard } from "react-icons/md";
 import { SlCalender } from "react-icons/sl";
 import { TbBrandBooking, TbLogout2 } from "react-icons/tb";
-import { Menu, MenuItem, ProSidebar, SidebarContent, SidebarFooter, SidebarHeader } from "react-pro-sidebar";
+import {
+  Menu,
+  MenuItem,
+  ProSidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+} from "react-pro-sidebar";
 import "react-pro-sidebar/dist/css/styles.css";
 import { useDispatch } from "react-redux";
 import { Link, NavLink } from "react-router-dom";
@@ -45,19 +52,19 @@ const Sidebar = (props) => {
 
         <SidebarContent>
           <Menu iconShape="circle">
-            <MenuItem icon={<MdDashboard />}>
+            <MenuItem icon={<MdDashboard />} className="sidebar-menu-item">
               Dashboard
               <Link to="/manage-company" />
             </MenuItem>
           </Menu>
           <Menu iconShape="circle">
-            <MenuItem icon={<TbBrandBooking />}>
+            <MenuItem icon={<TbBrandBooking />} className="sidebar-menu-item">
               Customer Booking
               <Link to="/manage-company/booking" />
             </MenuItem>
           </Menu>
           <Menu iconShape="circle">
-            <MenuItem icon={<FaShip />}>
+            <MenuItem icon={<FaShip />} className="sidebar-menu-item">
               {" "}
               View Yacht
               <Link to="/manage-company/view-yacht" />
@@ -65,7 +72,7 @@ const Sidebar = (props) => {
           </Menu>
 
           <Menu iconShape="circle">
-            <MenuItem icon={<SlCalender />}>
+            <MenuItem icon={<SlCalender />} className="sidebar-menu-item">
               {" "}
               Schedule Yacht
               <Link to="/manage-company/schedule" />
@@ -73,7 +80,7 @@ const Sidebar = (props) => {
           </Menu>
 
           <Menu iconShape="circle">
-            <MenuItem icon={<ImProfile />}>
+            <MenuItem icon={<ImProfile />} className="sidebar-menu-item">
               Profile
               <Link to="/manage-company/profile" />
             </MenuItem>
@@ -82,14 +89,29 @@ const Sidebar = (props) => {
 
         <SidebarFooter style={{ textAlign: "center" }}>
           <div
-            className="sidebar-btn-wrapper d-flex justify-content-center"
+            className="sidebar-btn-wrapper flex justify-center"
             style={{
               padding: "20px 24px",
             }}
           >
-            <NavLink onClick={handleLogout} className="nav-link " to="/signin">
-              <TbLogout2 />
-              Logout
+            <NavLink
+              onClick={handleLogout}
+              className="nav-link "
+              to="/signin"
+              style={{
+                color: "#e53e3e",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                letterSpacing: "1px",
+                cursor: "pointer",
+                minWidth: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TbLogout2 size={28} />
+              <span className="mt-1 px-1">Logout</span>
             </NavLink>
           </div>
         </SidebarFooter>

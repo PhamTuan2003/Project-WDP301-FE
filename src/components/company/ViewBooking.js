@@ -3,7 +3,12 @@ import { Button, Form, FormControl, FormGroup } from "react-bootstrap";
 import ReactPaginate from "react-paginate";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { canelBooking, confirmBooking, getBookingByAmount, getBookingOrder } from "../../services/ApiServices";
+import {
+  canelBooking,
+  confirmBooking,
+  getBookingByAmount,
+  getBookingOrder,
+} from "../../services/ApiServices";
 import "./Company.scss";
 
 import { Link } from "react-router-dom";
@@ -11,7 +16,7 @@ import ModalViewDetailBooking from "./ModalViewDetailBooking";
 import ModalReasonCompany from "./Modal/ModalReasonCompany";
 
 const ViewBooking = () => {
-  const idCompany = useSelector((state) => state.account.account.idCompany);
+  const idCompany = useSelector((state) => state?.account?.idCompany);
   const [listBooking, setListBooking] = useState([]);
   const [isShowModalViewBooking, setIsShowModalViewBooking] = useState(false);
   const [filterSearch, setFilterSearch] = useState("");
@@ -51,9 +56,15 @@ const ViewBooking = () => {
   };
 
   const getBooking = async () => {
+    if (!idCompany) {
+      toast.error("Company ID not found. Please log in again.");
+      return;
+    }
     let res = await getBookingOrder(idCompany);
     if (res && res.data && res.data.data) {
-      const sortedBookings = res.data.data.sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime));
+      const sortedBookings = res.data.data.sort(
+        (a, b) => new Date(b.bookingTime) - new Date(a.bookingTime)
+      );
       setListBooking(sortedBookings);
     } else toast.error("Not Found Booking");
   };
@@ -84,13 +95,22 @@ const ViewBooking = () => {
 
   const filterAndPaginateBooking = () => {
     const filtered = listBooking
-      .filter((b) => b.customerDTO.fullName.toLowerCase().includes(filterSearch.toLowerCase().trim()))
-      .filter((b) => (filterStatus === "0" ? b : b.status.includes(filterStatus)));
+      .filter((b) =>
+        b.customerDTO.fullName
+          .toLowerCase()
+          .includes(filterSearch.toLowerCase().trim())
+      )
+      .filter((b) =>
+        filterStatus === "0" ? b : b.status.includes(filterStatus)
+      );
 
     setFilterBooking(filtered);
   };
 
-  const displayedBooking = filterBooking.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  const displayedBooking = filterBooking.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
 
   const handleFilterByAmount = async () => {
     let res = await getBookingByAmount(idCompany, min, max);
@@ -100,151 +120,139 @@ const ViewBooking = () => {
   };
 
   return (
-    <div className="container">
-      <div className="row">
-        <div className="row my-4">
-          <h2 className="col-2">Booking</h2>
-          <FormGroup className="col-2 d-flex">
-            <FormControl placeholder="Name Customer" onChange={(e) => setFilterSearch(e.target.value)} type="text" />
-          </FormGroup>
-          <FormGroup className="col-2">
-            <Form.Select onChange={(event) => setFilterStatus(event.target.value)}>
-              <option value="0">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Decliled">Decliled</option>
-            </Form.Select>
-          </FormGroup>
-          <FormGroup className="col-2">
-            <FormControl placeholder="Min Amount" onChange={(e) => setMin(e.target.value)} type="number" />
-          </FormGroup>
-          <FormGroup className="col-2">
-            <FormControl placeholder="Max Amount" onChange={(e) => setMax(e.target.value)} type="number" />
-          </FormGroup>
-          <Button onClick={handleFilterByAmount} className="col btn btn-warning">
+    <div className="max-w-6xl mx-auto p-4">
+      <h2 className="text-2xl font-bold text-gray-800">Booking</h2>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center gap-4 my-6">
+          <input
+            className="border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Name Customer"
+            onChange={(e) => setFilterSearch(e.target.value)}
+            type="text"
+          />
+          <select
+            className="border rounded-xl px-1 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onChange={(event) => setFilterStatus(event.target.value)}
+          >
+            <option value="0">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Decliled">Decliled</option>
+          </select>
+          <input
+            className="border rounded-xl px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Min Amount"
+            onChange={(e) => setMin(e.target.value)}
+            type="number"
+          />
+          <input
+            className="border rounded-xl px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Max Amount"
+            onChange={(e) => setMax(e.target.value)}
+            type="number"
+          />
+          <button
+            onClick={handleFilterByAmount}
+            className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold px-4 py-2 rounded-xl shadow"
+          >
             Search Amount
-          </Button>
+          </button>
         </div>
-        <div className="row container">
-          <div className="col-xl-12">
-            {displayedBooking &&
-              displayedBooking.map((booking) => (
-                <div style={{ cursor: "pointer" }} key={booking.idBooking} className="card mb-4 order-list">
-                  <div className="gold-members p-4">
-                    <div className="media">
-                      <div className="media-body">
-                        <b>
-                          <span className="float-right text-success">
-                            {formatDate(booking.bookingTime)}
-                            <i className="feather-check-circle text-success" />
-                          </span>
-                        </b>
-                        <h6 className="mb-3">
-                          <b href="#"></b>
-                          <b className="text-dark">{booking.customerDTO.fullName}</b>
-                        </h6>
-                        <p className="text-black-50 mb-1">
-                          <i className="feather-map-pin" /> {booking.yachtName}, Amount:{" "}
-                          {booking.amount.toLocaleString()}VNĐ
-                        </p>
-                        <p className="text-black-50 mb-1">
-                          <i className="feather-list" /> Schedule - <i className="feather-clock ml-2" />
-                          Start Date: {formatDate(booking.schedule.startDate)}, End Date:{" "}
-                          {formatDate(booking.schedule.endDate)}{" "}
-                        </p>
-                        <p className="text-black-50 mb-3">
-                          <i className="feather-list" /> Requirement: <i className="feather-clock ml-2" />
-                          {booking.requirement}
-                        </p>
-
-                        <hr />
-                        <div className="action d-flex">
-                          <p className="mb-0 text-dark text-dark pt-2">
-                            Status:{" "}
-                            <span
-                              style={{
-                                color:
-                                  booking.status === "Pending"
-                                    ? "orange"
-                                    : booking.status === "Confirmed"
-                                    ? "green"
-                                    : booking.status === "Cancelled"
-                                    ? "red"
-                                    : "black",
-                              }}
-                              className=" font-weight-bold"
-                            >
-                              {booking.status}{" "}
-                            </span>
-                          </p>
-                          <div className="float-right">
-                            {booking.status === "Pending" ? (
-                              <>
-                                <Link
-                                  onClick={() => handleViewDetailBooking(booking)}
-                                  className="btn btn-sm btn-warning"
-                                >
-                                  {" "}
-                                  View Detai{" "}
-                                </Link>
-                                <Link
-                                  onClick={() => handleConfrimBooking(booking.idBooking)}
-                                  className="btn btn-sm btn-success"
-                                >
-                                  {" "}
-                                  Confirm{" "}
-                                </Link>
-                                <Link
-                                  onClick={() => handleCancelBooking(booking.idBooking)}
-                                  className="btn btn-sm btn-danger"
-                                >
-                                  {" "}
-                                  Cancel
-                                </Link>
-                              </>
-                            ) : (
-                              <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">
-                                {" "}
-                                View Detai{" "}
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        <div className="flex flex-col gap-4">
+          {displayedBooking &&
+            displayedBooking.map((booking) => (
+              <div
+                key={booking.idBooking}
+                className="bg-white rounded-xl-lg shadow p-6 flex flex-col gap-2 hover:shadow-lg transition"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="text-green-600 font-semibold">
+                    {formatDate(booking.bookingTime)}
+                  </span>
+                  <span
+                    className={`font-bold ${
+                      booking.status === "Pending"
+                        ? "text-orange-500"
+                        : booking.status === "Confirmed"
+                        ? "text-green-600"
+                        : booking.status === "Cancelled"
+                        ? "text-red-500"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {booking.status}
+                  </span>
                 </div>
-              ))}
-            <div className="page">
-              <ReactPaginate
-                nextLabel="Next >"
-                onPageChange={handlePageChange}
-                pageRangeDisplayed={3}
-                marginPagesDisplayed={2}
-                pageCount={Math.ceil(filterBooking.length / itemsPerPage)}
-                previousLabel="< Prev"
-                pageClassName="page-item"
-                pageLinkClassName="page-link"
-                previousClassName="page-item"
-                previousLinkClassName="page-link"
-                nextClassName="page-item"
-                nextLinkClassName="page-link"
-                breakLabel="..."
-                breakClassName="page-item"
-                breakLinkClassName="page-link"
-                containerClassName="pagination"
-                activeClassName="active"
-                renderOnZeroPageCount={null}
-              />
-            </div>
-          </div>
+                <div className="text-lg font-bold text-gray-800">
+                  {booking.customerDTO.fullName}
+                </div>
+                <div className="text-gray-600">
+                  {booking.yachtName}, Amount:{" "}
+                  <span className="font-semibold text-blue-600">
+                    {booking.amount.toLocaleString()} VNĐ
+                  </span>
+                </div>
+                <div className="text-gray-600">
+                  Schedule: {formatDate(booking.schedule.startDate)} -{" "}
+                  {formatDate(booking.schedule.endDate)}
+                </div>
+                <div className="text-gray-600">
+                  Requirement: {booking.requirement}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => handleViewDetailBooking(booking)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-xl"
+                  >
+                    View Detail
+                  </button>
+                  {booking.status === "Pending" && (
+                    <>
+                      <button
+                        onClick={() => handleConfrimBooking(booking.idBooking)}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-xl"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => handleCancelBooking(booking.idBooking)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-xl"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+        </div>
+        <div className="flex justify-center mt-6">
+          <ReactPaginate
+            nextLabel="Next >"
+            onPageChange={handlePageChange}
+            pageRangeDisplayed={3}
+            marginPagesDisplayed={2}
+            pageCount={Math.ceil(filterBooking.length / itemsPerPage)}
+            previousLabel="< Prev"
+            pageClassName="page-item"
+            pageLinkClassName="page-link"
+            previousClassName="page-item"
+            previousLinkClassName="page-link"
+            nextClassName="page-item"
+            nextLinkClassName="page-link"
+            breakLabel="..."
+            breakClassName="page-item"
+            breakLinkClassName="page-link"
+            containerClassName="flex gap-2"
+            activeClassName="bg-blue-500 text-white rounded-xl"
+            renderOnZeroPageCount={null}
+          />
         </div>
         <ModalViewDetailBooking
           show={isShowModalViewBooking}
           setIsShowModalViewBooking={setIsShowModalViewBooking}
           bookingDetail={bookingDetail}
         />
-
         <ModalReasonCompany
           showModalReason={showModalReason}
           setShowModalReason={setShowModalReason}

@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Form from "react-bootstrap/Form";
 import "./Dashboard.scss";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { FaCalendar } from "react-icons/fa";
 import { FaCalendarCheck } from "react-icons/fa";
 import { FaCalendarTimes } from "react-icons/fa";
@@ -17,7 +25,7 @@ import {
 import { useSelector } from "react-redux";
 import { RiFileExcel2Fill } from "react-icons/ri";
 const Dashboard = () => {
-  const idCompany = useSelector((state) => state.account.account.idCompany);
+  const idCompany = useSelector((state) => state?.account?.idCompany);
   const [totalBooking, setTotalBooking] = useState("");
   const [totalService, setTotalService] = useState("");
   const [allBooking, setAllBooking] = useState({});
@@ -92,14 +100,24 @@ const Dashboard = () => {
       console.log("Export error");
     }
   };
-  const total = Object.values(allBooking).reduce((sum, count) => sum + count, 0);
+  const total = Object.values(allBooking).reduce(
+    (sum, count) => sum + count,
+    0
+  );
 
   return (
-    <div>
-      <div className="p-2 container">
-        <div className="d-flex justify-content-between">
-          <div className="d-flex">
-            <Form.Select onChange={(event) => setMonth(event.target.value)} style={{ width: "fit-content" }}>
+    <div className="border mx-3 border-gray-300 rounded-xl">
+      <div className="p-4 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-3">
+            <Form.Select
+              onChange={(event) => setMonth(event.target.value)}
+              style={{
+                width: "fit-content",
+                borderRadius: "10px",
+                border: "1px solid #ccc",
+              }}
+            >
               <option value="7">July</option>
               <option value="1">January</option>
               <option value="2">February</option>
@@ -116,7 +134,11 @@ const Dashboard = () => {
             <Form.Select
               onChange={(event) => setYear(event.target.value)}
               className="mx-3"
-              style={{ width: "fit-content" }}
+              style={{
+                width: "fit-content",
+                borderRadius: "10px",
+                border: "1px solid #ccc",
+              }}
             >
               <option value="2024">2024</option>
               <option value="2025">2025</option>
@@ -125,69 +147,82 @@ const Dashboard = () => {
               <option value="2028">2028</option>
             </Form.Select>
           </div>
-          <div className="mx-3 ">
-            <button onClick={reportBookingOrder} className="btn btn-success d-flex">
-              <RiFileExcel2Fill style={{ marginRight: 5, marginTop: 5 }} />
-              Export Booking Order
-            </button>
+          <button
+            onClick={reportBookingOrder}
+            className="flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded shadow"
+          >
+            <RiFileExcel2Fill className="mr-2" />
+            Export Booking Order
+          </button>
+        </div>
+        <div className="flex gap-4 mb-6">
+          <div className="bg-yellow-100 rounded-lg p-6 flex-1 shadow">
+            <div className="flex justify-between items-center">
+              <h4 className="text-2xl font-bold">{total ? total : 0}</h4>
+              <FaCalendar className="text-3xl text-yellow-500" />
+            </div>
+            <p className="mt-2 text-gray-600">Total Booking</p>
+          </div>
+          <div className="bg-blue-100 rounded-lg p-6 flex-1 shadow">
+            <div className="flex justify-between items-center">
+              <h4 className="text-2xl font-bold">
+                {allBooking.Confirmed ? allBooking.Confirmed : 0}
+              </h4>
+              <FaCalendarCheck className="text-3xl text-blue-500" />
+            </div>
+            <p className="mt-2 text-gray-600">Confirmed Booking</p>
+          </div>
+          <div className="bg-red-100 rounded-lg p-6 flex-1 shadow">
+            <div className="flex justify-between items-center">
+              <h4 className="text-2xl font-bold">
+                {allBooking.Cancelled ? allBooking.Cancelled : 0}
+              </h4>
+              <FaCalendarTimes className="text-3xl text-red-500" />
+            </div>
+            <p className="mt-2 text-gray-600">Cancel Booking</p>
+          </div>
+          <div className="bg-green-100 rounded-lg p-6 flex-1 shadow">
+            <div className="flex justify-between items-center">
+              <h4 className="text-2xl font-bold">
+                {allBooking.Pending ? allBooking.Pending : 0}
+              </h4>
+              <FaCalendarDay className="text-3xl text-green-500" />
+            </div>
+            <p className="mt-2 text-gray-600">Pending Booking</p>
           </div>
         </div>
-        <div className="d-flex booking">
-          <div style={{ backgroundColor: "#F8F0E3" }} className="child">
-            <div className="d-flex justify-content-between">
-              <h4 className="fw-bold">{total ? total : 0}</h4>
-              <FaCalendar />
-            </div>
-            <p>Total Booking</p>
-          </div>
-          <div style={{ backgroundColor: "#F4FAF8" }} className="child">
-            <div className="d-flex justify-content-between">
-              <h4 className="fw-bold">{allBooking.Confirmed ? allBooking.Confirmed : 0}</h4>
-              <FaCalendarCheck />
-            </div>
-            <p>Confirmed Booking</p>
-          </div>
-          <div style={{ backgroundColor: "#FBF2F2" }} className="child">
-            <div className="d-flex justify-content-between">
-              <h4 className="fw-bold">{allBooking.Cancelled ? allBooking.Cancelled : 0}</h4>
-              <FaCalendarTimes />
-            </div>
-            <p>Cancel Booking</p>
-          </div>
-          <div style={{ backgroundColor: "#F2F6FD" }} className="child">
-            <div className="d-flex justify-content-between">
-              <h4 className="fw-bold">{allBooking.Pending ? allBooking.Pending : 0}</h4>
-              <FaCalendarDay />
-            </div>
-            <p>Pending Booking</p>
-          </div>
-        </div>
-        <div style={{ backgroundColor: "#F5F6F7" }} className="d-flex revenue my-2 py-2">
-          <div style={{ backgroundColor: "white" }} className="child1 mx-5">
-            <div className="d-flex justify-content-between">
-              <h4 className="fw-bold">
-                {totalBooking.toLocaleString() === "0" ? 0 : totalBooking.toLocaleString()} vnd
+        <div className="flex gap-4 bg-gray-100 rounded-lg p-4 mb-8">
+          <div className="bg-white rounded-lg p-6 flex-1 shadow mx-2">
+            <div className="flex justify-between items-center">
+              <h4 className="text-2xl font-bold">
+                {totalBooking.toLocaleString() === "0"
+                  ? 0
+                  : totalBooking.toLocaleString()}{" "}
+                vnd
               </h4>
-              <FaMoneyCheckAlt />
+              <FaMoneyCheckAlt className="text-3xl text-green-500" />
             </div>
-            <p>Revenue Booking</p>
+            <p className="mt-2 text-gray-600">Revenue Booking</p>
           </div>
-          <div style={{ backgroundColor: "white" }} className="child1">
-            <div className="d-flex justify-content-between">
-              <h4 className="fw-bold">
-                {totalService.toLocaleString() === "0" ? 0 : totalService.toLocaleString()} vnd
+          <div className="bg-white rounded-lg p-6 flex-1 shadow mx-2">
+            <div className="flex justify-between items-center">
+              <h4 className="text-2xl font-bold">
+                {totalService.toLocaleString() === "0"
+                  ? 0
+                  : totalService.toLocaleString()}{" "}
+                vnd
               </h4>
-              <FaMoneyCheckAlt />
+              <FaMoneyCheckAlt className="text-3xl text-green-500" />
             </div>
-            <p>Revenue Service</p>
+            <p className="mt-2 text-gray-600">Revenue Service</p>
           </div>
         </div>
       </div>
-      <div className="my-5">
-        <div className="mx-5">
-          <h4 className="fw-bold">BarChart Status Of Booking In Year {year ? year : "2024"}</h4>
-        </div>
-        <div className="my-3 graph">
+      <div className="my-8">
+        <h4 className="font-bold text-lg mb-4">
+          BarChart Status Of Booking In Year {year ? year : "2024"}
+        </h4>
+        <div className="flex justify-center">
           <BarChart width={1100} height={250} data={allBookingByYear}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="Month" />

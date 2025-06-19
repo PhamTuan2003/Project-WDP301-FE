@@ -23,6 +23,8 @@ import { useDispatch } from "react-redux";
 import { initializeAuth } from "./redux/asyncActions";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
+import MainLayout from "./layout/MainLayout";
+import ProtectedRoute from "./components/routers/ProtectedRoute";
 
 //COMPANY
 import Dashboard from "./components/company/Dashboard";
@@ -30,7 +32,6 @@ import ManageCompany from "./components/company/ManageCompany";
 import ProfileCompany from "./components/company/Profile";
 import ViewBooking from "./components/company/ViewBooking";
 import ViewYacht from "./components/company/ViewYacht";
-import ProtectedRoute from "./components/routers/ProtectedRoute";
 
 function App() {
   const [mode, setMode] = useState(
@@ -56,30 +57,35 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Header toggleTheme={toggleTheme} mode={mode} />
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/find-boat" element={<FindBoat />} />
-          <Route path="/boat-detail/:id" element={<DetailBoat />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/ve-chung-toi" element={<AboutUs />} />
-          <Route
-            path="/dieu-khoan-va-dieu-kien"
-            element={<TermsAndConditions />}
-          />
-          <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
-          <Route path="/huong-dan-su-dung" element={<UserGuide />} />
-          <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
-          <Route path="/cau-hoi-thuong-gap" element={<FAQ />} />
-          <Route path="/quy-dinh-chung-va-luu-y" element={<RulesAndNotes />} />
-          <Route path="/lien-he-tu-van" element={<ContactSection />} />
-          <Route path="/doanh-nghiep" element={<Enterprise />} />
-          <Route path="/view-profile" element={<CustomerProfile />} />
-          <Route path="/blog" element={<BlogList />} />
-          <Route path="/blog/:id" element={<BlogDetail />} />
-          {/* Add thêm nếu có thêm */}
+          {/* Các route public/user */}
+          <Route element={<MainLayout toggleTheme={toggleTheme} mode={mode} />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/find-boat" element={<FindBoat />} />
+            <Route path="/boat-detail/:id" element={<DetailBoat />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/ve-chung-toi" element={<AboutUs />} />
+            <Route
+              path="/dieu-khoan-va-dieu-kien"
+              element={<TermsAndConditions />}
+            />
+            <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
+            <Route path="/huong-dan-su-dung" element={<UserGuide />} />
+            <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
+            <Route path="/cau-hoi-thuong-gap" element={<FAQ />} />
+            <Route
+              path="/quy-dinh-chung-va-luu-y"
+              element={<RulesAndNotes />}
+            />
+            <Route path="/lien-he-tu-van" element={<ContactSection />} />
+            <Route path="/doanh-nghiep" element={<Enterprise />} />
+            <Route path="/view-profile" element={<CustomerProfile />} />
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog/:id" element={<BlogDetail />} />
+          </Route>
 
+          {/* Các route company */}
           <Route
             path="/manage-company"
             element={
@@ -94,7 +100,6 @@ function App() {
             <Route path="profile" element={<ProfileCompany />} />
           </Route>
         </Routes>
-        <Footer />
       </Router>
     </ThemeProvider>
   );
