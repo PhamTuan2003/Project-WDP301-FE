@@ -22,11 +22,13 @@ import {
   resetBookingForm,
   setBookingErrors,
   setEditingBookingId,
+  setGuestCounter,
   updateBookingForm,
   updateRooms,
+  setSelectedYachtServices,
 } from "../../../redux/actions/bookingActions";
 import { closeBookingModal } from "../../../redux/actions";
-import { setGuestCounter } from "../../../redux/actions/bookingActions";
+import RoomServicesModal from "../RoomServicesModal";
 
 const BookingRoomModal = ({ show, yachtData }) => {
   const dispatch = useDispatch();
@@ -40,9 +42,25 @@ const BookingRoomModal = ({ show, yachtData }) => {
     consultation,
     hasConsultation,
     editingBookingId,
-    selectedRoomServices,
+    selectedYachtServices,
+    guestCounter,
   } = useSelector((state) => state.booking);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+
+  const selectedRooms = rooms.filter((r) => r.quantity > 0);
+  const adults = Number(guestCounter?.adults ?? 0);
+  const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
+  const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
+
+  const totalRoomPrice = selectedRooms.reduce(
+    (sum, room) => sum + room.price * room.quantity,
+    0
+  );
+  const totalServicePrice = selectedYachtServices
+    ? selectedYachtServices.reduce((sum, sv) => sum + sv.price * totalGuests, 0)
+    : 0;
+
   useEffect(() => {
     if (show && yachtData?._id) {
       dispatch(fetchConsultationRequest(yachtData._id));
@@ -81,14 +99,8 @@ const BookingRoomModal = ({ show, yachtData }) => {
 
   const prepareSharedBookingData = () => {
     let isoCheckInDate = bookingForm.checkInDate;
-    const adults = Number(guestCounter?.adults ?? 0);
     const childrenUnder10 = Number(guestCounter?.childrenUnder10 ?? 0);
-    const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
-    const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
-    console.log(
-      "[BookingRoomModal] totalGuests (adults + ceil(childrenAbove10/2)):",
-      totalGuests
-    );
+
     if (bookingForm.checkInDate && !bookingForm.checkInDate.includes("T")) {
       try {
         const [day, month, year] = bookingForm.checkInDate.split("/");
@@ -99,6 +111,8 @@ const BookingRoomModal = ({ show, yachtData }) => {
         console.error("Lỗi chuyển đổi ngày:", e);
       }
     }
+
+    const totalPrice = totalRoomPrice + totalServicePrice;
 
     return {
       fullName: bookingForm.fullName,
@@ -129,6 +143,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
       yachtId: yachtData._id,
       scheduleId: selectedSchedule?._id || selectedSchedule || null,
       bookingId: consultation?.data?.bookingId || null,
+      selectedServices: selectedYachtServices,
     };
   };
 
@@ -177,19 +192,17 @@ const BookingRoomModal = ({ show, yachtData }) => {
       dispatch(
         updateBookingForm("requirements", consultation.data.requirements || "")
       );
-      const adults = consultation?.data?.adults ?? 1;
-      const childrenAbove10 = consultation?.data?.childrenAbove10 ?? 0;
       const childrenUnder10 = consultation?.data?.childrenUnder10 ?? 0;
       dispatch(
         setGuestCounter({
-          adults,
+          adults: consultation?.data?.adults ?? 1,
           childrenUnder10,
-          childrenAbove10,
+          childrenAbove10: consultation?.data?.childrenAbove10 ?? 0,
         })
       );
       let guestCountValue = `${adults} người lớn`;
-      if (childrenAbove10 > 0)
-        guestCountValue += `, ${childrenAbove10} trẻ em từ 10 tuổi`;
+      if (consultation.data.childrenAbove10 > 0)
+        guestCountValue += `, ${consultation.data.childrenAbove10} trẻ em từ 10 tuổi`;
       if (childrenUnder10 > 0)
         guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
       dispatch(updateBookingForm("guestCount", guestCountValue));
@@ -254,6 +267,11 @@ const BookingRoomModal = ({ show, yachtData }) => {
     }
   };
 
+  const handleSelectYachtServices = (services) => {
+    dispatch(setSelectedYachtServices(services));
+    setShowServiceModal(false);
+  };
+
   useEffect(() => {
     if (show) {
       if (!editingBookingId) {
@@ -272,17 +290,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
     dispatch(closeBookingModal());
   };
 
-  const selectedRooms = rooms.filter((r) => r.quantity > 0);
   const maxPeople = selectedRooms.reduce(
     (sum, r) => sum + (r.max_people || 0),
     0
   );
-  const { guestCounter } = useSelector((state) => state.booking);
-  const totalGuests =
-    guestCounter.adults +
-    guestCounter.childrenUnder10 +
-    Math.ceil(guestCounter.childrenAbove10 / 2);
-  const overLimit = maxPeople && totalGuests > maxPeople;
 
   if (!show) return null;
 
@@ -415,42 +426,33 @@ const BookingRoomModal = ({ show, yachtData }) => {
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                 }}
               >
-                {selectedRooms.map((room) => {
-                  const services = selectedRoomServices[room.id] || [];
-                  return (
-                    <Box key={room.id} sx={{ mb: 1 }}>
-                      <Typography
-                        sx={{
-                          fontWeight: "bold",
-                          fontSize: "1rem",
-                          color: "text.primary",
-                          fontFamily: "Archivo, sans-serif",
-                        }}
-                      >
-                        {room.name} x {room.quantity}:{" "}
-                        {room.price.toLocaleString()}đ/phòng
+                {(selectedRooms || []).map((room) => (
+                  <Box key={room.id} sx={{ mb: 1 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        color: "text.primary",
+                        fontFamily: "Archivo, sans-serif",
+                      }}
+                    >
+                      {room.name} x {room.quantity}:{" "}
+                      {room.price.toLocaleString()}đ/phòng
+                    </Typography>
+                  </Box>
+                ))}
+                {/* Hiển thị dịch vụ đã chọn cho booking */}
+                {selectedYachtServices && selectedYachtServices.length > 0 && (
+                  <Box sx={{ ml: 2 }}>
+                    {selectedYachtServices.map((sv, idx) => (
+                      <Typography key={sv.id || idx}>
+                        - Dịch vụ: {sv.serviceName} x {totalGuests} khách:{" "}
+                        {(sv.price * totalGuests).toLocaleString()}đ (
+                        {sv.price.toLocaleString()}đ/người)
                       </Typography>
-                      {services.length > 0 && (
-                        <Box sx={{ ml: 2 }}>
-                          {services.map((sv, idx) => (
-                            <Typography
-                              key={sv.id || idx}
-                              sx={{
-                                fontSize: "0.95rem",
-                                color: "text.secondary",
-                                fontFamily: "Archivo, sans-serif",
-                              }}
-                            >
-                              - Dịch vụ: {sv.name} x {room.quantity}:{" "}
-                              {(sv.price * room.quantity).toLocaleString()}đ (
-                              {sv.price.toLocaleString()}đ/người)
-                            </Typography>
-                          ))}
-                        </Box>
-                      )}
-                    </Box>
-                  );
-                })}
+                    ))}
+                  </Box>
+                )}
                 {/* Tổng phụ */}
                 <Box sx={{ mt: 1, ml: 1 }}>
                   <Typography
@@ -460,14 +462,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
                       fontFamily: "Archivo, sans-serif",
                     }}
                   >
-                    Tổng tiền phòng:{" "}
-                    {selectedRooms
-                      .reduce(
-                        (sum, room) => sum + room.price * room.quantity,
-                        0
-                      )
-                      .toLocaleString()}{" "}
-                    đ
+                    Tổng tiền phòng: {totalRoomPrice.toLocaleString()} đ
                   </Typography>
                   <Typography
                     sx={{
@@ -476,19 +471,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
                       fontFamily: "Archivo, sans-serif",
                     }}
                   >
-                    Tổng tiền dịch vụ:{" "}
-                    {selectedRooms
-                      .reduce(
-                        (sum, room) =>
-                          sum +
-                          (selectedRoomServices[room.id]?.reduce(
-                            (s, sv) => s + sv.price * room.quantity,
-                            0
-                          ) || 0),
-                        0
-                      )
-                      .toLocaleString()}{" "}
-                    đ
+                    Tổng tiền dịch vụ: {totalServicePrice.toLocaleString()} đ
                   </Typography>
                 </Box>
               </Box>
@@ -615,19 +598,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
                   variant="h6"
                   sx={{ fontWeight: "bold", color: "primary.main" }}
                 >
-                  {selectedRooms
-                    .reduce(
-                      (sum, room) =>
-                        sum +
-                        room.price * room.quantity +
-                        (selectedRoomServices[room.id]?.reduce(
-                          (s, sv) => s + sv.price * room.quantity,
-                          0
-                        ) || 0),
-                      0
-                    )
-                    .toLocaleString()}{" "}
-                  đ
+                  {(totalRoomPrice + totalServicePrice).toLocaleString()} đ
                 </Typography>
               </Box>
               <Box
@@ -725,6 +696,13 @@ const BookingRoomModal = ({ show, yachtData }) => {
         consultation={consultation?.data}
         onEdit={handleEditConsultation}
         onCancel={handleCancelConsultation}
+      />
+      <RoomServicesModal
+        show={showServiceModal}
+        yachtId={yachtData._id}
+        onClose={() => setShowServiceModal(false)}
+        onSelectServices={handleSelectYachtServices}
+        selectedServices={selectedYachtServices}
       />
     </>
   );

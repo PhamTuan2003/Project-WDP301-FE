@@ -174,7 +174,7 @@ export const createBookingOrConsultationRequest =
       if (!token) {
         throw new Error("Không tìm thấy token xác thực.");
       }
-      const { selectedSchedule, selectedServices } = getState().booking;
+      const { selectedSchedule, selectedYachtServices } = getState().booking;
       const requiredFields = [
         "yachtId",
         "fullName",
@@ -217,7 +217,7 @@ export const createBookingOrConsultationRequest =
           beds: room.beds || 1,
           image: room.image || room.avatar || "",
         })),
-        selectedServices: selectedServices || [],
+        selectedServices: selectedYachtServices,
         scheduleId: selectedSchedule || bookingData.scheduleId || null,
         requestType: requestType,
       };

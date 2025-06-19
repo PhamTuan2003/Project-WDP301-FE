@@ -155,7 +155,7 @@ const GuestCounter = ({ maxPeople }) => {
               <Typography
                 sx={{
                   mx: 2,
-                  width: 16,
+                  width: 20,
                   textAlign: "center",
                   color: "text.primary",
                   fontFamily: "Archivo, sans-serif",
@@ -218,7 +218,7 @@ const GuestCounter = ({ maxPeople }) => {
               <Typography
                 sx={{
                   mx: 2,
-                  width: 16,
+                  width: 20,
                   textAlign: "center",
                   color: "text.primary",
                   fontFamily: "Archivo, sans-serif",
@@ -294,7 +294,7 @@ const GuestCounter = ({ maxPeople }) => {
               <Typography
                 sx={{
                   mx: 2,
-                  width: 16,
+                  width: 20,
                   textAlign: "center",
                   color: "text.primary",
                   fontFamily: "Archivo, sans-serif",

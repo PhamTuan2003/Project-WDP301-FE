@@ -50,7 +50,7 @@ export const getTheme = (mode = "light") =>
   createTheme({
     palette: mode === "dark" ? darkPalette : lightPalette,
     typography: {
-      fontFamily: "Roboto, Arial, sans-serif",
+      fontFamily: "Archivo, sans-serif",
     },
     shape: {
       borderRadius: 12,

@@ -40,8 +40,7 @@ const bookingInitialState = {
   },
   hasConsultation: false,
   editingBookingId: null,
-  selectedRoomServices: {},
-  selectedServices: [],
+  selectedYachtServices: [],
 };
 
 const bookingReducer = (state = bookingInitialState, action) => {
@@ -391,7 +390,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
       };
     case "SET_ROOM_SERVICES": {
       const { roomId, services } = action.payload;
-      const updatedServices = { ...state.selectedRoomServices };
+      const updatedServices = { ...state.selectedYachtServices };
       if (!services || services.length === 0) {
         delete updatedServices[roomId];
       } else {
@@ -399,13 +398,13 @@ const bookingReducer = (state = bookingInitialState, action) => {
       }
       return {
         ...state,
-        selectedRoomServices: updatedServices,
+        selectedYachtServices: updatedServices,
       };
     }
-    case "SET_SELECTED_SERVICES":
+    case "SET_SELECTED_YACHT_SERVICES":
       return {
         ...state,
-        selectedServices: action.payload,
+        selectedYachtServices: action.payload,
       };
     default:
       return state;
