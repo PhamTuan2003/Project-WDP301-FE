@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import _ from 'lodash';
+import { useEffect, useState } from 'react';
 import { Button, Col, Row } from 'react-bootstrap';
 import Accordion from 'react-bootstrap/Accordion';
-import { getAllLocation, getYachtByIdYacht, getYachtType, updateYacht } from '../../services/ApiServices';
 import Form from 'react-bootstrap/Form';
 import { FcPlus } from "react-icons/fc";
-import _ from 'lodash'
 import { toast } from 'react-toastify';
+import { getAllLocation, getYachtByIdYacht, getYachtType, updateYacht } from '../../services/ApiServices';
 const ManageInforYacht = (props) => {
     const { idYacht } = props;
     const [inforYacht, setInforYacht] = useState({})
@@ -60,16 +60,16 @@ const ManageInforYacht = (props) => {
 
     const getLocation = async () => {
         let res = await getAllLocation();
-        if (res && res.data.data.length > 0) {
-            setListLocation(res.data.data);
+        if (res && res.data.length > 0) {
+            setListLocation(res.data);
         } else {
             toast.error('Location Not Found')
         }
     }
     const getAllType = async () => {
         let res = await getYachtType();
-        if (res && res.data.data.length > 0) {
-            setListYachtType(res.data.data)
+        if (res && res.data.length > 0) {
+            setListYachtType(res.data)
         } else {
             toast.error('Yacht Type Not Found')
         }
@@ -168,7 +168,7 @@ const ManageInforYacht = (props) => {
                                     <Form.Select value={idLocation} onChange={event => setIdLocation(event.target.value)} >
                                         {
                                             listLocation && listLocation.map((location) =>
-                                                <option key={location.idLocation} value={location.idLocation}>{location.name}</option>
+                                                <option key={location._id} value={location._id}>{location.name}</option>
                                             )
                                         }
 
@@ -179,7 +179,7 @@ const ManageInforYacht = (props) => {
                                     <Form.Select value={idYachtType} onChange={event => setIdYachtType(event.target.value)} >
                                         {
                                             listYachtType && listYachtType.map((type) =>
-                                                <option key={type.idYachtType} value={type.idYachtType}>{type.starRanking} Sao</option>
+                                                <option key={type._id} value={type._id}>{type.starRanking} Sao</option>
                                             )
                                         }
 

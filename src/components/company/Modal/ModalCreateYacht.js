@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react'
-import Modal from 'react-bootstrap/Modal';
+import _ from 'lodash';
+import { useEffect, useState } from 'react';
+import { Button } from 'react-bootstrap';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
+import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
-import { Button } from 'react-bootstrap'
 import { FcPlus } from "react-icons/fc";
-import { createYacht, getYachtType } from '../../../services/ApiServices';
-import { toast } from 'react-toastify';
-import _ from 'lodash';
 import { useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
+import { createYacht, getYachtType } from '../../../services/ApiServices';
 
 const ModalCreateYacht = (props) => {
     const { show, setShow, location } = props;
@@ -88,7 +88,7 @@ const ModalCreateYacht = (props) => {
 
     const getAllType = async () => {
         let res = await getYachtType();
-        setYachtType(res.data.data)
+        setYachtType(res.data)
     }
 
 
@@ -169,7 +169,7 @@ const ModalCreateYacht = (props) => {
                                 <Form.Select onChange={handleChange} name='location'>
                                     {
                                         location && location.map((location) =>
-                                            <option key={location.idLocation} value={location.idLocation}>{location.name}</option>
+                                            <option key={location._id} value={location._id}>{location.name}</option>
                                         )
                                     }
 
@@ -180,7 +180,7 @@ const ModalCreateYacht = (props) => {
                                 <Form.Select onChange={handleChange} name='yachtType'>
                                     {
                                         yachtType && yachtType.map((type) =>
-                                            <option key={type.idYachtType} value={type.idYachtType}>{type.starRanking} Sao</option>
+                                            <option key={type._id} value={type._id}>{type.starRanking} Sao</option>
                                         )
                                     }
 
