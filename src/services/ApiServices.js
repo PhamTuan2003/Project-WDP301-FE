@@ -235,13 +235,14 @@ export const createYacht = (idCompany, name, image, launch, hullBody, descriptio
     data.append('name', name);
     data.append('image', image);
     data.append('launch', launch);
-    data.append('hullBody', hullBody);
     data.append('description', description);
+    data.append('hullBody', hullBody);
     data.append('rule', rule);
     data.append('itinerary', itinerary);
-    data.append('idYachtType', idYachtType);
-    data.append('idLocation', idLocation);
-    return axios.post(`/api/companies/yacht/insertYacht/${idCompany}`, data);
+     data.append('locationId', idLocation);
+    data.append('yachtTypeId', idYachtType);
+    data.append('IdCompanys', idCompany);
+    return axios.post(`/api/companies/yacht/insertYacht`, data);
 }
 
 export const createRoom = (roomName, area, description, roomType, avatar, idYacht) => {

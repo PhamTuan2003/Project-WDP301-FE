@@ -1,26 +1,20 @@
-import React, { useEffect, useState } from "react";
-import Modal from "react-bootstrap/Modal";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
-import { Button } from "react-bootstrap";
-import { FcPlus } from "react-icons/fc";
-import { createYacht, getYachtType } from "../../../services/ApiServices";
-import { toast } from "react-toastify";
 import _ from "lodash";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import Modal from "react-bootstrap/Modal";
 import {
-  FaRegEdit,
-  FaSave,
-  FaTimes,
-  FaShip,
-  FaRegStickyNote,
-  FaRegImage,
-  FaMapMarkerAlt,
-  FaList,
-  FaCalendarAlt,
-  FaClipboardList,
+    FaCalendarAlt,
+    FaClipboardList,
+    FaList,
+    FaMapMarkerAlt,
+    FaRegImage,
+    FaRegStickyNote,
+    FaSave,
+    FaShip,
+    FaTimes
 } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { createYacht, getYachtType } from "../../../services/ApiServices";
 
 const ModalCreateYacht = (props) => {
   const { show, setShow, location } = props;
@@ -77,6 +71,7 @@ const ModalCreateYacht = (props) => {
     }
   };
   const handleCreateYacht = async () => {
+    console.log("datatetststst", data);
     if (
       !data.name ||
       !image ||
@@ -91,12 +86,12 @@ const ModalCreateYacht = (props) => {
       toast.error("Please fill in all fields");
     } else {
       let res = await createYacht(
-        idCompany,
+        idCompany ? idCompany : "6824c0c72c32e5fbf0814b83",
         data.name.trim(),
         image,
         data.launch,
-        data.hullBody.trim(),
         data.description.trim(),
+        data.hullBody.trim(),
         data.rule.trim(),
         data.itinerary.trim(),
         data.location,
@@ -114,7 +109,7 @@ const ModalCreateYacht = (props) => {
 
   const getAllType = async () => {
     let res = await getYachtType();
-    setYachtType(res.data.data);
+    setYachtType(res.data);
   };
 
   return (
@@ -244,8 +239,8 @@ const ModalCreateYacht = (props) => {
                   {location &&
                     location.map((location) => (
                       <option
-                        key={location.idLocation}
-                        value={location.idLocation}
+                        key={location._id}
+                        value={location._id}
                       >
                         {location.name}
                       </option>
@@ -268,7 +263,7 @@ const ModalCreateYacht = (props) => {
                 >
                   {yachtType &&
                     yachtType.map((type) => (
-                      <option key={type.idYachtType} value={type.idYachtType}>
+                      <option key={type._id} value={type._id}>
                         {type.starRanking} Sao
                       </option>
                     ))}

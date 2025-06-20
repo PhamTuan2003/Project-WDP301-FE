@@ -1,31 +1,29 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
-import { getTheme } from "./theme/theme";
-import Header from "./layout/Header";
-import Footer from "./layout/Footer";
-import HomePage from "./pages/HomePage";
-import FindBoat from "./pages/FindBoat";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { Route, Routes } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
 import Login from "./auth/Login";
 import Register from "./auth/Register";
-import CustomerProfile from "./layout/componentsHeader/CustomerProfile";
-import AboutUs from "./layout/componentsFooter/AboutUs";
-import TermsAndConditions from "./layout/componentsFooter/TermsAndConditions";
-import PrivacyPolicy from "./layout/componentsFooter/PrivacyPolicy";
-import UserGuide from "./layout/componentsFooter/UserGuide";
-import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
-import ContactSection from "./layout/componentsFooter/ContactSection";
-import Enterprise from "./components/Enterprise/Enterprise";
 import BlogDetail from "./components/Blog/BlogDetail";
 import BlogList from "./components/Blog/BlogList";
-import DetailBoat from "./pages/DetailBoat";
-import { useDispatch } from "react-redux";
-import { initializeAuth } from "./redux/asyncActions";
-import FAQ from "./layout/componentsFooter/FAQ";
-import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
-import MainLayout from "./layout/MainLayout";
+import Enterprise from "./components/Enterprise/Enterprise";
 import ProtectedRoute from "./components/routers/ProtectedRoute";
-
+import AboutUs from "./layout/componentsFooter/AboutUs";
+import ContactSection from "./layout/componentsFooter/ContactSection";
+import FAQ from "./layout/componentsFooter/FAQ";
+import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
+import PrivacyPolicy from "./layout/componentsFooter/PrivacyPolicy";
+import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
+import TermsAndConditions from "./layout/componentsFooter/TermsAndConditions";
+import UserGuide from "./layout/componentsFooter/UserGuide";
+import CustomerProfile from "./layout/componentsHeader/CustomerProfile";
+import MainLayout from "./layout/MainLayout";
+import DetailBoat from "./pages/DetailBoat";
+import FindBoat from "./pages/FindBoat";
+import HomePage from "./pages/HomePage";
+import { initializeAuth } from "./redux/asyncActions";
+import { getTheme } from "./theme/theme";
 //COMPANY
 import Dashboard from "./components/company/Dashboard";
 import ManageCompany from "./components/company/ManageCompany";
@@ -56,7 +54,6 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
         <Routes>
           {/* Các route public/user */}
           <Route element={<MainLayout toggleTheme={toggleTheme} mode={mode} />}>
@@ -100,7 +97,19 @@ function App() {
             <Route path="profile" element={<ProfileCompany />} />
           </Route>
         </Routes>
-      </Router>
+
+        <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </ThemeProvider>
   );
 }

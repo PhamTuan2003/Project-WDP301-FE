@@ -1,9 +1,17 @@
-import { createStore, applyMiddleware } from "redux";
-import thunk from "redux-thunk";
-import rootReducer from "./rootReducer";
+import { applyMiddleware, createStore } from 'redux';
+import { composeWithDevTools } from 'redux-devtools-extension';
+import { persistReducer, persistStore } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+import thunk from 'redux-thunk';
+import rootReducer from './reducer/RootReducer';
 
-const store = createStore(rootReducer, applyMiddleware(thunk));
+const persistConfig = {
+    key: 'root',
+    storage,
+}
 
-console.log("Redux Store initialized:", store.getState());
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+const store = createStore(persistedReducer, composeWithDevTools(applyMiddleware(thunk)))
+let persistor = persistStore(store);
 
-export default store;
+export { persistor, store };

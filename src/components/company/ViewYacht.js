@@ -1,22 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { Button, FormControl, FormGroup } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { FaCirclePlus, FaLocationDot } from "react-icons/fa6";
 import { RiShipLine } from "react-icons/ri";
-import { FaLocationDot } from "react-icons/fa6";
-import "./ViewYacht.scss";
 import ReactPaginate from "react-paginate";
-import "./Company.scss";
-import { FaCirclePlus } from "react-icons/fa6";
-import ModalCreateYacht from "./Modal/ModalCreateYacht";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   deleteYacht,
   getAllLocation,
   getYachtByIdCompany,
   getYachtType,
 } from "../../services/ApiServices";
-import Form from "react-bootstrap/Form";
-import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
+import "./Company.scss";
+import ModalCreateYacht from "./Modal/ModalCreateYacht";
+import "./ViewYacht.scss";
 const ViewYacht = () => {
   const navigate = useNavigate();
   const [isShowModal, setIsShowModal] = useState(false);
@@ -77,15 +74,16 @@ const ViewYacht = () => {
 
   const getLocation = async () => {
     let res = await getAllLocation();
-    if (res && res.data && res.data.data) {
-      setLocation(res.data.data);
+    if (res && res.data ) {
+      setLocation(res.data);
+      console.log("Location Data:", res.data);
     }
   };
 
   const getTypeYacht = async () => {
     let res = await getYachtType();
-    if (res && res.data && res.data.data) {
-      setYachtType(res.data.data);
+    if (res && res.data) {
+      setYachtType(res.data);
     }
   };
 
