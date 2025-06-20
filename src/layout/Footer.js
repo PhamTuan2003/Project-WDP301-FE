@@ -57,10 +57,9 @@ export default function Footer() {
         pb: 2,
       }}
     >
-      <Box maxWidth={1250} mx="auto" px={0}>
+      <Box maxWidth={1100} mx="auto" px={2}>
         <Grid container spacing={3}>
-          {/* Cột 1: Logo và thông tin công ty */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <Stack
               direction="row"
               alignItems="center"
@@ -83,9 +82,7 @@ export default function Footer() {
               Mã số doanh nghiệp: AAAAAAAAAAAA do Sở KHĐT TP Hà Nội cấp ngày 05/06/2023
             </Typography>
           </Grid>
-
-          {/* Cột 2: Các thông tin liên kết */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
               Thông tin
             </Typography>
@@ -110,47 +107,29 @@ export default function Footer() {
               </MuiLink>
             </Stack>
           </Grid>
-
-          {/* 🆕 Cột 3: Du Thuyền */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
-              Du Thuyền
-            </Typography>
-            <Stack spacing={0.5}>
-              <MuiLink href="/blog" color="inherit" underline="hover">
-                Blog
-              </MuiLink>
-              <MuiLink href="/quy-dinh-chung-va-luu-y" color="inherit" underline="hover">
-                Quy định chung và lưu ý
-              </MuiLink>
-              <MuiLink href="/cau-hoi-thuong-gap" color="inherit" underline="hover">
-                Các câu hỏi thường gặp
-              </MuiLink>
-            </Stack>
-          </Grid>
-
-          {/* Cột 4: Liên hệ và logo Bộ Công thương */}
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={4}>
             <Typography variant="subtitle1" mb={1} fontWeight={700} color="text.primary">
               Liên hệ
             </Typography>
             <Typography variant="body3" color="text.secondary">
-              Hotline: 0912 202 885
+              Hotline: 0123456789
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Email: huyndhe176876@fpt.edu.vn
+              Email: info@longwave.example
             </Typography>
             <Box
               component="img"
               src="/images/logo-bo-cong-thuong.png"
               alt="Đã thông báo Bộ Công thương"
-              sx={{ height: 75, width: 200, mt: 2 }}
+              sx={{ height: 48, mt: 2 }}
             />
           </Grid>
         </Grid>
         <Box textAlign="center" mt={6} sx={{ opacity: 0.7 }}>
-          <Typography fontSize={14} color="text.primary" fontWeight="bold">
-            &copy; 2025 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Bản quyền thuộc về 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Đã đăng ký bản quyền. Thiết kế bởi WDP301 - Group 4
+          <Typography fontSize={12} color="text.primary">
+            &copy; 2025 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Bản quyền thuộc về 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮. Đã đăng ký bản quyền.
+            <br />
+            Thiết kế bởi WDP301 - Group 4.
           </Typography>
         </Box>
       </Box>

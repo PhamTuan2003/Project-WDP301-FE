@@ -1,165 +1,125 @@
-import { Box, Typography, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import { BedDouble, Check, Minus, Plus, User, X } from "lucide-react";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { decrementRoomQuantity, incrementRoomQuantity } from "../../redux/actions/bookingActions";
+import {
+  incrementRoomQuantity,
+  decrementRoomQuantity,
+} from "../../redux/action";
 
 const RoomModal = ({ show, room, onClose }) => {
   const dispatch = useDispatch();
 
+  // Get the latest room data from Redux store
   const rooms = useSelector((state) => state.booking.rooms);
   const currentRoom = rooms.find((r) => r.id === room?.id) || room;
 
-  const amenities = ["Nhìn ra biển", "Điều hòa", "Sạc điện thoại", "Ban công riêng", "Wi-Fi", "Két an toàn"];
+  // Hardcoded amenities list
+  const amenities = [
+    "Nhìn ra biển",
+    "Điều hòa",
+    "Sạc điện thoại",
+    "Ban công riêng",
+    "Wi-Fi",
+    "Két an toàn",
+  ];
 
+  // Prevent rendering if show is false or room is invalid
   if (!show || !room || !room.id) {
     return null;
   }
 
   return (
-    <Box
-      sx={{
-        position: "fixed",
-        inset: 0,
-        bgcolor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 50,
-      }}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Box
+        className="rounded-3xl max-w-4xl w-full mx-4 max-h-[90vh] p-5 overflow-y-auto"
         sx={{
-          bgcolor: "background.paper",
-          borderRadius: (theme) => theme.shape.borderRadius / 4,
-          maxWidth: "64rem",
-          width: "100%",
-          mx: 2,
-          maxHeight: "90vh",
-          p: 3,
-          overflowY: "auto",
+          bgcolor: (theme) => theme.palette.background.paper,
+          borderColor: (theme) => theme.palette.divider,
           boxShadow: (theme) => theme.shadows[1],
-          border: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Box sx={{ display: "flex" }}>
-          <Box sx={{ width: "50%", p: 2 }}>
-            <Box
-              component="img"
+        <div className="flex">
+          <div className="w-1/2 p-4">
+            <img
               src={room.image || room.avatar || "/images/default-room.jpg"}
               alt={room.name || "Room Image"}
-              sx={{
-                width: "100%",
-                height: 320,
-                objectFit: "cover",
-                borderRadius: (theme) => theme.shape.borderRadius / 4,
-              }}
+              className="w-full h-80 object-cover rounded-lg"
             />
-            <Box sx={{ display: "flex", mt: 1, gap: 1 }}></Box>
-          </Box>
-          <Box sx={{ width: "50%", p: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-              <Typography variant="h2" sx={{ fontSize: "1.5rem", fontWeight: "bold", color: "text.primary" }}>
+            <div className="flex mt-2 space-x-2"></div>
+          </div>
+          <div className="w-1/2 p-4">
+            <div className="flex justify-between items-center mb-7">
+              <h2 className="text-3xl font-bold">
                 {room.name || "Unknown Room"}
-              </Typography>
-              <Button onClick={onClose} sx={{ color: "text.secondary", "&:hover": { color: "text.primary" }, minWidth: 0 }}>
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
+              >
                 <X size={24} />
-              </Button>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Typography sx={{ fontSize: "0.875rem", fontWeight: "medium", color: "text.secondary", display: "flex", gap: 0.5 }}>
-                  <BedDouble size={16} /> {room.area || "33"} m²
-                </Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Typography sx={{ fontSize: "0.875rem", fontWeight: "medium", color: "text.secondary", display: "flex", gap: 0.5 }}>
-                  Tối đa: {room.beds || 0} <User size={16} />
-                </Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <Typography sx={{ fontSize: "1.125rem", fontWeight: "bold", color: "text.secondary" }}>
-                Các dịch vụ phòng có sẵn &darr;
-              </Typography>
-            </Box>
-            <Box sx={{ my: 3 }}>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+              </button>
+            </div>
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center">
+                <span className="text-sm font-medium flex items-center gap-1 text-gray-600">
+                  <BedDouble size={16} /> <p>{room.area || "33"} m²</p>
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-sm font-medium flex gap-1 items-center text-gray-600">
+                  <p>Tối đa: {room.beds || 0}</p>
+                  <User size={16} className="mr-1" />
+                </span>
+              </div>
+            </div>
+            <div className="my-6">
+              <div className="grid grid-cols-2 gap-2">
                 {amenities.map((amenity, index) => (
-                  <Box key={index} sx={{ display: "flex", alignItems: "center" }}>
+                  <div key={index} className="flex items-center">
                     <Check size={18} className="text-teal-400 mr-1" />
-                    <Typography sx={{ fontSize: "1rem", fontWeight: "medium", color: "text.primary" }}>
-                      {amenity}
-                    </Typography>
-                  </Box>
+                    <span className="text-base font-medium">{amenity}</span>
+                  </div>
                 ))}
-              </Box>
-            </Box>
+              </div>
+            </div>
             {room.description && (
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={{ fontSize: "0.875rem", color: "text.secondary" }}>{room.description}</Typography>
-              </Box>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">{room.description}</p>
+              </div>
             )}
-            <Box sx={{ borderTop: (theme) => `1px solid ${theme.palette.divider}`, pt: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                    borderRadius: (theme) => theme.shape.borderRadius / 2,
-                    gap: 1,
-                  }}
-                >
-                  <Button
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center border rounded-2xl space-x-3">
+                  <button
                     onClick={() => dispatch(decrementRoomQuantity(room.id))}
                     disabled={currentRoom.quantity === 0}
-                    sx={{
-                      minWidth: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      color: "text.primary",
-                      "&:hover": { bgcolor: "background.default" },
-                      "&:disabled": { opacity: 0.5 },
-                    }}
+                    className="w-8 h-8 flex items-center justify-center disabled:opacity-50"
                   >
                     <Minus size={16} />
-                  </Button>
-                  <Typography sx={{ fontWeight: "bold", minWidth: 20, textAlign: "center", color: "text.primary" }}>
+                  </button>
+                  <span className="font-semibold min-w-[20px] text-center">
                     {currentRoom.quantity || 0}
-                  </Typography>
-                  <Button
+                  </span>
+                  <button
                     onClick={() => dispatch(incrementRoomQuantity(room.id))}
-                    sx={{
-                      minWidth: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      color: "text.primary",
-                      "&:hover": { bgcolor: "background.default" },
-                    }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
                   >
                     <Plus size={16} />
-                  </Button>
-                </Box>
-                <Button
+                  </button>
+                </div>
+                <button
+                  className="bg-teal-400 text-white px-6 py-2 hover:bg-teal-500"
                   onClick={onClose}
-                  variant="contained"
-                  sx={{
-                    bgcolor: "primary.main",
-                    color: "primary.contrastText",
-                    px: 3,
-                    py: 1,
-                    "&:hover": { bgcolor: "primary.dark" },
-                  }}
                 >
                   Chọn phòng
-                </Button>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </Box>
-    </Box>
+    </div>
   );
 };
 

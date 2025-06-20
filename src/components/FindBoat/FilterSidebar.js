@@ -1,15 +1,28 @@
-import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { Box, Typography, Divider, Stack, Checkbox, FormControlLabel, Button, Chip } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import StarIcon from "@mui/icons-material/Star";
-import Spa from "@mui/icons-material/Spa";
 import DinnerDining from "@mui/icons-material/DinnerDining";
 import Kayaking from "@mui/icons-material/Kayaking";
 import Pool from "@mui/icons-material/Pool";
+import Spa from "@mui/icons-material/Spa";
+import StarIcon from "@mui/icons-material/Star";
 import WineBar from "@mui/icons-material/WineBar";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  Divider,
+  FormControlLabel,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-import { setSelectedStars, setSelectedDurations, setSelectedServices } from "../../redux/actions";
+import {
+  setSelectedDurations,
+  setSelectedServices,
+  setSelectedStars,
+} from "../../redux/action";
 
 const FilterSidebar = ({
   availableServices,
@@ -20,11 +33,15 @@ const FilterSidebar = ({
   onClearFilters,
 }) => {
   const dispatch = useDispatch();
-  const { selectedStars, selectedDurations, selectedServices } = useSelector((state) => state.filters || {});
+  const { selectedStars, selectedDurations, selectedServices } = useSelector(
+    (state) => state.filters || {}
+  );
   const [showAllServices, setShowAllServices] = useState(false);
 
   const handleStarChange = (star) => {
-    const newStars = selectedStars.includes(star) ? selectedStars.filter((s) => s !== star) : [...selectedStars, star];
+    const newStars = selectedStars.includes(star)
+      ? selectedStars.filter((s) => s !== star)
+      : [...selectedStars, star];
     dispatch(setSelectedStars(newStars));
     setCurrentPage(1);
   };
@@ -76,7 +93,11 @@ const FilterSidebar = ({
           fontFamily: (theme) => theme.typography.fontFamily,
         }}
       >
-        <Typography fontFamily={"Archivo, sans-serif"} variant="h6" fontWeight="bold">
+        <Typography
+          fontFamily={"Archivo, sans-serif"}
+          variant="h6"
+          fontWeight="bold"
+        >
           Bộ lọc
         </Typography>
         <Button
@@ -95,7 +116,11 @@ const FilterSidebar = ({
 
       {/* Đánh giá sao */}
       <Box sx={{ mb: 2 }}>
-        <Typography fontFamily={"Archivo, sans-serif"} variant="subtitle1" fontWeight="medium">
+        <Typography
+          fontFamily={"Archivo, sans-serif"}
+          variant="subtitle1"
+          fontWeight="medium"
+        >
           Đánh giá sao
         </Typography>
         <Divider sx={{ my: 1 }} />
@@ -103,7 +128,12 @@ const FilterSidebar = ({
           {[5, 4, 3, 2, 1].map((star) => (
             <FormControlLabel
               key={star}
-              control={<Checkbox checked={selectedStars.includes(star)} onChange={() => handleStarChange(star)} />}
+              control={
+                <Checkbox
+                  checked={selectedStars.includes(star)}
+                  onChange={() => handleStarChange(star)}
+                />
+              }
               label={
                 <span
                   style={{
@@ -129,7 +159,11 @@ const FilterSidebar = ({
 
       {/* Thời gian chuyến đi */}
       <Box sx={{ mb: 2 }}>
-        <Typography fontFamily={"Archivo, sans-serif"} variant="subtitle1" fontWeight="medium">
+        <Typography
+          fontFamily={"Archivo, sans-serif"}
+          variant="subtitle1"
+          fontWeight="medium"
+        >
           Lịch trình{" "}
           <CalendarTodayIcon
             sx={{
@@ -158,7 +192,11 @@ const FilterSidebar = ({
 
       {/* Dịch vụ */}
       <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle1" fontFamily={"Archivo, sans-serif"} fontWeight="medium">
+        <Typography
+          variant="subtitle1"
+          fontFamily={"Archivo, sans-serif"}
+          fontWeight="medium"
+        >
           Dịch vụ{" "}
           <Chip
             label={
@@ -172,7 +210,9 @@ const FilterSidebar = ({
                 }}
               >
                 <Spa sx={{ fontSize: "1rem", color: "text.secondary" }} />
-                <DinnerDining sx={{ fontSize: "1rem", color: "text.secondary" }} />
+                <DinnerDining
+                  sx={{ fontSize: "1rem", color: "text.secondary" }}
+                />
                 <Kayaking sx={{ fontSize: "1rem", color: "text.secondary" }} />
                 <Pool sx={{ fontSize: "1rem", color: "text.secondary" }} />
                 <WineBar sx={{ fontSize: "1rem", color: "text.secondary" }} />
@@ -180,7 +220,8 @@ const FilterSidebar = ({
             }
             sx={{
               fontFamily: "Archivo, sans-serif",
-              bgcolor: (theme) => (theme.palette.mode === "light" ? "#f0f7f7" : "#2f3b44"),
+              bgcolor: (theme) =>
+                theme.palette.mode === "light" ? "#f0f7f7" : "#2f3b44",
               fontWeight: 500,
               opacity: 0.85,
             }}
@@ -193,7 +234,10 @@ const FilterSidebar = ({
               key={service}
               sx={{ fontFamily: "Archivo, sans-serif" }}
               control={
-                <Checkbox checked={selectedServices.includes(service)} onChange={() => handleServiceChange(service)} />
+                <Checkbox
+                  checked={selectedServices.includes(service)}
+                  onChange={() => handleServiceChange(service)}
+                />
               }
               label={service}
             />
@@ -208,7 +252,8 @@ const FilterSidebar = ({
                 height: "35px",
                 borderRadius: "32px",
                 bgcolor: "primary.main",
-                color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
+                color: (theme) =>
+                  theme.palette.getContrastText(theme.palette.primary.main),
                 "&:hover": {
                   bgcolor: "primary.dark",
                 },

@@ -1,113 +1,90 @@
-import React, { useState } from "react";
-import Modal from "react-bootstrap/Modal";
-import { Button } from "react-bootstrap";
+import React, { useState } from 'react';
+import Modal from 'react-bootstrap/Modal';
+import { Button } from 'react-bootstrap'
 import { FcPlus } from "react-icons/fc";
-import { createYachtImage } from "../../../services/ApiServices";
-import { toast } from "react-toastify";
-import _ from "lodash";
-import { FaRegImage, FaSave, FaTimes } from "react-icons/fa";
+import { createYachtImage } from '../../../services/ApiServices';
+import { toast } from 'react-toastify';
+import _ from 'lodash';
 
 const ModalCreateImageYacht = (props) => {
-  const { show, setShow, idYacht } = props;
-  const [image, setImage] = useState("");
-  const [previewImage, setPreviewImage] = useState("");
+    const { show, setShow, idYacht } = props
+    const [image, setImage] = useState("");
+    const [previewImage, setPreviewImage] = useState("");
 
-  const handleClose = () => {
-    setShow(false);
-    setImage("");
-    setPreviewImage("");
-  };
-
-  const handelUploadImage = (event) => {
-    if (event.target.files[0] && event.target && event.target.files) {
-      setPreviewImage(URL.createObjectURL(event.target.files[0]));
-      setImage(event.target.files[0]);
+    const handleClose = () => {
+        setShow(false);
+        setImage('');
+        setPreviewImage('');
     }
-  };
 
-  const handleCreateImageYacht = async () => {
-    if (_.isEmpty(image) && _.isEmpty(previewImage)) {
-      toast.error("Please Choose File ");
-      return;
-    } else {
-      const res = await createYachtImage(idYacht, image);
-      if (res && res.data.data === true) {
-        toast.success("Create Image Successfully");
-        handleClose();
-        setPreviewImage("");
-        setImage("");
-        await props.getAllImagesYacht();
-      } else {
-        toast.error("Image Invalid");
-      }
+    const handelUploadImage = (event) => {
+        if (event.target.files[0] && event.target && event.target.files) {
+            setPreviewImage(URL.createObjectURL(event.target.files[0]));
+            setImage(event.target.files[0]);
+        }
     }
-  };
-  return (
-    <div className="my-4">
-      <Modal
-        size="xl"
-        show={show}
-        onHide={handleClose}
-        backdrop="static"
-        className="modal-add-new-yacht"
-        autoFocus
-        centered
-      >
-        <Modal.Header closeButton className="bg-indigo-50 rounded-t-2xl">
-          <Modal.Title>
-            <div className="flex items-center gap-2 text-indigo-700 font-bold text-lg">
-              <FaRegImage className="text-2xl" /> Add Yacht Image
-            </div>
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="bg-gray-50">
-          <div>
-            <label
-              className="flex items-center gap-2 font-semibold mb-1 cursor-pointer"
-              htmlFor="labelCreateImage"
+
+    const handleCreateImageYacht = async () => {
+        if (_.isEmpty(image) && _.isEmpty(previewImage)) {
+            toast.error("Please Choose File ")
+            return;
+        } else {
+            const res = await createYachtImage(idYacht, image);
+            if (res && res.data.data === true) {
+                toast.success("Create Image Successfully")
+                handleClose();
+                setPreviewImage('');
+                setImage('');
+                await props.getAllImagesYacht();
+            } else {
+                toast.error("Image Invalid")
+            }
+        }
+
+    }
+    return (
+        <div className='my-4'>
+            <Modal size='xl'
+                show={show}
+                onHide={handleClose}
+                backdrop="static"
+                className='modal-add-new-yacht'
+                autoFocus
+
             >
-              <FaRegImage className="text-indigo-500" /> Upload Image
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              id="labelCreateImage"
-              name="image"
-              onChange={(event) => handelUploadImage(event)}
-            />
-            <div className="flex items-center gap-4 mt-2">
-              {previewImage ? (
-                <img
-                  src={previewImage}
-                  alt="image upload"
-                  className="w-20 h-20 object-cover rounded-xl border-2 border-indigo-400 shadow"
-                />
-              ) : (
-                <span className="text-gray-400">Preview Avatar</span>
-              )}
-            </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer className="bg-indigo-50 rounded-b-2xl flex gap-2">
-          <button
-            className="flex items-center gap-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded-lg transition"
-            onClick={handleClose}
-            type="button"
-          >
-            <FaTimes /> Close
-          </button>
-          <button
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition"
-            onClick={handleCreateImageYacht}
-            type="button"
-          >
-            <FaSave /> Save
-          </button>
-        </Modal.Footer>
-      </Modal>
-    </div>
-  );
+                <Modal.Header closeButton>
+                    <Modal.Title>Add New Yacht</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className='col-mad-12'>
+                        <label style={{ width: 'fit-content' }} className='form-label label-upload' htmlFor='labelCreateImage'> <FcPlus /> Upload File IMAGE</label>
+                        <input
+                            type='file'
+                            accept='image/*'
+                            hidden id='labelCreateImage'
+                            name='image'
+                            onChange={(event) => handelUploadImage(event)}
+                        />
+                    </div>
+                    <div className='col-md-12 img-preview'>
+                        {previewImage ?
+                            <img src={previewImage} alt='image upload' />
+                            :
+                            <span>Preview Avartar</span>
+                        }
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleClose}>
+                        Close
+                    </Button>
+                    <Button variant="primary" onClick={handleCreateImageYacht}>
+                        Save
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        </div>
+    );
 };
 
 export default ModalCreateImageYacht;

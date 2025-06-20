@@ -1,93 +1,98 @@
-import React, { useEffect, useState } from "react";
-import { Button, ButtonGroup } from "react-bootstrap";
-import ModalUpdateProfile from "./Modal/ModalUpdateProfile";
-import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { getProfileCompany } from "../../services/ApiServices";
-import ModalChangePassCompany from "./Modal/ModalChangePassCompany";
-import { MdEmail } from "react-icons/md";
-import { FaMapMarkerAlt, FaUserTie, FaEdit } from "react-icons/fa";
-import { RiLockPasswordLine } from "react-icons/ri";
+import React, { useEffect, useState } from 'react';
+import { Button, ButtonGroup } from 'react-bootstrap';
+import ModalUpdateProfile from './Modal/ModalUpdateProfile';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { getProfileCompany } from '../../services/ApiServices';
+import ModalChangePassCompany from './Modal/ModalChangePassCompany';
 
 const ProfileCompany = () => {
-  const idCompany = useSelector((state) => state?.account?.idCompany);
 
-  const [isShowModal, setIsShowModal] = useState(false);
-  const [profile, setProfile] = useState({});
-  const [showModalChangePass, setShowModalChangePass] = useState(false);
+    const idCompany = useSelector(state => state.account.account.idCompany);
 
-  const handleClose = () => {
-    setIsShowModal(false);
-    setShowModalChangePass(false);
-  };
+    const [isShowModal, setIsShowModal] = useState(false);
+    const [profile, setProfile] = useState({});
+    const [showModalChangePass, setShowModalChangePass] = useState(false)
 
-  useEffect(() => {
-    getProfile();
-  }, []);
-
-  const getProfile = async () => {
-    let res = await getProfileCompany(idCompany);
-    if (res && res.data && res.data.data) {
-      setProfile(res.data.data);
+    const handleClose = () => {
+        setIsShowModal(false);
+        setShowModalChangePass(false)
     }
-  };
 
-  return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 py-8">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex flex-col items-center gap-4">
-          <img
-            src={profile.logo}
-            alt="logo"
-            className="w-24 h-24 object-cover rounded-full border-4 border-green-400 shadow mb-2"
-          />
-          <div className="w-full flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-gray-700">
-              <MdEmail className="text-xl text-green-500" />
-              <span className="font-semibold">Email:</span>
-              <span className="text-gray-500">{profile.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700">
-              <FaMapMarkerAlt className="text-xl text-green-500" />
-              <span className="font-semibold">Address:</span>
-              <span className="text-gray-500">{profile.address}</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700">
-              <FaUserTie className="text-xl text-green-500" />
-              <span className="font-semibold">Name:</span>
-              <span className="text-gray-500">{profile.name}</span>
-            </div>
-          </div>
-          <div className="flex gap-4 mt-6">
-            <button
-              onClick={() => setIsShowModal(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
-            >
-              <FaEdit />
-              Edit
-            </button>
-            <button
-              onClick={() => setShowModalChangePass(true)}
-              className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
-            >
-              <RiLockPasswordLine />
-              Change Password
-            </button>
-          </div>
+    useEffect(() => {
+        getProfile();
+    }, [])
+
+    const getProfile = async () => {
+        let res = await getProfileCompany(idCompany);
+        if (res && res.data && res.data.data) {
+            setProfile(res.data.data);
+        }
+    }
+
+    return (
+
+        <div>
+            <section >
+                <div className="container py-5 h-100">
+                    <div className="row d-flex justify-content-center align-items-center h-100">
+                        <div className="col col-lg-6 mb-4 mb-lg-0">
+                            <div className="card mb-3" style={{ borderRadius: '.5rem' }}>
+                                <div className="row g-0">
+                                    <div className="col-md-4 gradient-custom text-center" style={{ borderTopLeftRadius: '.3rem', borderBottomLeftRadius: '.3rem' }}>
+                                        <img src={profile.logo} alt='logo' className="img-fluid my-5" style={{ width: 80 }} />
+
+                                    </div>
+                                    <div className="col-md-8">
+                                        <div className="card-body p-4">
+                                            <h6>Information</h6>
+                                            <hr className="mt-0 mb-4" />
+                                            <div className="row pt-1">
+                                                <div className="col-6 mb-3">
+                                                    <h6>Email</h6>
+                                                    <p className="text-muted">{profile.email}</p>
+                                                </div>
+                                                <div className="col-6 mb-3">
+                                                    <h6>Address</h6>
+                                                    <p className="text-muted">{profile.address}</p>
+                                                </div>
+
+                                            </div>
+                                            <h6>Name</h6>
+                                            <hr className="mt-0 mb-4" />
+                                            <div className="row pt-1">
+                                                <div className="col-9 mb-2">
+                                                    {profile.name}
+                                                </div>
+                                                <div className="col-3 mb-3">
+
+                                                </div>
+                                            </div>
+                                            <ButtonGroup>
+                                                <Button onClick={() => setIsShowModal(true)} className='btn btn-primary'>Edit</Button>
+                                            </ButtonGroup>
+                                            <Link onClick={() => setShowModalChangePass(true)} className='mx-3'>Change Password</Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <ModalUpdateProfile
+                show={isShowModal}
+                handleClose={handleClose}
+                profile={profile}
+                getProfile={getProfile}
+            />
+            <ModalChangePassCompany
+                show={showModalChangePass}
+                handleClose={handleClose}
+            />
+
         </div>
-      </div>
-      <ModalUpdateProfile
-        show={isShowModal}
-        handleClose={handleClose}
-        profile={profile}
-        getProfile={getProfile}
-      />
-      <ModalChangePassCompany
-        show={showModalChangePass}
-        handleClose={handleClose}
-      />
-    </div>
-  );
+    );
 };
 
 export default ProfileCompany;

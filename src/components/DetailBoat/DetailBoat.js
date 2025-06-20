@@ -22,6 +22,15 @@ import {
   FaShip,
 } from "react-icons/fa6";
 import ReviewSection from "./ReviewSection";
+//Dùng SweetAlert2 đi cho đẹp nhé. Đừng dùng mấy cái thông báo alert của JS trông nó phèn lắm =))
+// import Swal from "sweetalert2";
+
+//Swal.fire({
+//   title: 'Đặt hàng thành công!',
+//   text: 'Cảm ơn bạn đã đặt hàng với chúng tôi!',
+//   icon: 'success',
+//   confirmButtonText: 'OK'
+// });
 
 function DetailBoat() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,7 +41,7 @@ function DetailBoat() {
     {
       id: 1,
       name: "Phòng Delta Suite",
-      image: "./images/ambassador/ambassador-cruise7.webp",
+      image: "./images/yacht-10.jpg",
       area: "33",
       beds: 2,
       price: 4150000,
@@ -41,7 +50,7 @@ function DetailBoat() {
     {
       id: 2,
       name: "Phòng Ocean Suite",
-      image: "./images/ambassador/ambassador-cruise7.webp",
+      image: "./images/yacht-10.jpg",
       area: "33",
       beds: 2,
       price: 4370000,
@@ -50,7 +59,7 @@ function DetailBoat() {
     {
       id: 3,
       name: "Phòng Captain Suite",
-      image: "./images/ambassador/ambassador-cruise7.webp",
+      image: "./images/yacht-10.jpg",
       area: "35",
       beds: 2,
       price: 4620000,
@@ -59,7 +68,7 @@ function DetailBoat() {
     {
       id: 4,
       name: "Phòng Regal Suite",
-      image: "./images/ambassador/ambassador-cruise7.webp",
+      image: "./images/yacht-10.jpg",
       area: "45",
       beds: 2,
       price: 4870000,
@@ -68,15 +77,15 @@ function DetailBoat() {
   ]);
   const mainImages = [
     {
-      src: "./images/ambassador/ambassador-cruise1.webp",
+      src: "./images/yacht-10.jpg",
       alt: "Ambassador Cruise ship front view",
     },
     {
-      src: "./images/ambassador/ambassador-cruise3.webp",
+      src: "./images/yacht-10.jpg",
       alt: "Ambassador Cruise ship deck",
     },
     {
-      src: "./images/ambassador/ambassador-cruise5.webp",
+      src: "./images/yacht-10.jpg",
       alt: "Ambassador Cruise interior",
     },
   ];
@@ -84,8 +93,8 @@ function DetailBoat() {
   // Thumbnail images at the bottom
   const thumbnails = [
     "./images/ambassador/ambassador-cruise1.webp",
-    "./images/ambassador/ambassador-cruise3.webp",
-    "./images/ambassador/ambassador-cruise5.webp",
+    "./images/yacht-10.jpg",
+    "./images/yacht-10.jpg",
   ];
   const tabs = [
     { label: "Đặc điểm", badge: null },
@@ -96,8 +105,8 @@ function DetailBoat() {
   ];
 
   // Side images that stay fixed
-  const leftImage = "./images/ambassador/ambassador-cruise2.webp";
-  const rightImage = "./images/ambassador/ambassador-cruise4.webp";
+  const leftImage = "./images/yacht-8.jpg";
+  const rightImage = "./images/yacht-9.jpg";
   const nextSlide = () => {
     setCurrentIndex((prevIndex) =>
       prevIndex === mainImages.length - 1 ? 0 : prevIndex + 1

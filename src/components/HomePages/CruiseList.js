@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Box, Typography, Card, CardContent, CardMedia, CardActions, Button, Grid, Chip, Stack } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  CardMedia,
+  CardActions,
+  Button,
+  Grid,
+  Chip,
+  Stack,
+} from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PersonIcon from "@mui/icons-material/Person";
 import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 
 export default function CruiseList() {
@@ -13,14 +25,23 @@ export default function CruiseList() {
     const fetchCruises = async () => {
       try {
         // Step 1: Fetch list of 6 yachts from API without cheapestPrice
-        const resBasic = await axios.get("http://localhost:9999/api/v1/yachts", {
-          params: { limit: 6 },
-        });
-        const yachtsBasic = Array.isArray(resBasic.data.data) ? resBasic.data.data : [];
+        const resBasic = await axios.get(
+          "http://localhost:9999/api/v1/yachts",
+          {
+            params: { limit: 6 },
+          }
+        );
+        const yachtsBasic = Array.isArray(resBasic.data.data)
+          ? resBasic.data.data
+          : [];
 
         // Step 2: Fetch full list with cheapestPrice
-        const resWithPrice = await axios.get("http://localhost:9999/api/v1/yachts/findboat");
-        const yachtsWithPrice = Array.isArray(resWithPrice.data.data) ? resWithPrice.data.data : [];
+        const resWithPrice = await axios.get(
+          "http://localhost:9999/api/v1/yachts/findboat"
+        );
+        const yachtsWithPrice = Array.isArray(resWithPrice.data.data)
+          ? resWithPrice.data.data
+          : [];
 
         // Step 3: Fetch images for each yacht and select the first image
         const combinedYachts = await Promise.all(
@@ -29,12 +50,21 @@ export default function CruiseList() {
             // Fetch image for the yacht
             let imageUrl = "/images/placeholder.jpg"; // Default fallback image
             try {
-              const imageRes = await axios.get(`http://localhost:9999/api/v1/yachtImages/yacht/${yacht._id}`);
-              if (imageRes.data.success && Array.isArray(imageRes.data.data) && imageRes.data.data.length > 0) {
+              const imageRes = await axios.get(
+                `http://localhost:9999/api/v1/yachtImages/yacht/${yacht._id}`
+              );
+              if (
+                imageRes.data.success &&
+                Array.isArray(imageRes.data.data) &&
+                imageRes.data.data.length > 0
+              ) {
                 imageUrl = imageRes.data.data[0]; // Select the first image from the array
               }
             } catch (imageErr) {
-              console.error(`Error fetching image for yacht ${yacht._id}:`, imageErr);
+              console.error(
+                `Error fetching image for yacht ${yacht._id}:`,
+                imageErr
+              );
             }
 
             return {
@@ -80,9 +110,14 @@ export default function CruiseList() {
       >
         Du thuyền mới và phổ biến nhất
       </Typography>
-      <Typography color="text.primary" fontFamily={"Archivo, sans-serif"} mb={3}>
-        Tận hưởng sự xa hoa và đẳng cấp tối đa trên du thuyền mới nhất và phổ biến nhất. Khám phá một hành trình tuyệt
-        vời đưa bạn vào thế giới của sự sang trọng, tiện nghi và trải nghiệm không thể quên.
+      <Typography
+        color="text.primary"
+        fontFamily={"Archivo, sans-serif"}
+        mb={3}
+      >
+        Tận hưởng sự xa hoa và đẳng cấp tối đa trên du thuyền mới nhất và phổ
+        biến nhất. Khám phá một hành trình tuyệt vời đưa bạn vào thế giới của sự
+        sang trọng, tiện nghi và trải nghiệm không thể quên.
       </Typography>
       <Typography mb={6} fontFamily={"Archivo, sans-serif"} mt={-2}>
         <img src="/images/border.jpg" alt="border" width={100} />
@@ -90,7 +125,10 @@ export default function CruiseList() {
       <Grid container spacing={3}>
         {cruises.map((cruise) => (
           <Grid item xs={12} sm={6} md={4} key={cruise._id}>
-            <Link to={`/boat-detail/${cruise._id}`} style={{ textDecoration: "none" }}>
+            <Link
+              to={`/boat-detail/${cruise._id}`}
+              style={{ textDecoration: "none" }}
+            >
               <Card
                 sx={{
                   borderRadius: 2,
@@ -102,12 +140,20 @@ export default function CruiseList() {
               >
                 <CardMedia
                   component="img"
-                  image={cruise.image}
+                  maxHeight="200"
+                  image={cruise.image} // Use the first imageUrl
                   alt={cruise.name}
                   sx={{ objectFit: "cover", maxHeight: 220 }}
                 />
                 <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={1} borderRadius={1} mb={2} width="fit-content">
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                    borderRadius={1}
+                    mb={2}
+                    width="fit-content"
+                  >
                     <LocationOnIcon color="primary" fontSize="small" />
                     <Typography
                       variant="subtitle2"
@@ -115,7 +161,10 @@ export default function CruiseList() {
                       color="text.primary"
                       sx={{ fontWeight: 500 }}
                     >
-                      <Chip label={cruise.locationId?.name || "Không xác định"} size="small" />
+                      <Chip
+                        label={cruise.locationId?.name || "Không xác định"}
+                        size="small"
+                      />
                     </Typography>
                   </Stack>
 
@@ -124,7 +173,7 @@ export default function CruiseList() {
                     variant="h6"
                     fontWeight={600}
                     fontFamily={"Archivo, sans-serif"}
-                    sx={{ minHeight: 36, mb: 1, fontWeight: 750, color: "text.secondary" }}
+                    sx={{ minHeight: 36, mb: 1, color: "text.primary" }}
                   >
                     {cruise.name}
                   </Typography>
@@ -134,14 +183,21 @@ export default function CruiseList() {
                     <Typography
                       variant="caption"
                       fontFamily={"Archivo, sans-serif"}
-                      sx={{ fontWeight: 800, color: "text.secondary" }}
+                      color="text.primary"
+                      sx={{ fontWeight: 500 }}
                     >
-                      Hạ thuỷ {cruise.launch} - Thân vỏ {cruise.hullBody} - {cruise.rule || "Không xác định"} phòng
+                      Hạ thuỷ {cruise.launch} - Thân vỏ {cruise.hullBody} -{" "}
+                      {cruise.yachtTypeId?.name || "Không xác định"}
                     </Typography>
                   </Stack>
 
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Typography variant="h6" fontFamily={"Archivo, sans-serif"} sx={{ fontWeight: 750, color: "text.secondary" }}>
+                    <Typography
+                      variant="h6"
+                      fontFamily={"Archivo, sans-serif"}
+                      color="text.primary"
+                      fontWeight={700}
+                    >
                       {formatPrice(cruise.price)}
                     </Typography>
                   </Stack>
