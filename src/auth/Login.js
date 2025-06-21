@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Box, Button, TextField, Typography, Checkbox, FormControlLabel, Stack } from "@mui/material";
 import styled from "@emotion/styled";
 import axios from "axios";
-// import ForgotPassword from "./ForgotPassword";
+import ForgotPassword from "./ForgotPassword";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import "./Auth.css";
 
@@ -115,7 +115,7 @@ export default function Login() {
         <Box
           component="img"
           src="/images/logo.png"
-          alt="LongWave Logo"
+          alt="𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 Logo"
           sx={{
             height: 120,
             mb: 2,
@@ -320,16 +320,15 @@ export default function Login() {
                 </Typography>
               </>
             ) : (
-              // <ForgotPassword
-              //   initialUsername={formData.username}
-              //   onBackToLogin={() => {
-              //     setStep("login");
-              //     setError("");
-              //     setSuccess("");
-              //   }}
-              //   navigate={navigate}
-              // />
-              <Typography>Quên mật khẩu</Typography>
+              <ForgotPassword
+                initialUsername={formData.username}
+                onBackToLogin={() => {
+                  setStep("login");
+                  setError("");
+                  setSuccess("");
+                }}
+                navigate={navigate}
+              />             
             )}
           </Box>
         </Box>

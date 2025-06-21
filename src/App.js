@@ -7,6 +7,7 @@ import FindBoat from "./pages/FindBoat";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
 import CustomerProfile from "./layout/componentsHeader/CustomerProfile";
+import ChangePassword from "./layout/componentsHeader/ChangePassword";
 import AboutUs from "./layout/componentsFooter/AboutUs";
 import TermsAndConditions from "./layout/componentsFooter/TermsAndConditions";
 import PrivacyPolicy from "./layout/componentsFooter/PrivacyPolicy";
@@ -32,9 +33,7 @@ import ViewBooking from "./components/company/ViewBooking";
 import ViewYacht from "./components/company/ViewYacht";
 
 function App() {
-  const [mode, setMode] = useState(
-    localStorage.getItem("themeMode") || "light"
-  );
+  const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -63,19 +62,14 @@ function App() {
             <Route path="/boat-detail/:id" element={<DetailBoat />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/ve-chung-toi" element={<AboutUs />} />
-            <Route
-              path="/dieu-khoan-va-dieu-kien"
-              element={<TermsAndConditions />}
-            />
+            <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
             <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
             <Route path="/huong-dan-su-dung" element={<UserGuide />} />
             <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
             <Route path="/cau-hoi-thuong-gap" element={<FAQ />} />
-            <Route
-              path="/quy-dinh-chung-va-luu-y"
-              element={<RulesAndNotes />}
-            />
+            <Route path="/quy-dinh-chung-va-luu-y" element={<RulesAndNotes />} />
             <Route path="/lien-he-tu-van" element={<ContactSection />} />
             <Route path="/doanh-nghiep" element={<Enterprise />} />
             <Route path="/view-profile" element={<CustomerProfile />} />
