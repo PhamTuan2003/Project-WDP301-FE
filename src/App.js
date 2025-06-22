@@ -18,6 +18,7 @@ import ContactSection from "./layout/componentsFooter/ContactSection";
 import Enterprise from "./components/Enterprise/Enterprise";
 import BlogDetail from './components/Blog/BlogDetail';
 import BlogList from './components/Blog/BlogList';
+import Admin from './components/Admin/AdminDashboard'
 
 function App() {
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
@@ -51,6 +52,7 @@ function App() {
           <Route path="/doanh-nghiep" element={<Enterprise />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/admin" element={<Admin/>}/>
           {/* Add thêm nếu có thêm */}
         </Routes>
         <Footer />
