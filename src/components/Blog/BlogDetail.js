@@ -3,8 +3,6 @@ import React from "react";
 import { Box, Breadcrumbs, Link, Typography, Chip, Container, useTheme } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import StarIcon from "@mui/icons-material/Star";
-import StarBorderIcon from "@mui/icons-material/StarBorder";
-import StarHalfIcon from "@mui/icons-material/StarHalf";
 import { useParams } from "react-router-dom";
 
 const articles = [

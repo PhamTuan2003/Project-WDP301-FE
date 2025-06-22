@@ -153,6 +153,9 @@ export default function Enterprise() {
             <Button
               variant="contained"
               size="large"
+              component={Link}
+              to="/find-boat"
+              onClick={() => window.scrollTo(0, 0)}
               sx={{
                 minWidth: { xs: "100%", sm: 120 },
                 width: { xs: "100%", sm: "auto" },

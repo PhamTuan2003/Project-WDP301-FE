@@ -1,42 +1,92 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Grid, TextField, InputAdornment, Stack, Button, MenuItem } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import PinDrop from "@mui/icons-material/PinDrop";
 import MonetizationOnOutlined from "@mui/icons-material/MonetizationOnOutlined";
-import { setSearchTerm, setDeparturePoint, setPriceRange, setSortOption } from "../../redux/action";
-import { cruiseData, priceRanges } from "../../data/cruiseData";
+import PinDrop from "@mui/icons-material/PinDrop";
+import SearchIcon from "@mui/icons-material/Search";
+import {
+  Grid,
+  InputAdornment,
+  MenuItem,
+  Stack,
+  TextField
+} from "@mui/material";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setDeparturePoint,
+  setPriceRange,
+  setSearchTerm,
+} from "../../redux/action";
 
-const SearchBar = () => {
+const SearchBar = ({ uniqueDeparturePoints, priceRanges, setCurrentPage }) => {
   const dispatch = useDispatch();
-  const { searchTerm, selectedDeparturePoint, selectedPriceRange } = useSelector(
-    (state) => state.filters || {}
-  );
+  const { searchTerm, selectedDeparturePoint, selectedPriceRange } =
+    useSelector((state) => state.filters || {});
+  const [searchOptions, setSearchOptions] = useState({
+    cruise: ["Tất cả du thuyền"],
+    location: ["Tất cả địa điểm"],
+    price: ["Tất cả mức giá"],
+  });
 
-  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm || "");
-  const [localDeparturePoint, setLocalDeparturePoint] = useState(selectedDeparturePoint || "");
-  const [localPriceRange, setLocalPriceRange] = useState(selectedPriceRange || "");
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const yachtsResponse = await axios.get(
+          "http://localhost:9999/api/v1/yachts",
+          {
+            params: { limit: 10, populate: "locationId" },
+          }
+        );
+        const yachtsData = Array.isArray(yachtsResponse.data?.data)
+          ? yachtsResponse.data.data
+          : [];
 
-  const uniqueDeparturePoints = [
-    ...new Set(cruiseData.map((cruise) => cruise.departurePoint).filter(Boolean)),
-  ];
+        const cruiseOptions = [
+          "Tất cả du thuyền",
+          ...new Set(yachtsData.map((y) => y.name)),
+        ];
+        const locationOptions = [
+          "Tất cả địa điểm",
+          ...new Set(yachtsData.map((y) => y.locationId?.name).filter(Boolean)),
+        ];
+        const priceOptions = [
+          "Tất cả mức giá",
+          "< 3 triệu",
+          "3-6 triệu",
+          "> 6 triệu",
+        ];
+
+        setSearchOptions({
+          cruise: cruiseOptions,
+          location: locationOptions,
+          price: priceOptions,
+        });
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu tìm kiếm:", err);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   const handleSearch = () => {
-    dispatch(setSearchTerm(localSearchTerm));
-    dispatch(setDeparturePoint(localDeparturePoint));
-    dispatch(setPriceRange(localPriceRange));
-    dispatch(setSortOption("")); // Reset sort option to empty
+    dispatch(setSearchTerm(searchTerm || "Tất cả du thuyền"));
+    dispatch(setDeparturePoint(selectedDeparturePoint || "Tất cả địa điểm"));
+    dispatch(setPriceRange(selectedPriceRange || "Tất cả mức giá"));
+    setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
   };
 
   return (
-    <Grid container spacing={2} sx={{ mt: 2 }}>
-      <Grid item xs={12} md={6}>
+    <Grid container spacing={2} sx={{ mt: 2, mx: "auto" }}>
+      <Grid item xs={12} md={7}>
         <TextField
           variant="outlined"
           fullWidth
           placeholder="Nhập tên du thuyền"
-          value={localSearchTerm}
-          onChange={(e) => setLocalSearchTerm(e.target.value)}
+          value={searchTerm || "Tất cả du thuyền"}
+          onChange={(e) =>
+            dispatch(setSearchTerm(e.target.value || "Tất cả du thuyền"))
+          }
+          select
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -49,18 +99,30 @@ const SearchBar = () => {
             borderColor: (theme) => theme.palette.divider,
             "& .MuiOutlinedInput-root": {
               borderRadius: "32px",
-              color: 'text.primary',
+              color: "text.primary",
+              fontFamily: "Archivo, sans-serif",
             },
           }}
-        />
+        >
+          {searchOptions.cruise.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{ color: "text.primary", fontFamily: "Archivo, sans-serif" }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={5} sx={{ pr: 3 }}>
         <Stack direction="row" spacing={2}>
           <TextField
             select
-            value={localDeparturePoint}
-            onChange={(e) => setLocalDeparturePoint(e.target.value)}
-            SelectProps={{ displayEmpty: true }}
+            value={selectedDeparturePoint || "Tất cả địa điểm"}
+            onChange={(e) =>
+              dispatch(setDeparturePoint(e.target.value || "Tất cả địa điểm"))
+            }
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -72,25 +134,33 @@ const SearchBar = () => {
             sx={{
               borderColor: (theme) => theme.palette.divider,
               opacity: 0.8,
+              fontFamily: "Archivo, sans-serif",
               "& .MuiOutlinedInput-root": {
                 borderRadius: "32px",
-                color: 'text.primary',
+                color: "text.primary",
               },
-              "& .MuiSelect-icon": { color: 'text.primary' },
+              "& .MuiSelect-icon": { color: "text.primary" },
             }}
           >
-            <MenuItem value="" sx={{ color: 'text.primary' }}>Tất cả địa điểm</MenuItem>
-            {uniqueDeparturePoints.map((point) => (
-              <MenuItem key={point} value={point} sx={{ color: 'text.primary' }}>
-                {point}
+            {searchOptions.location.map((option) => (
+              <MenuItem
+                key={option}
+                value={option}
+                sx={{
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
+                {option}
               </MenuItem>
             ))}
           </TextField>
           <TextField
             select
-            value={localPriceRange}
-            onChange={(e) => setLocalPriceRange(e.target.value)}
-            SelectProps={{ displayEmpty: true }}
+            value={selectedPriceRange || "Tất cả mức giá"}
+            onChange={(e) =>
+              dispatch(setPriceRange(e.target.value || "Tất cả mức giá"))
+            }
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -104,33 +174,25 @@ const SearchBar = () => {
               borderColor: (theme) => theme.palette.divider,
               "& .MuiOutlinedInput-root": {
                 borderRadius: "32px",
-                color: 'text.primary',
+                color: "text.primary",
               },
-              "& .MuiSelect-icon": { color: 'text.primary' },
+              fontFamily: "Archivo, sans-serif",
+              "& .MuiSelect-icon": { color: "text.primary" },
             }}
           >
-            <MenuItem value="" sx={{ color: 'text.primary' }}>Tất cả mức giá</MenuItem>
-            {priceRanges.map((range) => (
-              <MenuItem key={range.value} value={range.value} sx={{ color: 'text.primary' }}>
-                {range.label}
+            {searchOptions.price.map((option) => (
+              <MenuItem
+                key={option}
+                value={option}
+                sx={{
+                  color: "text.primary",
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
+                {option}
               </MenuItem>
             ))}
           </TextField>
-          <Button
-            variant="contained"
-            sx={{
-              textTransform: "none",
-              fontFamily: "Archivo, sans-serif",
-              height: "48px",
-              borderRadius: "32px",
-              bgcolor: "primary.main",
-              color: (theme) => theme.palette.getContrastText(theme.palette.primary.main),
-              "&:hover": { bgcolor: "primary.dark" },
-            }}
-            onClick={handleSearch}
-          >
-            Tìm kiếm
-          </Button>
         </Stack>
       </Grid>
     </Grid>

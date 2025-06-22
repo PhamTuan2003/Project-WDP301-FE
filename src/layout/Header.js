@@ -67,17 +67,31 @@ export default function Header({ toggleTheme, mode }) {
   };
 
   return (
-    <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 0, py: 1 }}>
+    <AppBar
+      position="sticky"
+      color="inherit"
+      elevation={0}
+      sx={{ borderBottom: 0, py: 1 }}
+    >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* Logo */}
-        <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <Box component="img" src="/images/logo.png" alt="LongWave Logo" sx={{ height: 80, mr: 2 }} />
+        <Box
+          component={Link}
+          to="/"
+          sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}
+        >
+          <Box
+            component="img"
+            src="/images/logo.png"
+            alt="LongWave Logo"
+            sx={{ height: 60, mr: 2 }}
+          />
           <Typography
             variant="h6"
             color="primary"
             fontWeight={700}
             fontFamily="'Pacifico', cursive"
-            fontSize={35}
+            fontSize={20}
             component={Link}
             to="/"
             sx={{
@@ -93,7 +107,12 @@ export default function Header({ toggleTheme, mode }) {
 
         {/* Menu */}
         {!isMobile ? (
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            fontFamily={"Archivo, sans-serif"}
+          >
             {menuLinks.map((link) => (
               <Button
                 href={link.href}
@@ -101,24 +120,35 @@ export default function Header({ toggleTheme, mode }) {
                 color="inherit"
                 sx={{
                   fontWeight: 500,
-                  fontSize: 18,
-                  lineHeight: "24px",
+                  fontSize: 15,
                   textTransform: "none",
+                  fontFamily: "Archivo, sans-serif",
+                  textDecoration: "none",
                   "&:hover": {
                     color: "text.secondary",
+                    textDecoration: "underline",
                   },
                 }}
               >
                 {link.label}
               </Button>
             ))}
-            <Typography fontSize={19} color="text.secondary">
+            <Typography
+              fontSize={18}
+              fontFamily={"Archivo, sans-serif"}
+              color="text.secondary"
+            >
               <b>Hotline: </b>0123456789
             </Typography>
           </Stack>
         ) : (
           <>
-            <IconButton size="large" edge="end" aria-label="menu" onClick={handleMenuOpen}>
+            <IconButton
+              size="large"
+              edge="end"
+              aria-label="menu"
+              onClick={handleMenuOpen}
+            >
               <MenuIcon />
             </IconButton>
             <Menu
@@ -129,12 +159,32 @@ export default function Header({ toggleTheme, mode }) {
               transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
               {menuLinks.map((link) => (
-                <MenuItem key={link.label} onClick={handleMenuClose} component={Link} to={link.href}>
+                <MenuItem
+                  key={link.label}
+                  onClick={handleMenuClose}
+                  component={Link}
+                  to={link.href}
+                  sx={{
+                    fontWeight: 500,
+                    fontSize: 16,
+                    textDecoration: "none",
+                    "&:hover": {
+                      backgroundColor: "primary.light",
+                      color: "primary.main",
+                    },
+                    fontFamily: "Archivo, sans-serif",
+                  }}
+                >
                   {link.label}
                 </MenuItem>
               ))}
               <MenuItem disabled>
-                <Typography fontSize={14} color="text.secondary" ml={1}>
+                <Typography
+                  fontSize={14}
+                  color="text.secondary"
+                  fontFamily={"Archivo, sans-serif"}
+                  ml={1}
+                >
                   <b>Hotline:</b> 0123456789
                 </Typography>
               </MenuItem>
@@ -146,7 +196,12 @@ export default function Header({ toggleTheme, mode }) {
         <Stack direction="row" spacing={1} ml={3} alignItems="center">
           {customer ? (
             <>
-              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 500 }}>
+              <Typography
+                variant="body1"
+                color="text.primary"
+                sx={{ fontWeight: 500 }}
+                fontFamily={"Archivo, sans-serif"}
+              >
                 Xin chào, {customer.fullName}!
               </Typography>
               <Button
@@ -154,7 +209,13 @@ export default function Header({ toggleTheme, mode }) {
                 color="primary"
                 size="small"
                 onClick={handleLogout}
-                sx={{ borderRadius: 20, textTransform: "none" }}
+                sx={{
+                  borderRadius: 20,
+                  textTransform: "none",
+                  px: 2,
+                  fontFamily: "Archivo, sans-serif",
+                }}
+                startIcon={<LoginIcon />}
               >
                 Đăng xuất
               </Button>
@@ -186,7 +247,11 @@ export default function Header({ toggleTheme, mode }) {
             </>
           )}
           <IconButton onClick={toggleTheme} color="inherit" sx={{ p: 1 }}>
-            {mode === "light" ? <AiOutlineMoon size={24} /> : <AiOutlineSun size={24} />}
+            {mode === "light" ? (
+              <AiOutlineMoon size={24} />
+            ) : (
+              <AiOutlineSun size={24} />
+            )}
           </IconButton>
         </Stack>
       </Toolbar>

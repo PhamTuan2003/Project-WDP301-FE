@@ -1,228 +1,289 @@
-import React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DinnerDining from "@mui/icons-material/DinnerDining";
+import Kayaking from "@mui/icons-material/Kayaking";
+import Pool from "@mui/icons-material/Pool";
+import Spa from "@mui/icons-material/Spa";
+import StarIcon from "@mui/icons-material/Star";
+import WineBar from "@mui/icons-material/WineBar";
 import {
-  Paper,
-  Typography,
-  Divider,
   Box,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
   Button,
-  styled,
+  Checkbox,
+  Chip,
+  Divider,
+  FormControlLabel,
+  Stack,
+  Typography,
 } from "@mui/material";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
 import {
-  setStarFilter,
-  setDurationFilter,
-  setFeatureFilter,
-  setFeatureShowCount,
-  setSearchTerm,
-  setDeparturePoint,
-  setPriceRange,
-  setSortOption,
+  setSelectedDurations,
+  setSelectedServices,
+  setSelectedStars,
 } from "../../redux/action";
-import { cruiseData } from "../../data/cruiseData";
 
-const FilterSectionTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 600,
-  marginBottom: theme.spacing(1),
-  color: theme.palette.text.primary,
-}));
-
-const FilterSidebar = () => {
+const FilterSidebar = ({
+  availableServices,
+  availableDurations,
+  serviceShowCount,
+  setServiceShowCount,
+  setCurrentPage,
+  onClearFilters,
+}) => {
   const dispatch = useDispatch();
-  const {
-    selectedStars,
-    selectedDurations,
-    selectedFeatures,
-    featureShowCount,
-  } = useSelector((state) => state.filters || {});
+  const { selectedStars, selectedDurations, selectedServices } = useSelector(
+    (state) => state.filters || {}
+  );
+  const [showAllServices, setShowAllServices] = useState(false);
 
-  const availableDurations = [
-    ...new Set(cruiseData.map((cruise) => cruise.duration).filter(Boolean)),
-  ];
-  const availableFeatures = [
-    ...new Set(
-      cruiseData.flatMap((cruise) => cruise.features || []).filter(Boolean)
-    ),
-  ];
+  const handleStarChange = (star) => {
+    const newStars = selectedStars.includes(star)
+      ? selectedStars.filter((s) => s !== star)
+      : [...selectedStars, star];
+    dispatch(setSelectedStars(newStars));
+    setCurrentPage(1);
+  };
 
-  const handleResetFilters = () => {
-    dispatch(setSearchTerm(""));
-    dispatch(setStarFilter([]));
-    dispatch(setDurationFilter([]));
-    dispatch(setFeatureFilter([]));
-    dispatch(setDeparturePoint(""));
-    dispatch(setPriceRange(""));
-    dispatch(setSortOption(""));
-    dispatch(setFeatureShowCount(5));
+  const handleDurationChange = (duration) => {
+    const newDurations = selectedDurations.includes(duration)
+      ? selectedDurations.filter((d) => d !== duration)
+      : [...selectedDurations, duration];
+    dispatch(setSelectedDurations(newDurations));
+    setCurrentPage(1);
+  };
+
+  const handleServiceChange = (service) => {
+    const newServices = selectedServices.includes(service)
+      ? selectedServices.filter((s) => s !== service)
+      : [...selectedServices, service];
+    dispatch(setSelectedServices(newServices));
+    setCurrentPage(1);
+  };
+
+  const handleShowMoreServices = () => {
+    setShowAllServices(true);
+    setServiceShowCount(availableServices.length);
+  };
+
+  const handleShowLessServices = () => {
+    setShowAllServices(false);
+    setServiceShowCount(5);
   };
 
   return (
-    <Paper
+    <Box
       sx={{
         p: 3,
-        borderRadius: "32px",
-        border: "1px solid #eaecf0",
-        boxShadow:
-          "0px 1px 2px 0px rgba(16,24,40,.06), 0px 1px 3px 0px rgba(16,24,40,.1)",
+        borderRadius: "16px",
+        border: "1px solid",
+        borderColor: (theme) => theme.palette.divider,
+        bgcolor: (theme) => theme.palette.background.paper,
+        boxShadow: (theme) => theme.shadows[1],
       }}
     >
+      {/* Tiêu đề và nút xóa bộ lọc */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           mb: 2,
+          fontFamily: (theme) => theme.typography.fontFamily,
         }}
       >
         <Typography
+          fontFamily={"Archivo, sans-serif"}
           variant="h6"
-          fontFamily="Archivo, sans-serif"
           fontWeight="bold"
         >
-          Lọc kết quả
+          Bộ lọc
         </Typography>
         <Button
-          color="error"
+          onClick={onClearFilters}
+          variant="outlined"
+          color="secondary"
           sx={{
-            textTransform: "none",
-            fontSize: "0.875rem",
             fontFamily: "Archivo, sans-serif",
+            mb: 1,
+            borderRadius: "20px",
           }}
-          onClick={handleResetFilters}
         >
           Xóa bộ lọc
         </Button>
       </Box>
-      <Divider sx={{ my: 1 }} />
 
-      <Box sx={{ mb: 3 }}>
-        <FilterSectionTitle
-          fontFamily="Archivo, sans-serif"
+      {/* Đánh giá sao */}
+      <Box sx={{ mb: 2 }}>
+        <Typography
+          fontFamily={"Archivo, sans-serif"}
           variant="subtitle1"
+          fontWeight="medium"
         >
-          Xếp hạng sao
-        </FilterSectionTitle>
-        <FormGroup>
-          {[5, 4, 3].map((star) => (
+          Đánh giá sao
+        </Typography>
+        <Divider sx={{ my: 1 }} />
+        <Stack>
+          {[5, 4, 3, 2, 1].map((star) => (
             <FormControlLabel
               key={star}
               control={
                 <Checkbox
-                  checked={
-                    Array.isArray(selectedStars) && selectedStars.includes(star)
-                  }
-                  onChange={() => dispatch(setStarFilter(star))}
-                  size="small"
-                  sx={{ opacity: 0.6 }}
+                  checked={selectedStars.includes(star)}
+                  onChange={() => handleStarChange(star)}
                 />
               }
-              label={`${star} sao`}
-              sx={{
-                "& .MuiFormControlLabel-label": {
-                  fontSize: "0.875rem",
-                  fontFamily: "Archivo, sans-serif",
-                  fontWeight: 600,
-                },
-              }}
+              label={
+                <span
+                  style={{
+                    display: "flex",
+                    fontFamily: "Archivo, sans-serif",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  {`${star} sao`}
+                  <StarIcon
+                    sx={{
+                      fontSize: "1rem",
+                      color: "#FFD700",
+                    }}
+                  />
+                </span>
+              }
             />
           ))}
-        </FormGroup>
+        </Stack>
       </Box>
-      <Divider sx={{ my: 2 }} />
 
-      <Box sx={{ mb: 3 }}>
-        <FilterSectionTitle
-          fontFamily="Archivo, sans-serif"
+      {/* Thời gian chuyến đi */}
+      <Box sx={{ mb: 2 }}>
+        <Typography
+          fontFamily={"Archivo, sans-serif"}
           variant="subtitle1"
+          fontWeight="medium"
         >
-          Thời gian
-        </FilterSectionTitle>
-        <FormGroup>
+          Lịch trình{" "}
+          <CalendarTodayIcon
+            sx={{
+              fontSize: "1rem",
+              color: "text.secondary",
+              fontFamily: "Archivo, sans-serif",
+            }}
+          />
+        </Typography>
+        <Divider sx={{ my: 1 }} />
+        <Stack sx={{ fontFamily: "Archivo, sans-serif" }}>
           {availableDurations.map((duration) => (
             <FormControlLabel
               key={duration}
               control={
                 <Checkbox
-                  checked={
-                    Array.isArray(selectedDurations) &&
-                    selectedDurations.includes(duration)
-                  }
-                  onChange={() => dispatch(setDurationFilter(duration))}
-                  size="small"
-                  sx={{ opacity: 0.6 }}
+                  checked={selectedDurations.includes(duration)}
+                  onChange={() => handleDurationChange(duration)}
                 />
               }
               label={duration}
-              sx={{
-                "& .MuiFormControlLabel-label": {
-                  fontSize: "0.875rem",
-                  fontFamily: "Archivo, sans-serif",
-                  fontWeight: 600,
-                },
-              }}
             />
           ))}
-        </FormGroup>
+        </Stack>
       </Box>
-      <Divider sx={{ my: 2 }} />
 
-      <Box sx={{ mb: 3 }}>
-        <FilterSectionTitle
-          fontFamily="Archivo, sans-serif"
+      {/* Dịch vụ */}
+      <Box sx={{ mb: 2 }}>
+        <Typography
           variant="subtitle1"
+          fontFamily={"Archivo, sans-serif"}
+          fontWeight="medium"
         >
-          Tiện ích
-        </FilterSectionTitle>
-        <FormGroup>
-          {availableFeatures.slice(0, featureShowCount).map((feature) => (
+          Dịch vụ{" "}
+          <Chip
+            label={
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                  marginLeft: -4,
+                  fontFamily: "Archivo, sans-serif",
+                }}
+              >
+                <Spa sx={{ fontSize: "1rem", color: "text.secondary" }} />
+                <DinnerDining
+                  sx={{ fontSize: "1rem", color: "text.secondary" }}
+                />
+                <Kayaking sx={{ fontSize: "1rem", color: "text.secondary" }} />
+                <Pool sx={{ fontSize: "1rem", color: "text.secondary" }} />
+                <WineBar sx={{ fontSize: "1rem", color: "text.secondary" }} />
+              </span>
+            }
+            sx={{
+              fontFamily: "Archivo, sans-serif",
+              bgcolor: (theme) =>
+                theme.palette.mode === "light" ? "#f0f7f7" : "#2f3b44",
+              fontWeight: 500,
+              opacity: 0.85,
+            }}
+          />
+        </Typography>
+        <Divider sx={{ my: 1 }} />
+        <Stack>
+          {availableServices.slice(0, serviceShowCount).map((service) => (
             <FormControlLabel
-              key={feature}
+              key={service}
+              sx={{ fontFamily: "Archivo, sans-serif" }}
               control={
                 <Checkbox
-                  checked={
-                    Array.isArray(selectedFeatures) &&
-                    selectedFeatures.includes(feature)
-                  }
-                  onChange={() => dispatch(setFeatureFilter(feature))}
-                  size="small"
-                  sx={{ opacity: 0.6 }}
+                  checked={selectedServices.includes(service)}
+                  onChange={() => handleServiceChange(service)}
                 />
               }
-              label={feature}
-              sx={{
-                "& .MuiFormControlLabel-label": {
-                  fontSize: "0.875rem",
-                  fontFamily: "Archivo, sans-serif",
-                  fontWeight: 600,
-                },
-              }}
+              label={service}
             />
           ))}
-        </FormGroup>
-        {featureShowCount < availableFeatures.length && (
-          <Button
-            color="primary"
-            sx={{
-              textTransform: "none",
-              fontSize: "0.875rem",
-              fontFamily: "Archivo, sans-serif",
-              mt: 2,
-              height: "30px",
-              borderRadius: "32px",
-              bgcolor: "#fff",
-              border: "1px solid #eaecf0",
-              color: "#333",
-              "&:hover": { bgcolor: "#f5f5f5" },
-            }}
-            onClick={() => dispatch(setFeatureShowCount(featureShowCount + 5))}
-          >
-            Xem thêm
-          </Button>
-        )}
+          {availableServices.length > serviceShowCount && !showAllServices && (
+            <Button
+              variant="text"
+              onClick={handleShowMoreServices}
+              sx={{
+                textTransform: "none",
+                fontFamily: "Archivo, sans-serif",
+                height: "35px",
+                borderRadius: "32px",
+                bgcolor: "primary.main",
+                color: (theme) =>
+                  theme.palette.getContrastText(theme.palette.primary.main),
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                },
+                mt: 1,
+                fontSize: "0.875rem",
+              }}
+            >
+              Xem thêm
+            </Button>
+          )}
+          {showAllServices && (
+            <Button
+              variant="text"
+              onClick={handleShowLessServices}
+              sx={{
+                textTransform: "none",
+                fontFamily: "Archivo, sans-serif",
+                height: "35px",
+                borderRadius: "32px",
+                mt: 1,
+                fontSize: "1rem",
+              }}
+            >
+              Thu gọn
+            </Button>
+          )}
+        </Stack>
       </Box>
-    </Paper>
+    </Box>
   );
 };
+
 export default FilterSidebar;
