@@ -1,14 +1,13 @@
-
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom"; // thêm useLocation
 import Login from "./auth/Login";
 import Register from "./auth/Register";
 import BlogDetail from "./components/Blog/BlogDetail";
 import BlogList from "./components/Blog/BlogList";
 import DetailBoat from "./components/DetailBoat/DetailBoat";
 import Enterprise from "./components/Enterprise/Enterprise";
-import Admin from './components/Admin/AdminDashboard'
+import Admin from './components/Admin/AdminDashboard';
 import AboutUs from "./layout/componentsFooter/AboutUs";
 import ContactSection from "./layout/componentsFooter/ContactSection";
 import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
@@ -20,7 +19,6 @@ import Header from "./layout/Header";
 import FindBoat from "./pages/FindBoat";
 import HomePage from "./pages/HomePage";
 import { getTheme } from "./theme/theme";
-// import Company from "./components/company/Company";
 import { ToastContainer } from 'react-toastify';
 import Dashboard from './components/company/Dashboard';
 import ManageCompany from './components/company/ManageCompany';
@@ -31,23 +29,25 @@ import ProtectedRoute from './components/routers/ProtectedRoute';
 
 function App() {
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
+  const location = useLocation(); // lấy path hiện tại
 
   const toggleTheme = () => {
-    setMode((prevMode) => {
-      const newMode = prevMode === "light" ? "dark" : "light";
-      localStorage.setItem("themeMode", newMode);
-      return newMode;
-    });
+    const newMode = mode === "light" ? "dark" : "light";
+    localStorage.setItem("themeMode", newMode);
+    setMode(newMode);
   };
 
   const theme = getTheme(mode);
+
+  // Các path không hiển thị Header & Footer
+  const hideHeaderFooter = ["/admin"].includes(location.pathname);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
+      {!hideHeaderFooter && <Header toggleTheme={toggleTheme} mode={mode} />}
 
-      <Header toggleTheme={toggleTheme} mode={mode} />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/find-boat" element={<FindBoat />} />
@@ -55,10 +55,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/ve-chung-toi" element={<AboutUs />} />
-        <Route
-            path="/dieu-khoan-va-dieu-kien"
-            element={<TermsAndConditions />}
-        />
+        <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
         <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
         <Route path="/huong-dan-su-dung" element={<UserGuide />} />
         <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
@@ -66,7 +63,7 @@ function App() {
         <Route path="/doanh-nghiep" element={<Enterprise />} />
         <Route path="/blog" element={<BlogList />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
-        {/* Add thêm nếu có thêm */}
+        <Route path="/admin" element={<Admin />} />
         <Route path="/manage-company" element={
           <ProtectedRoute>
             <ManageCompany />
@@ -78,7 +75,8 @@ function App() {
           <Route path="profile" element={<ProfileCompany />} />
         </Route>
       </Routes>
-      <Footer />
+
+      {!hideHeaderFooter && <Footer />}
 
       <ToastContainer
         position="top-right"
@@ -92,10 +90,8 @@ function App() {
         pauseOnHover
         theme="light"
       />
-
     </ThemeProvider>
   );
-
 }
 
 export default App;
