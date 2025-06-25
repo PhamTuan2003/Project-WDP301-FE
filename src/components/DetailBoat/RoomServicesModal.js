@@ -175,10 +175,18 @@ const RoomServicesModal = ({
                             }}
                           >
                             <span>
-                              {service.serviceName || service.name || "Dịch vụ"}
+                              {serviceObj.serviceName ||
+                                serviceObj.name ||
+                                "Dịch vụ"}
                             </span>
                             <span style={{ color: "#14b8a6", fontWeight: 500 }}>
-                              {(service.price || 0).toLocaleString()} đ
+                              {(
+                                (serviceObj.serviceId &&
+                                  serviceObj.serviceId.price) ||
+                                serviceObj.price ||
+                                0
+                              ).toLocaleString()}{" "}
+                              đ
                             </span>
                           </Box>
                         }
@@ -218,7 +226,16 @@ const RoomServicesModal = ({
                   )
                   .map((service, idx) => ({
                     ...service,
-                    id: service._id || service.id || getServiceId(service, idx),
+                    serviceId:
+                      service._id ||
+                      service.serviceId ||
+                      service.id ||
+                      getServiceId(service, idx),
+                    _id:
+                      service._id ||
+                      service.serviceId ||
+                      service.id ||
+                      getServiceId(service, idx),
                   }));
                 onSelectServices(selectedObjs);
                 onClose();
@@ -229,6 +246,7 @@ const RoomServicesModal = ({
                 color: "primary.contrastText",
                 px: 3,
                 py: 1,
+                borderRadius: 3,
                 fontFamily: "Archivo, sans-serif",
                 fontWeight: 500,
                 "&:hover": { bgcolor: "primary.dark" },

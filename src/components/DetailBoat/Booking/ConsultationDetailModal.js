@@ -32,12 +32,6 @@ const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 const MotionButton = motion(Button);
 
-// Animation variants
-const backdropVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.3 } },
-};
-
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.8, y: -20 },
   visible: {
@@ -206,7 +200,11 @@ const ConsultationDetailsModal = ({
           Phòng đã chọn
         </Typography>
         <Stack spacing={1}>
-          {consultation.selectedRooms.map((room, i) => (
+          {(
+            consultation.selectedRooms ||
+            consultation.consultationData?.requestedRooms ||
+            []
+          ).map((room, i) => (
             <MotionCard
               key={i}
               component="div"
@@ -225,12 +223,16 @@ const ConsultationDetailsModal = ({
               <Stack direction="row" spacing={1} alignItems="center">
                 <Building size={18} />
                 <Typography fontFamily="Archivo, sans-serif">
-                  {room.name}
+                  {room.roomName || room.name}
                 </Typography>
-                <Chip label={`x${room.quantity}`} size="small" color="info" />
+                <Chip
+                  label={`x${room.roomQuantity || room.quantity}`}
+                  size="small"
+                  color="info"
+                />
               </Stack>
               <Typography fontFamily="Archivo, sans-serif" fontWeight={500}>
-                {formatPrice(room.price)}
+                {formatPrice(room.roomPrice || room.price)}
               </Typography>
             </MotionCard>
           ))}
@@ -248,24 +250,56 @@ const ConsultationDetailsModal = ({
           Dịch vụ đã chọn
         </Typography>
         <Stack spacing={1}>
-          {consultation.selectedServices &&
-          consultation.selectedServices.length > 0 ? (
-            consultation.selectedServices.map((sv, i) => (
-              <Typography
-                key={sv._id || sv.id || i}
-                fontFamily="Archivo, sans-serif"
-                fontSize="0.95rem"
-                color="text.secondary"
-              >
-                - {sv.name || sv.serviceName}{" "}
-                {sv.price ? `(${formatPrice(sv.price)})` : ""}
-              </Typography>
-            ))
-          ) : (
-            <Typography fontFamily="Archivo, sans-serif" color="text.secondary">
-              Không có dịch vụ nào được chọn
-            </Typography>
-          )}
+          {(() => {
+            const services =
+              consultation.selectedServices ||
+              consultation.services ||
+              consultation.consultationData?.requestServices ||
+              [];
+            if (services.length > 0) {
+              return services.map((sv, i) => (
+                <MotionCard
+                  key={sv.serviceId || sv._id || sv.id || i}
+                  component="div"
+                  variants={itemVariants}
+                  custom={i + 20}
+                  initial="hidden"
+                  animate="visible"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    p: 2,
+                    boxShadow: theme.shadows[4],
+                  }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <FileText size={18} />
+                    <Typography fontFamily="Archivo, sans-serif">
+                      {sv.serviceName || sv.name}
+                    </Typography>
+                    <Chip
+                      label={`x${sv.serviceQuantity || sv.quantity}`}
+                      size="small"
+                      color="info"
+                    />
+                  </Stack>
+                  <Typography fontFamily="Archivo, sans-serif" fontWeight={500}>
+                    {formatPrice(sv.servicePrice || sv.price)}
+                  </Typography>
+                </MotionCard>
+              ));
+            } else {
+              return (
+                <Typography
+                  fontFamily="Archivo, sans-serif"
+                  color="text.secondary"
+                >
+                  Không có dịch vụ nào được chọn
+                </Typography>
+              );
+            }
+          })()}
         </Stack>
 
         {/* Tổng tiền */}
@@ -284,7 +318,10 @@ const ConsultationDetailsModal = ({
             color="primary"
             fontWeight={700}
           >
-            {formatPrice(consultation.totalPrice)}
+            {formatPrice(
+              consultation.totalPrice ||
+                consultation.consultationData?.estimatedPrice
+            )}
           </Typography>
         </Stack>
 

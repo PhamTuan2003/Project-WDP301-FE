@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { getTheme } from "./theme/theme";
-import Header from "./layout/Header";
-import Footer from "./layout/Footer";
 import HomePage from "./pages/HomePage";
 import FindBoat from "./pages/FindBoat";
 import Login from "./auth/Login";

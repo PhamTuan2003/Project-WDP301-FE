@@ -7,7 +7,6 @@ import Swal from "sweetalert2";
 
 import {
   validateBookingForm,
-  formatPrice,
   validateRoomSelection,
 } from "../../../redux/validation";
 import {
@@ -36,7 +35,6 @@ const BookingRoomModal = ({ show, yachtData }) => {
     bookingForm,
     bookingErrors,
     rooms,
-    totalPrice,
     submitting,
     selectedSchedule,
     consultation,
@@ -107,12 +105,36 @@ const BookingRoomModal = ({ show, yachtData }) => {
         isoCheckInDate = new Date(
           `${year}-${month}-${day}T00:00:00.000Z`
         ).toISOString();
-      } catch (e) {
-        console.error("Lỗi chuyển đổi ngày:", e);
-      }
+      } catch (e) {}
     }
 
     const totalPrice = totalRoomPrice + totalServicePrice;
+
+    const mappedRooms = rooms
+      .filter((r) => r.quantity > 0)
+      .map((r) => ({
+        roomId: r.roomId || r.id,
+        roomName: r.roomName || r.name,
+        roomPrice: r.roomPrice !== undefined ? r.roomPrice : r.price,
+        roomQuantity:
+          r.roomQuantity !== undefined ? r.roomQuantity : r.quantity,
+        roomDescription: r.roomDescription || r.description,
+        roomArea: r.roomArea || r.area,
+        roomAvatar: r.roomAvatar || r.avatar,
+        roomMaxPeople: r.roomMaxPeople || r.max_people,
+        roomBeds: r.roomBeds || r.beds,
+        roomImage:
+          r.roomImage ||
+          (r.images && r.images.length > 0 ? r.images[0] : r.avatar || ""),
+      }));
+
+    const mappedServices = (selectedYachtServices || []).map((sv) => ({
+      serviceId: sv.serviceId || sv._id || sv.id,
+      serviceName: sv.serviceName || sv.name,
+      servicePrice: sv.servicePrice !== undefined ? sv.servicePrice : sv.price,
+      serviceQuantity:
+        sv.serviceQuantity !== undefined ? sv.serviceQuantity : sv.quantity,
+    }));
 
     return {
       fullName: bookingForm.fullName,
@@ -125,25 +147,12 @@ const BookingRoomModal = ({ show, yachtData }) => {
       requirements: bookingForm.requirements || "",
       checkInDate: isoCheckInDate,
       address: bookingForm.address || "",
-      selectedRooms: rooms
-        .filter((r) => r.quantity > 0)
-        .map((r) => ({
-          id: r._id || r.id,
-          name: r.name,
-          quantity: r.quantity,
-          price: r.price,
-          description: r.description,
-          area: r.area,
-          avatar: r.avatar,
-          max_people: r.max_people,
-          beds: r.beds,
-          image: r.images && r.images.length > 0 ? r.images[0] : r.avatar || "",
-        })),
+      selectedRooms: mappedRooms,
       totalPrice,
       yachtId: yachtData._id,
       scheduleId: selectedSchedule?._id || selectedSchedule || null,
       bookingId: consultation?.data?.bookingId || null,
-      selectedServices: selectedYachtServices,
+      selectedServices: mappedServices,
     };
   };
 
@@ -200,7 +209,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
           childrenAbove10: consultation?.data?.childrenAbove10 ?? 0,
         })
       );
-      let guestCountValue = `${adults} người lớn`;
+      let guestCountValue = `${consultation?.data?.adults ?? 1} người lớn`;
       if (consultation.data.childrenAbove10 > 0)
         guestCountValue += `, ${consultation.data.childrenAbove10} trẻ em từ 10 tuổi`;
       if (childrenUnder10 > 0)
@@ -214,11 +223,43 @@ const BookingRoomModal = ({ show, yachtData }) => {
       dispatch(updateBookingForm("checkInDate", checkInDateValue));
       dispatch(
         updateRooms(
-          consultation.data.selectedRooms.map((room) => ({
-            ...room,
-            _id: room.id,
-            id: room.id,
-            images: room.image ? [room.image] : [],
+          (
+            consultation.data.selectedRooms ||
+            consultation.data.consultationData?.requestedRooms ||
+            []
+          ).map((room) => ({
+            id: room.roomId || room.id,
+            name: room.roomName || room.name,
+            price: room.roomPrice !== undefined ? room.roomPrice : room.price,
+            quantity:
+              room.roomQuantity !== undefined
+                ? room.roomQuantity
+                : room.quantity,
+            description: room.roomDescription || room.description,
+            area: room.roomArea || room.area,
+            avatar: room.roomAvatar || room.avatar,
+            max_people: room.roomMaxPeople || room.max_people,
+            beds: room.roomBeds || room.beds,
+            images: room.roomImage ? [room.roomImage] : room.images || [],
+          }))
+        )
+      );
+      dispatch(
+        setSelectedYachtServices(
+          (
+            consultation.data.selectedServices ||
+            consultation.data.services ||
+            consultation.data.consultationData?.requestServices ||
+            []
+          ).map((sv) => ({
+            serviceId: sv.serviceId || sv._id || sv.id,
+            serviceName: sv.serviceName || sv.name,
+            price: sv.servicePrice !== undefined ? sv.servicePrice : sv.price,
+            quantity:
+              sv.serviceQuantity !== undefined
+                ? sv.serviceQuantity
+                : sv.quantity,
+            _id: sv._id || sv.serviceId || sv.id,
           }))
         )
       );
@@ -437,7 +478,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
                       }}
                     >
                       {room.name} x {room.quantity}:{" "}
-                      {room.price.toLocaleString()}đ/phòng
+                      {typeof room.price === "number"
+                        ? room.price.toLocaleString()
+                        : "0"}
+                      đ/phòng
                     </Typography>
                   </Box>
                 ))}
@@ -445,12 +489,26 @@ const BookingRoomModal = ({ show, yachtData }) => {
                 {selectedYachtServices && selectedYachtServices.length > 0 && (
                   <Box sx={{ ml: 2 }}>
                     {selectedYachtServices.map((sv, idx) => (
-                      <Typography key={sv.id || idx}>
+                      <Typography key={sv.serviceId || idx}>
                         - Dịch vụ: {sv.serviceName} x {totalGuests} khách:{" "}
-                        {(sv.price * totalGuests).toLocaleString()}đ (
-                        {sv.price.toLocaleString()}đ/người)
+                        {typeof sv.price === "number"
+                          ? (sv.price * totalGuests).toLocaleString()
+                          : "0"}
+                        đ (
+                        {typeof sv.price === "number"
+                          ? sv.price.toLocaleString()
+                          : "0"}
+                        đ/người)
                       </Typography>
                     ))}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 1 }}
+                      onClick={() => setShowServiceModal(true)}
+                    >
+                      Chỉnh sửa dịch vụ
+                    </Button>
                   </Box>
                 )}
                 {/* Tổng phụ */}

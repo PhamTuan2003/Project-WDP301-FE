@@ -8,7 +8,7 @@ html {
     font-family: "Archivo", serif;
 }
 
-button {
+.button {
     border-radius: 100px;
     box-shadow: 0px 1px 2px 0px #1018280d;
     display: flex;
@@ -16,13 +16,13 @@ button {
     gap: 8px;
 }
 
-h4,
-h5 {
+.h4,
+.h5 {
     font-weight: 700;
     color: #101828;
 }
 
-h4 {
+.h4 {
     font-size: 36px;
     line-height: 44px;
 }
@@ -152,23 +152,8 @@ label {
     font-weight: 500;
 }
 
-p.sm {
-    font-size: 14px;
-    line-height: 20px;
-}
 
-p.md,
-p.sm {
-    font-weight: 400;
-}
 
-p {
-    margin: 0;
-}
-
-p {
-    word-wrap: break-word;
-}
 
 .Checkbox_container__ccFUl input:checked ~ .Checkbox_checkmark__81gnF > svg {
     display: block;
@@ -213,16 +198,6 @@ p {
     color: #344054;
 }
 
-p.md,
-p.sm {
-    font-weight: 400;
-}
-
-p.md {
-    font-size: 16px;
-    line-height: 24px;
-    color: #475467;
-}
 
 /* AFTER RESULT SEARCH */
 
@@ -780,38 +755,4 @@ p.md {
 
 ::-webkit-scrollbar {
     display: none !important;
-}
-
-@media print {
-    body * {
-        display: none !important;
-    }
-
-    #invoice-content,
-    #invoice-content * {
-        display: revert !important;
-        visibility: visible !important;
-    }
-
-    #invoice-content {
-        position: static !important;
-        width: 210mm !important;
-        min-height: 297mm !important;
-        max-width: 210mm !important;
-        margin: 0 auto !important;
-        background: white !important;
-        box-shadow: none !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        z-index: 9999 !important;
-    }
-
-    html,
-    body {
-        background: white !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 210mm !important;
-        min-height: 297mm !important;
-    }
 }

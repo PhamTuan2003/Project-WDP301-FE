@@ -51,10 +51,7 @@ const BookingList = () => {
     window.location.href = `/booking-detail/${bookingId}`;
   };
 
-  const handleCancelBooking = (bookingId) => {
-    // TODO: Implement cancel booking functionality
-    console.log("Cancel booking:", bookingId);
-  };
+  const handleCancelBooking = (bookingId) => {};
 
   if (customerBookingsLoading) {
     return (

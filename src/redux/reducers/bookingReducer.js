@@ -59,7 +59,6 @@ const bookingReducer = (state = bookingInitialState, action) => {
         area: room.area || "33",
         description: room.description || "Phòng thoải mái với view đẹp",
       }));
-      // Sử dụng schedules trực tiếp từ payload (bao gồm displayText) - không cần tạo return lại
       const maxPeopleOptions = [
         ...new Set(processedRooms.map((r) => r.beds)),
       ].sort((a, b) => a - b);

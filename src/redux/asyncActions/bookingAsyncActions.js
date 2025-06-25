@@ -205,18 +205,7 @@ export const createBookingOrConsultationRequest =
       }
       const requestPayload = {
         ...bookingData,
-        selectedRooms: bookingData.selectedRooms.map((room) => ({
-          id: room.id || room._id,
-          name: room.name,
-          quantity: room.quantity,
-          price: room.price,
-          description: room.description || "",
-          area: room.area || 0,
-          avatar: room.avatar || "",
-          max_people: room.max_people || 1,
-          beds: room.beds || 1,
-          image: room.image || room.avatar || "",
-        })),
+        selectedRooms: bookingData.selectedRooms,
         selectedServices: selectedYachtServices,
         scheduleId: selectedSchedule || bookingData.scheduleId || null,
         requestType: requestType,
@@ -499,8 +488,14 @@ export const fetchCustomerBookingDetail = (bookingId) => async (dispatch) => {
       }
     );
     if (response.data.success) {
-      dispatch(bookingActions.fetchBookingDetailSuccess(response.data.data));
-      return { success: true, data: response.data.data };
+      let detail = response.data.data;
+      let booking = detail.booking || {};
+      detail.bookedServices =
+        detail.bookedServices && detail.bookedServices.length > 0
+          ? detail.bookedServices
+          : booking.requestServices || booking.selectedServices || [];
+      dispatch(bookingActions.fetchBookingDetailSuccess(detail));
+      return { success: true, data: detail };
     } else {
       throw new Error(response.data.message || "Lỗi lấy chi tiết booking");
     }

@@ -43,9 +43,6 @@ const ModalCreateRoom = (props) => {
     }
   }, [show]);
 
-  console.log("d", listRoomType);
-  console.log("d2", roomType);
-
   const handleClose = () => {
     setIsShowModalCreateRoom(false);
     resetForm();
