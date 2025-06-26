@@ -67,7 +67,6 @@ export default function CompanyManagement() {
                 return;
             }
             try {
-                // Gửi cả thông tin công ty và tài khoản lên BE
                 const res = await axios.post('http://localhost:9999/api/v1/account-companies', {
                     name: formData.name,
                     address: formData.address,
@@ -75,7 +74,7 @@ export default function CompanyManagement() {
                     username: formData.username,
                     password: formData.password
                 });
-                // Sau khi thêm mới, reload lại danh sách để đồng bộ dữ liệu
+                alert(res.data.message || 'Thêm mới thành công!');
                 const resList = await axios.get('http://localhost:9999/api/v1/account-companies');
                 setCompanies(Array.isArray(resList.data) ? resList.data : []);
                 handleCloseDialog();
@@ -88,17 +87,32 @@ export default function CompanyManagement() {
                 }
             }
         } else {
-            // (Có thể bổ sung API update sau)
-            setCompanies(prev =>
-                prev.map(c => (c._id === editingCompany._id ? { ...editingCompany, ...formData } : c))
-            );
-            handleCloseDialog();
+            try {
+                const res = await axios.put(`http://localhost:9999/api/v1/account-companies/${editingCompany._id}`, {
+                    name: formData.name,
+                    address: formData.address,
+                    email: formData.email,
+                    username: formData.username
+                });
+                alert(res.data.message || 'Cập nhật thành công!');
+                const resList = await axios.get('http://localhost:9999/api/v1/account-companies');
+                setCompanies(Array.isArray(resList.data) ? resList.data : []);
+                handleCloseDialog();
+            } catch (err) {
+                alert('Cập nhật công ty thất bại!');
+            }
         }
     };
 
-    const handleDelete = (id) => {
-        setCompanies(prev => prev.filter(c => c._id !== id));
-        // Có thể bổ sung API xóa ở backend nếu cần
+    const handleDelete = async (id) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa công ty này?')) return;
+        try {
+            const res = await axios.delete(`http://localhost:9999/api/v1/account-companies/${id}`);
+            alert(res.data.message || 'Xóa thành công!');
+            setCompanies(prev => prev.filter(c => c._id !== id));
+        } catch (err) {
+            alert('Xóa công ty thất bại!');
+        }
     };
 
     return (
