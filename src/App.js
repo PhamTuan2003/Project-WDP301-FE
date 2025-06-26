@@ -23,6 +23,7 @@ import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "./components/routers/ProtectedRoute";
+import BookingHistory from "./pages/BookingHistory";
 
 //COMPANY
 import Dashboard from "./components/company/Dashboard";
@@ -79,6 +80,7 @@ function App() {
             <Route path="/lien-he-tu-van" element={<ContactSection />} />
             <Route path="/doanh-nghiep" element={<Enterprise />} />
             <Route path="/view-profile" element={<CustomerProfile />} />
+            <Route path="/booking-history" element={<BookingHistory />} />
             <Route path="/blog" element={<BlogList />} />
             <Route path="/blog/:id" element={<BlogDetail />} />
           </Route>

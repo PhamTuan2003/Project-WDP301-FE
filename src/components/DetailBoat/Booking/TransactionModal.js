@@ -27,7 +27,10 @@ import {
   stopPaymentStatusPolling,
   cancelTransaction,
 } from "../../../redux/asyncActions/paymentAsyncActions";
-import { fetchCustomerBookingDetail } from "../../../redux/asyncActions/bookingAsyncActions";
+import {
+  fetchCustomerBookingDetail,
+  fetchCustomerBookings,
+} from "../../../redux/asyncActions/bookingAsyncActions";
 import { fetchInvoiceByTransactionId } from "../../../redux/asyncActions/invoiceAsyncActions";
 import { formatPrice } from "../../../redux/validation";
 import {
@@ -106,6 +109,8 @@ const TransactionModal = ({ onBack }) => {
       if (bookingIdFortransaction) {
         dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
       }
+      // Thêm dòng này để cập nhật danh sách booking ngay sau khi thanh toán thành công
+      dispatch(fetchCustomerBookings());
     }
   }, [paymentStatus, showTransactionModal]);
 
