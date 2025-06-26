@@ -39,6 +39,7 @@ import TransactionModal from "../components/DetailBoat/Booking/TransactionModal"
 import InvoiceModal from "../components/DetailBoat/Booking/InvoiceModal";
 import { openInvoiceModal } from "../redux/actions/uiActions";
 import { fetchInvoiceByBookingId } from "../redux/asyncActions/invoiceAsyncActions";
+import { customerCancelBooking } from "../redux/asyncActions/bookingAsyncActions";
 
 const statusMap = {
   consultation_requested: {
@@ -262,13 +263,15 @@ export default function BookingHistory() {
                             elevation={6}
                             sx={{
                               px: 3,
-                              py: 2,
-                              borderRadius: 3,
+                              py: 2.5,
+                              borderRadius: 4,
                               border: `1.5px solid #e0e0e0`,
-                              minHeight: 260,
+                              minHeight: 370,
                               display: "flex",
                               flexDirection: "column",
                               justifyContent: "space-between",
+                              bgcolor: "#fff",
+                              boxShadow: "0 2px 16px 0 rgba(0,0,0,0.04)",
                               transition: "box-shadow 0.2s, transform 0.2s",
                               "&:hover": {
                                 boxShadow: 12,
@@ -327,8 +330,9 @@ export default function BookingHistory() {
                             <Typography
                               variant="body2"
                               color="primary.dark"
-                              minHeight={24}
+                              minHeight={32}
                               fontWeight={500}
+                              sx={{ mb: 1 }}
                             >
                               {status.desc || ""}
                             </Typography>
@@ -356,151 +360,73 @@ export default function BookingHistory() {
                               />
                             </Stack>
                             {/* Phòng đã đặt - tóm tắt */}
-                            {rooms.length > 0 && (
-                              <Box mb={1}>
-                                <Typography
-                                  variant="subtitle2"
-                                  fontWeight={600}
-                                  color="primary.dark"
-                                  mb={0.5}
-                                >
-                                  Phòng:
-                                </Typography>
-                                <Stack spacing={0.5} sx={{ display: "flex" }}>
-                                  <Box display="flex" alignItems="center">
-                                    <Typography
-                                      key={rooms[0].roomId || 0}
-                                      variant="body2"
-                                      color="text.secondary"
-                                      sx={{ mr: 1 }}
-                                    >
-                                      • {rooms[0].roomName} (x
-                                      {rooms[0].roomQuantity})
-                                    </Typography>
-                                    {rooms.length > 1 && !isRoomsExpanded && (
-                                      <Button
-                                        size="small"
-                                        variant="text"
-                                        sx={{
-                                          px: 1,
-                                          border: "1px solid #90caf9",
-                                          fontSize: 13,
-                                          minWidth: 0,
-                                        }}
-                                        onClick={() =>
-                                          setExpandedRooms((prev) => ({
-                                            ...prev,
-                                            [booking._id]: true,
-                                          }))
-                                        }
-                                      >
-                                        +{rooms.length - 1}
-                                      </Button>
-                                    )}
-                                  </Box>
-                                  {isRoomsExpanded &&
-                                    rooms.slice(1).map((room, idx) => (
+                            <Box mb={1} minHeight={40}>
+                              <Typography
+                                variant="subtitle2"
+                                fontWeight={600}
+                                color="primary.dark"
+                                mb={0.5}
+                              >
+                                Phòng:
+                              </Typography>
+                              <Stack spacing={0.5} sx={{ minHeight: 28 }}>
+                                {rooms.length > 0 ? (
+                                  <>
+                                    <Box display="flex" alignItems="center">
                                       <Typography
-                                        key={room.roomId || idx + 1}
+                                        key={rooms[0].roomId || 0}
                                         variant="body2"
                                         color="text.secondary"
+                                        sx={{ mr: 1 }}
                                       >
-                                        • {room.roomName} (x{room.roomQuantity})
+                                        • {rooms[0].roomName} (x
+                                        {rooms[0].roomQuantity})
                                       </Typography>
-                                    ))}
-                                  {isRoomsExpanded && rooms.length > 1 && (
-                                    <Button
-                                      size="small"
-                                      variant="text"
-                                      color="primary.dark"
-                                      sx={{
-                                        minWidth: 0,
-                                        px: 1,
-                                        fontSize: 13,
-                                        border: "1px solid #90caf9",
-                                      }}
-                                      onClick={() =>
-                                        setExpandedRooms((prev) => ({
-                                          ...prev,
-                                          [booking._id]: false,
-                                        }))
-                                      }
-                                    >
-                                      Thu gọn
-                                    </Button>
-                                  )}
-                                </Stack>
-                              </Box>
-                            )}
-                            {/* Dịch vụ đã chọn - tóm tắt */}
-                            {services.length > 0 && (
-                              <Box mb={1}>
-                                <Typography
-                                  variant="subtitle2"
-                                  fontWeight={600}
-                                  color="primary.dark"
-                                  mb={0.5}
-                                >
-                                  Dịch vụ:
-                                </Typography>
-                                <Stack spacing={0.5} sx={{ display: "flex" }}>
-                                  <Box display="flex" alignItems="center">
-                                    <Typography
-                                      key={services[0].serviceId || 0}
-                                      variant="body2"
-                                      color="text.secondary"
-                                      sx={{ mr: 1 }}
-                                    >
-                                      • {services[0].serviceName} (x
-                                      {services[0].serviceQuantity})
-                                    </Typography>
-                                    {services.length > 1 &&
-                                      !isServicesExpanded && (
+                                      {rooms.length > 1 && !isRoomsExpanded && (
                                         <Button
                                           size="small"
                                           variant="text"
                                           sx={{
-                                            px: 0.5,
-                                            py: 0,
-                                            border: "1px solid #66bdb3",
-                                            borderRadius: "100%",
-                                            fontSize: 12,
+                                            px: 1,
+                                            border: "1px solid #90caf9",
+                                            fontSize: 13,
                                             minWidth: 0,
                                           }}
                                           onClick={() =>
-                                            setExpandedServices((prev) => ({
+                                            setExpandedRooms((prev) => ({
                                               ...prev,
                                               [booking._id]: true,
                                             }))
                                           }
                                         >
-                                          +{services.length - 1}
+                                          +{rooms.length - 1}
                                         </Button>
                                       )}
-                                  </Box>
-                                  {isServicesExpanded &&
-                                    services.slice(1).map((sv, idx) => (
-                                      <Typography
-                                        key={sv.serviceId || idx + 1}
-                                        variant="body2"
-                                        color="text.secondary"
-                                      >
-                                        • {sv.serviceName} (x
-                                        {sv.serviceQuantity})
-                                      </Typography>
-                                    ))}
-                                  {isServicesExpanded &&
-                                    services.length > 1 && (
+                                    </Box>
+                                    {isRoomsExpanded &&
+                                      rooms.slice(1).map((room, idx) => (
+                                        <Typography
+                                          key={room.roomId || idx + 1}
+                                          variant="body2"
+                                          color="text.secondary"
+                                        >
+                                          • {room.roomName} (x
+                                          {room.roomQuantity})
+                                        </Typography>
+                                      ))}
+                                    {isRoomsExpanded && rooms.length > 1 && (
                                       <Button
                                         size="small"
                                         variant="text"
+                                        color="primary.dark"
                                         sx={{
                                           minWidth: 0,
                                           px: 1,
                                           fontSize: 13,
+                                          border: "1px solid #90caf9",
                                         }}
                                         onClick={() =>
-                                          setExpandedServices((prev) => ({
+                                          setExpandedRooms((prev) => ({
                                             ...prev,
                                             [booking._id]: false,
                                           }))
@@ -509,56 +435,200 @@ export default function BookingHistory() {
                                         Thu gọn
                                       </Button>
                                     )}
-                                </Stack>
-                              </Box>
-                            )}
+                                  </>
+                                ) : (
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                      fontStyle: "italic",
+                                      color: "#7e9ca7",
+                                    }}
+                                  >
+                                    Không có phòng nào được chọn
+                                  </Typography>
+                                )}
+                              </Stack>
+                            </Box>
+                            {/* Dịch vụ đã chọn - tóm tắt */}
+                            <Box mb={1} minHeight={40}>
+                              <Typography
+                                variant="subtitle2"
+                                fontWeight={600}
+                                color="primary.dark"
+                                mb={0.5}
+                              >
+                                Dịch vụ:
+                              </Typography>
+                              <Stack spacing={0.5} sx={{ minHeight: 28 }}>
+                                {services.length > 0 ? (
+                                  <>
+                                    <Box display="flex" alignItems="center">
+                                      <Typography
+                                        key={services[0].serviceId || 0}
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{ mr: 1 }}
+                                      >
+                                        • {services[0].serviceName} (x
+                                        {services[0].serviceQuantity})
+                                      </Typography>
+                                      {services.length > 1 &&
+                                        !isServicesExpanded && (
+                                          <Button
+                                            size="small"
+                                            variant="text"
+                                            sx={{
+                                              px: 0.5,
+                                              py: 0,
+                                              border: "1px solid #66bdb3",
+                                              borderRadius: "100%",
+                                              fontSize: 12,
+                                              minWidth: 0,
+                                            }}
+                                            onClick={() =>
+                                              setExpandedServices((prev) => ({
+                                                ...prev,
+                                                [booking._id]: true,
+                                              }))
+                                            }
+                                          >
+                                            +{services.length - 1}
+                                          </Button>
+                                        )}
+                                    </Box>
+                                    {isServicesExpanded &&
+                                      services.slice(1).map((sv, idx) => (
+                                        <Typography
+                                          key={sv.serviceId || idx + 1}
+                                          variant="body2"
+                                          color="text.secondary"
+                                        >
+                                          • {sv.serviceName} (x
+                                          {sv.serviceQuantity})
+                                        </Typography>
+                                      ))}
+                                    {isServicesExpanded &&
+                                      services.length > 1 && (
+                                        <Button
+                                          size="small"
+                                          variant="text"
+                                          sx={{
+                                            minWidth: 0,
+                                            px: 1,
+                                            fontSize: 13,
+                                          }}
+                                          onClick={() =>
+                                            setExpandedServices((prev) => ({
+                                              ...prev,
+                                              [booking._id]: false,
+                                            }))
+                                          }
+                                        >
+                                          Thu gọn
+                                        </Button>
+                                      )}
+                                  </>
+                                ) : (
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                      fontStyle: "italic",
+                                      color: "#7e9ca7",
+                                    }}
+                                  >
+                                    Không có dịch vụ được chọn
+                                  </Typography>
+                                )}
+                              </Stack>
+                            </Box>
 
                             <Box
                               mt={2}
                               display="flex"
                               justifyContent="space-between"
-                              alignItems="center"
+                              alignItems="flex-end"
+                              minHeight={56}
                             >
                               <Typography
                                 variant="body2"
                                 fontWeight={600}
                                 color="primary.dark"
+                                sx={{ alignSelf: "flex-end" }}
                               >
                                 <b>Tổng tiền:</b>{" "}
                                 {booking.amount?.toLocaleString("vi-VN")}₫
                               </Typography>
-                              <Box display="flex" gap={1}>
+                              <Box
+                                display="flex"
+                                gap={1}
+                                alignItems="flex-end"
+                                justifyContent="flex-end"
+                              >
                                 {booking.status === "pending_payment" && (
+                                  <>
+                                    <Button
+                                      variant="contained"
+                                      color="warning"
+                                      size="small"
+                                      sx={{
+                                        borderRadius: 2,
+                                        fontWeight: 700,
+                                        minWidth: 120,
+                                      }}
+                                      onClick={() => {
+                                        dispatch(
+                                          openTransactionModal(booking._id)
+                                        );
+                                      }}
+                                    >
+                                      Thanh toán
+                                    </Button>
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      sx={{ borderRadius: 2, minWidth: 120 }}
+                                      onClick={() => handleOpenDetail(booking)}
+                                    >
+                                      Xem chi tiết
+                                    </Button>
+                                    <Button
+                                      variant="outlined"
+                                      color="error"
+                                      size="small"
+                                      onClick={() =>
+                                        dispatch(
+                                          customerCancelBooking(booking._id)
+                                        )
+                                      }
+                                      sx={{ minWidth: 120 }}
+                                    >
+                                      Hủy
+                                    </Button>
+                                  </>
+                                )}
+                                {booking.status !== "pending_payment" && (
                                   <Button
-                                    variant="contained"
-                                    color="warning"
+                                    variant="outlined"
                                     size="small"
-                                    sx={{ borderRadius: 2, fontWeight: 700 }}
-                                    onClick={() => {
-                                      dispatch(
-                                        openTransactionModal(booking._id)
-                                      );
-                                    }}
+                                    sx={{ borderRadius: 2, minWidth: 120 }}
+                                    onClick={() => handleOpenDetail(booking)}
                                   >
-                                    Tiếp tục thanh toán
+                                    Xem chi tiết
                                   </Button>
                                 )}
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={() => handleOpenDetail(booking)}
-                                  sx={{ borderRadius: 2, ml: 1 }}
-                                >
-                                  Xem chi tiết
-                                </Button>
-                                {/* Nút xem hóa đơn cho booking đã hoàn thành */}
                                 {(booking.status === "completed" ||
                                   booking.status === "fully_paid") && (
                                   <Button
                                     variant="contained"
                                     color="success"
                                     size="small"
-                                    sx={{ borderRadius: 2, fontWeight: 700 }}
+                                    sx={{
+                                      borderRadius: 2,
+                                      fontWeight: 700,
+                                      minWidth: 120,
+                                    }}
                                     onClick={() => handleViewInvoice(booking)}
                                   >
                                     Xem hóa đơn
@@ -890,8 +960,12 @@ export default function BookingHistory() {
                     )}
                   </Grid>
                 ) : (
-                  <Typography color="text.secondary" mb={2}>
-                    Không có dịch vụ nào.
+                  <Typography
+                    color="text.secondary"
+                    mb={2}
+                    sx={{ fontStyle: "italic" }}
+                  >
+                    Không có dịch vụ được chọn
                   </Typography>
                 )}
               </Box>
