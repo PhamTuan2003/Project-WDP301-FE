@@ -16,7 +16,11 @@ import {
     Grid,
     Card,
     CardContent,
-    Avatar
+    Avatar,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -50,6 +54,8 @@ export default function Dashboard() {
     const [stats, setStats] = useState(null);
     const [companyCount, setCompanyCount] = useState(0);
     const [earningsByMonth, setEarningsByMonth] = useState([]);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [yearOptions, setYearOptions] = useState([]);
 
     useEffect(() => {
         fetch("http://localhost:9999/api/v1/count-companies/count")
@@ -71,7 +77,19 @@ export default function Dashboard() {
             });
     }, []);
 
-    const totalCommission = earningsByMonth.reduce(
+    // Lấy danh sách năm từ earningsByMonth
+    useEffect(() => {
+        if (earningsByMonth.length > 0) {
+            const years = Array.from(new Set(earningsByMonth.map(row => row.year))).sort((a, b) => b - a);
+            setYearOptions(years);
+            if (!years.includes(selectedYear)) setSelectedYear(years[0]);
+        }
+    }, [earningsByMonth]);
+
+    // Lọc dữ liệu theo năm được chọn
+    const filteredData = earningsByMonth.filter(row => row.year === selectedYear);
+
+    const totalCommission = filteredData.reduce(
         (sum, row) => sum + (row.earnings * 0.05), 0
     );
 
@@ -246,10 +264,25 @@ export default function Dashboard() {
                             <Box mt={15} display="flex" justifyContent="center">
                                 <Box width="100%" maxWidth={1400}>
                                     <Typography variant="h6" fontWeight={600} mb={2}>Earnings & Commission by Month</Typography>
-                                    {earningsByMonth.length > 0 && (
+                                    <Box mb={2} display="flex" alignItems="center" gap={2}>
+                                        <FormControl size="small">
+                                            <InputLabel>Năm</InputLabel>
+                                            <Select
+                                                value={selectedYear}
+                                                label="Năm"
+                                                onChange={e => setSelectedYear(Number(e.target.value))}
+                                                sx={{ minWidth: 100 }}
+                                            >
+                                                {yearOptions.map(y => (
+                                                    <MenuItem key={y} value={y}>{y}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
+                                    {filteredData.length > 0 && (
                                         <ResponsiveContainer width="100%" height={300}>
                                             <ComposedChart
-                                                data={earningsByMonth.map(row => ({
+                                                data={filteredData.map(row => ({
                                                     ...row,
                                                     commission: row.earnings * 0.05
                                                 }))}
@@ -263,11 +296,10 @@ export default function Dashboard() {
                                                         value: 'Earnings (đ)',
                                                         angle: -90,
                                                         position: 'outsideLeft',
-                                                        dx: -50, // đẩy chữ ra xa hơn trục tung
+                                                        dx: -50,
                                                         style: { textAnchor: 'middle', fontSize: 12 }
                                                     }}
                                                 />
-
                                                 <YAxis
                                                     yAxisId="right"
                                                     orientation="right"
@@ -275,11 +307,10 @@ export default function Dashboard() {
                                                         value: 'Commission (đ)',
                                                         angle: -90,
                                                         position: 'outsideRight',
-                                                        dx: 50, // đẩy chữ ra khỏi trục bên phải
+                                                        dx: 50,
                                                         style: { textAnchor: 'middle', fontSize: 12 }
                                                     }}
                                                 />
-
                                                 <Tooltip />
                                                 <Bar yAxisId="left" dataKey="earnings" fill="#1976d2" name="Booking Earnings" />
                                                 <Line yAxisId="right" type="monotone" dataKey="commission" stroke="#ff9800" strokeWidth={3} dot name="Commission (5%)" />

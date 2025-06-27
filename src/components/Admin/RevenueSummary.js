@@ -1,6 +1,6 @@
 // RevenueSummary.js
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
+import { Box, Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 
@@ -22,12 +22,19 @@ const monthFullName = {
 
 export default function RevenueSummary() {
     const [data, setData] = useState([]);
+    const [year, setYear] = useState(new Date().getFullYear());
+    const [yearOptions, setYearOptions] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await axios.get('http://localhost:9999/api/v1/account-companies/revenue/monthly');
                 setData(response.data);
+
+                // Lấy danh sách năm có trong dữ liệu
+                const years = Array.from(new Set(response.data.map(row => row.year || new Date().getFullYear()))).sort((a, b) => b - a);
+                setYearOptions(years);
+                if (years.length > 0) setYear(years[0]);
             } catch (error) {
                 console.error('Error fetching revenue data:', error);
             }
@@ -36,13 +43,31 @@ export default function RevenueSummary() {
         fetchData();
     }, []);
 
+    // Lọc dữ liệu theo năm được chọn
+    const filteredData = data.filter(row => (row.year || new Date().getFullYear()) === year);
+
     return (
         <Box>
             <Typography variant="h5" fontWeight={700} mb={3}>Tổng hợp doanh thu các tháng</Typography>
+            <Box mb={2} display="flex" alignItems="center" gap={2}>
+                <FormControl size="small">
+                    <InputLabel>Năm</InputLabel>
+                    <Select
+                        value={year}
+                        label="Năm"
+                        onChange={e => setYear(Number(e.target.value))}
+                        sx={{ minWidth: 100 }}
+                    >
+                        {yearOptions.map(y => (
+                            <MenuItem key={y} value={y}>{y}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
             <Paper sx={{ p: 3, mb: 4 }}>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart
-                        data={data.map(row => ({
+                        data={filteredData.map(row => ({
                             ...row,
                             commission: row.earnings * 0.05
                         }))}
@@ -67,7 +92,7 @@ export default function RevenueSummary() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {data.map((row) => (
+                            {filteredData.map((row) => (
                                 <TableRow key={row.month}>
                                     <TableCell align="center">{monthFullName[row.month] || row.month}</TableCell>
                                     <TableCell align="center">{row.earnings.toLocaleString()} đ</TableCell>
