@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { X, ArrowRight } from "lucide-react";
+import { X, ArrowRight, Edit } from "lucide-react";
 import { Box, TextField, Typography, Button } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
@@ -396,7 +396,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
               <X size={24} />
             </Button>
           </Box>
-          <Box sx={{ p: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
             <Box
               sx={{
                 display: "grid",
@@ -460,59 +460,150 @@ const BookingRoomModal = ({ show, yachtData }) => {
               {/* Hiển thị chi tiết phòng và dịch vụ */}
               <Box
                 sx={{
-                  bgcolor: "background.paper",
-                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
                   borderRadius: 2,
                   boxShadow: (theme) => theme.shadows[1],
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                 }}
               >
-                {(selectedRooms || []).map((room) => (
-                  <Box key={room.id} sx={{ mb: 1 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: "1rem",
-                        color: "text.primary",
-                        fontFamily: "Archivo, sans-serif",
-                      }}
-                    >
-                      {room.name} x {room.quantity}:{" "}
-                      {typeof room.price === "number"
-                        ? room.price.toLocaleString()
-                        : "0"}
-                      đ/phòng
-                    </Typography>
-                  </Box>
-                ))}
-                {/* Hiển thị dịch vụ đã chọn cho booking */}
-                {selectedYachtServices && selectedYachtServices.length > 0 && (
-                  <Box sx={{ ml: 2 }}>
-                    {selectedYachtServices.map((sv, idx) => (
-                      <Typography key={sv.serviceId || idx}>
-                        - Dịch vụ: {sv.serviceName} x {totalGuests} khách:{" "}
-                        {typeof sv.price === "number"
-                          ? (sv.price * totalGuests).toLocaleString()
-                          : "0"}
-                        đ (
-                        {typeof sv.price === "number"
-                          ? sv.price.toLocaleString()
-                          : "0"}
-                        đ/người)
+                <Box
+                  sx={{
+                    maxHeight: "150px",
+                    overflowY: "scroll",
+                    scrollbarGutter: "stable",
+                    p: 1,
+                    borderRadius: 2,
+                    background: "#fafafa",
+                    "&::-webkit-scrollbar": {
+                      width: "8px",
+                      borderRadius: "4px",
+                      backgroundColor: "#f0f0f0",
+                      display: "block",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: "rgba(0, 0, 0, 0.25)",
+                      borderRadius: "4px",
+                      minHeight: "20px",
+                    },
+                    boxShadow: (theme) => theme.shadows[1],
+                    borderBottom: (theme) =>
+                      `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <Typography
+                    sx={{ fontWeight: "bold", mx: 1, color: "primary.main" }}
+                  >
+                    Phòng đã đã chọn
+                  </Typography>{" "}
+                  {(selectedRooms || []).map((room) => (
+                    <Box key={room.id} sx={{ mx: 2 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: "bold",
+                          fontSize: "1rem",
+                          color: "text.primary",
+                          fontFamily: "Archivo, sans-serif",
+                        }}
+                      >
+                        <li>
+                          {" "}
+                          {room.name} x {room.quantity}:{" "}
+                          {typeof room.price === "number"
+                            ? room.price.toLocaleString()
+                            : "0"}
+                          đ/phòng
+                        </li>
                       </Typography>
-                    ))}
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      sx={{ mt: 1 }}
-                      onClick={() => setShowServiceModal(true)}
-                    >
-                      Chỉnh sửa dịch vụ
-                    </Button>
-                  </Box>
-                )}
-                {/* Tổng phụ */}
-                <Box sx={{ mt: 1, ml: 1 }}>
+                    </Box>
+                  ))}
+                  {/* Hiển thị dịch vụ đã chọn cho booking */}
+                  {selectedYachtServices &&
+                    selectedYachtServices.length > 0 && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 1,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontWeight: "bold",
+                            mx: 1,
+                            color: "primary.main",
+                          }}
+                        >
+                          Dịch vụ đã chọn
+                        </Typography>
+                        {selectedYachtServices.map((sv, idx) => (
+                          <Box
+                            key={sv.serviceId || idx}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                color: "primary.main",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Edit size={18} />
+                            </Box>
+                            <Box>
+                              <Typography>
+                                <b>{sv.serviceName}</b> x {totalGuests} khách:{" "}
+                                {typeof sv.price === "number"
+                                  ? (sv.price * totalGuests).toLocaleString()
+                                  : "0"}
+                                đ (
+                                {typeof sv.price === "number"
+                                  ? sv.price.toLocaleString()
+                                  : "0"}
+                                đ/người)
+                              </Typography>
+                              {sv.description && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  {sv.description}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  {/* Tổng phụ */}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    sx={{ mt: 1, borderRadius: 3, width: "fit-content" }}
+                    onClick={() => setShowServiceModal(true)}
+                  >
+                    <Edit size={20} />
+                  </Button>
+                </Box>
+                <Box
+                  sx={{
+                    pt: 1,
+
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderRadius: 2,
+                    bgcolor: "primary.main",
+                    px: 3,
+                    boxShadow: (theme) => theme.shadows[1],
+                  }}
+                >
                   <Typography
                     sx={{
                       fontSize: "1rem",
@@ -520,7 +611,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
                       fontFamily: "Archivo, sans-serif",
                     }}
                   >
-                    Tổng tiền phòng: {totalRoomPrice.toLocaleString()} đ
+                    Tổng tiền phòng:{" "}
+                    <p style={{ color: "white" }}>
+                      {totalRoomPrice.toLocaleString()} đ
+                    </p>
                   </Typography>
                   <Typography
                     sx={{
@@ -529,7 +623,10 @@ const BookingRoomModal = ({ show, yachtData }) => {
                       fontFamily: "Archivo, sans-serif",
                     }}
                   >
-                    Tổng tiền dịch vụ: {totalServicePrice.toLocaleString()} đ
+                    Tổng tiền dịch vụ:{" "}
+                    <p style={{ color: "white" }}>
+                      {totalServicePrice.toLocaleString()} đ
+                    </p>
                   </Typography>
                 </Box>
               </Box>

@@ -506,4 +506,32 @@ export const fetchCustomerBookingDetail = (bookingId) => async (dispatch) => {
   }
 };
 
+export const deleteBookingById = (bookingId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Không tìm thấy token xác thực.");
+    const response = await axios.delete(
+      `http://localhost:9999/api/v1/bookings/${bookingId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (response.data.success) {
+      dispatch(fetchCustomerBookings());
+      Swal.fire({
+        icon: "success",
+        title: "Đã xóa booking!",
+        text: "Booking đã được xóa thành công.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return { success: true };
+    } else {
+      throw new Error(response.data.message || "Xóa booking thất bại.");
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message;
+    Swal.fire({ icon: "error", title: "Lỗi xóa booking!", text: errorMessage });
+    return { success: false, error: errorMessage };
+  }
+};
+
 // Các async action booking khác (fetchConsultationRequest, cancelConsultationRequestById, customerConfirmConsultation, customerCancelBooking, fetchCustomerBookings, fetchCustomerBookingDetail, ...) cũng cần được bổ sung tương tự từ file gốc nếu cần.

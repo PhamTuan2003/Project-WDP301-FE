@@ -39,7 +39,12 @@ import TransactionModal from "../components/DetailBoat/Booking/TransactionModal"
 import InvoiceModal from "../components/DetailBoat/Booking/InvoiceModal";
 import { openInvoiceModal } from "../redux/actions/uiActions";
 import { fetchInvoiceByBookingId } from "../redux/asyncActions/invoiceAsyncActions";
-import { customerCancelBooking } from "../redux/asyncActions/bookingAsyncActions";
+import {
+  customerCancelBooking,
+  deleteBookingById,
+} from "../redux/asyncActions/bookingAsyncActions";
+import Swal from "sweetalert2";
+import { ListCollapse, Receipt, Trash } from "lucide-react";
 
 const statusMap = {
   consultation_requested: {
@@ -188,6 +193,23 @@ export default function BookingHistory() {
     }
   };
 
+  const handleDeleteBooking = (booking) => {
+    Swal.fire({
+      title: "Bạn có chắc chắn muốn xóa booking này?",
+      text: "Hành động này không thể hoàn tác!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Xóa",
+      cancelButtonText: "Hủy",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await dispatch(deleteBookingById(booking._id));
+      }
+    });
+  };
+
   if (loading)
     return (
       <Box display="flex" justifyContent="center" mt={5}>
@@ -210,7 +232,7 @@ export default function BookingHistory() {
         backgroundPosition: "center",
       })}
     >
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 2 }}>
         <Typography variant="h4" mb={3} fontWeight={700} color="primary.main">
           Lịch sử booking của bạn
         </Typography>
@@ -270,14 +292,16 @@ export default function BookingHistory() {
                               display: "flex",
                               flexDirection: "column",
                               justifyContent: "space-between",
-                              bgcolor: "#fff",
-                              boxShadow: "0 2px 16px 0 rgba(0,0,0,0.04)",
                               transition: "box-shadow 0.2s, transform 0.2s",
                               "&:hover": {
                                 boxShadow: 12,
                                 transform: "translateY(-4px) scale(1.03)",
                                 borderColor: "#90caf9",
                               },
+                              bgcolor: (theme) =>
+                                theme.palette.background.paper,
+                              borderColor: (theme) => theme.palette.divider,
+                              boxShadow: (theme) => theme.shadows[1],
                             }}
                           >
                             <Stack
@@ -332,7 +356,6 @@ export default function BookingHistory() {
                               color="primary.dark"
                               minHeight={32}
                               fontWeight={500}
-                              sx={{ mb: 1 }}
                             >
                               {status.desc || ""}
                             </Typography>
@@ -588,23 +611,25 @@ export default function BookingHistory() {
                                     <Button
                                       variant="outlined"
                                       size="small"
-                                      sx={{ borderRadius: 2, minWidth: 120 }}
+                                      sx={{
+                                        borderRadius: 3,
+                                        minWidth: 20,
+                                      }}
                                       onClick={() => handleOpenDetail(booking)}
                                     >
-                                      Xem chi tiết
+                                      <ListCollapse size={20} />
                                     </Button>
                                     <Button
-                                      variant="outlined"
-                                      color="error"
                                       size="small"
+                                      color="error"
                                       onClick={() =>
                                         dispatch(
                                           customerCancelBooking(booking._id)
                                         )
                                       }
-                                      sx={{ minWidth: 120 }}
+                                      sx={{ minWidth: 20 }}
                                     >
-                                      Hủy
+                                      <CancelIcon size={19} />
                                     </Button>
                                   </>
                                 )}
@@ -612,10 +637,13 @@ export default function BookingHistory() {
                                   <Button
                                     variant="outlined"
                                     size="small"
-                                    sx={{ borderRadius: 2, minWidth: 120 }}
+                                    sx={{
+                                      borderRadius: 3,
+                                      minWidth: 20,
+                                    }}
                                     onClick={() => handleOpenDetail(booking)}
                                   >
-                                    Xem chi tiết
+                                    <ListCollapse size={20} />
                                   </Button>
                                 )}
                                 {(booking.status === "completed" ||
@@ -631,7 +659,18 @@ export default function BookingHistory() {
                                     }}
                                     onClick={() => handleViewInvoice(booking)}
                                   >
-                                    Xem hóa đơn
+                                    <Receipt size={20} />
+                                  </Button>
+                                )}
+                                {booking.status === "cancelled" && (
+                                  <Button
+                                    variant="outlined"
+                                    color="error"
+                                    size="small"
+                                    sx={{ minWidth: 20 }}
+                                    onClick={() => handleDeleteBooking(booking)}
+                                  >
+                                    <Trash size={20} />
                                   </Button>
                                 )}
                               </Box>
