@@ -15,9 +15,12 @@ import {
     DialogContent,
     DialogActions,
     TextField,
-    IconButton
+    IconButton,
+    TablePagination // Thêm dòng này
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function CompanyManagement() {
     const [companies, setCompanies] = useState([]);
@@ -31,6 +34,10 @@ export default function CompanyManagement() {
         password: '',
         confirmPassword: ''
     });
+
+    // Thêm state cho phân trang
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
 
     // Lấy danh sách công ty từ BE khi load trang
     useEffect(() => {
@@ -63,7 +70,7 @@ export default function CompanyManagement() {
         if (!editingCompany) {
             // Kiểm tra password và confirmPassword
             if (formData.password !== formData.confirmPassword) {
-                alert('Mật khẩu và xác nhận mật khẩu không khớp!');
+                toast.error('Mật khẩu và xác nhận mật khẩu không khớp!');
                 return;
             }
             try {
@@ -74,16 +81,16 @@ export default function CompanyManagement() {
                     username: formData.username,
                     password: formData.password
                 });
-                alert(res.data.message || 'Thêm mới thành công!');
+                toast.success(res.data.message || 'Thêm mới thành công!');
                 const resList = await axios.get('http://localhost:9999/api/v1/account-companies');
                 setCompanies(Array.isArray(resList.data) ? resList.data : []);
                 handleCloseDialog();
             } catch (err) {
                 console.error(err);
                 if (err.response?.data?.error?.includes('duplicate')) {
-                    alert('Username đã tồn tại!');
+                    toast.error('Username đã tồn tại!');
                 } else {
-                    alert('Thêm công ty thất bại!');
+                    toast.error('Thêm công ty thất bại!');
                 }
             }
         } else {
@@ -94,12 +101,12 @@ export default function CompanyManagement() {
                     email: formData.email,
                     username: formData.username
                 });
-                alert(res.data.message || 'Cập nhật thành công!');
+                toast.success(res.data.message || 'Cập nhật thành công!');
                 const resList = await axios.get('http://localhost:9999/api/v1/account-companies');
                 setCompanies(Array.isArray(resList.data) ? resList.data : []);
                 handleCloseDialog();
             } catch (err) {
-                alert('Cập nhật công ty thất bại!');
+                toast.error('Cập nhật công ty thất bại!');
             }
         }
     };
@@ -108,11 +115,21 @@ export default function CompanyManagement() {
         if (!window.confirm('Bạn có chắc chắn muốn xóa công ty này?')) return;
         try {
             const res = await axios.delete(`http://localhost:9999/api/v1/account-companies/${id}`);
-            alert(res.data.message || 'Xóa thành công!');
+            toast.success(res.data.message || 'Xóa thành công!');
             setCompanies(prev => prev.filter(c => c._id !== id));
         } catch (err) {
-            alert('Xóa công ty thất bại!');
+            toast.error('Xóa công ty thất bại!');
         }
+    };
+
+    // Thêm hàm xử lý phân trang
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
     };
 
     return (
@@ -133,24 +150,35 @@ export default function CompanyManagement() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {companies.map((company) => (
-                            <TableRow key={company._id}>
-                                <TableCell>{company.name}</TableCell>
-                                <TableCell>{company.address}</TableCell>
-                                <TableCell>{company.email}</TableCell>
-                                <TableCell>{company.accountId?.username || ''}</TableCell>
-                                <TableCell align="right">
-                                    <IconButton onClick={() => handleOpenDialog(company)}>
-                                        <Edit />
-                                    </IconButton>
-                                    <IconButton onClick={() => handleDelete(company._id)}>
-                                        <Delete />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {companies
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map((company) => (
+                                <TableRow key={company._id}>
+                                    <TableCell>{company.name}</TableCell>
+                                    <TableCell>{company.address}</TableCell>
+                                    <TableCell>{company.email}</TableCell>
+                                    <TableCell>{company.accountId?.username || ''}</TableCell>
+                                    <TableCell align="right">
+                                        <IconButton onClick={() => handleOpenDialog(company)}>
+                                            <Edit />
+                                        </IconButton>
+                                        <IconButton onClick={() => handleDelete(company._id)}>
+                                            <Delete />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
+                <TablePagination
+                    component="div"
+                    count={companies.length}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[5, 10, 25, 50]}
+                />
             </Paper>
 
             <Dialog open={dialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="sm">
