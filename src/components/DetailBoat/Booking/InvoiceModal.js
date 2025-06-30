@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { formatPrice } from "../../../redux/validation";
 import { closeInvoiceModal } from "../../../redux/actions/uiActions";
-import { downloadInvoicePDF } from "../../../redux/asyncActions";
+import { downloadInvoicePDF } from "../../../redux/asyncActions/invoiceAsyncActions";
 import {
   Dialog,
   DialogTitle,

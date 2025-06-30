@@ -14,7 +14,7 @@ import {
   createBookingOrConsultationRequest,
   fetchConsultationRequest,
   updateBookingOrConsultationRequest,
-} from "../../../redux/asyncActions";
+} from "../../../redux/asyncActions/bookingAsyncActions";
 import ConsultationDetailsModal from "./ConsultationDetailModal";
 import {
   clearAllErrors,

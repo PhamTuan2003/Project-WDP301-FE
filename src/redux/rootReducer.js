@@ -9,9 +9,10 @@ import {
   reviewFormReducer,
   authReducer,
   filtersReducer,
-  paymentReducer,
-  invoiceReducer,
+
 } from "./reducers";
+import paymentReducer from "./reducers/paymentReducer";
+import invoiceReducer from "./reducers/invoiceReducer";
 
 const rootReducer = combineReducers({
   yacht: yachtReducer,

@@ -83,8 +83,17 @@ export default function Header({ toggleTheme, mode }) {
     >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* Logo */}
-        <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <Box component="img" src="/images/logo.png" alt="𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 Logo" sx={{ height: 80, mr: 2 }} />
+        <Box
+          component={Link}
+          to="/"
+          sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}
+        >
+          <Box
+            component="img"
+            src="/images/logo.png"
+            alt="LongWave Logo"
+            sx={{ height: 80, mr: 2 }}
+          />
           <Typography
             variant="h6"
             color="primary.main"
