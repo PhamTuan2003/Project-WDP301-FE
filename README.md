@@ -1,8 +1,9 @@
-# 🚢 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 - Booking Yacht
+# Project-WDP301-FE
+# 🚢 LongWave - Booking Yacht
 
 > "Trải nghiệm hành trình đẳng cấp giữa kỳ quan thiên nhiên Hạ Long."
 
-𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 là một nền tảng đặt du thuyền hiện đại, giúp người dùng tìm kiếm, so sánh và đặt các chuyến du ngoạn tại Vịnh Hạ Long một cách nhanh chóng, tiện lợi và... cực kỳ ngầu 😎.
+LongWave là một nền tảng đặt du thuyền hiện đại, giúp người dùng tìm kiếm, so sánh và đặt các chuyến du ngoạn tại Vịnh Hạ Long một cách nhanh chóng, tiện lợi và... cực kỳ ngầu 😎.
 
 ---
 

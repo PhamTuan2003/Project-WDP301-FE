@@ -1,7 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap');
+
+
+html {
+    font-family: "Archivo", serif;
+}
+
+.button {
+    border-radius: 100px;
+    box-shadow: 0px 1px 2px 0px #1018280d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.h4,
+.h5 {
+    font-weight: 700;
+    color: #101828;
+}
+
+.h4 {
+    font-size: 36px;
+    line-height: 44px;
+}
 
 .input_group {
   position: relative;
@@ -127,23 +151,8 @@ label {
   font-weight: 500;
 }
 
-p.sm {
-  font-size: 14px;
-  line-height: 20px;
-}
 
-p.md,
-p.sm {
-  font-weight: 400;
-}
 
-p {
-  margin: 0;
-}
-
-p {
-  word-wrap: break-word;
-}
 
 .Checkbox_container__ccFUl input:checked ~ .Checkbox_checkmark__81gnF > svg {
   display: block;
@@ -188,16 +197,6 @@ p {
   color: #344054;
 }
 
-p.md,
-p.sm {
-  font-weight: 400;
-}
-
-p.md {
-  font-size: 16px;
-  line-height: 24px;
-  color: #475467;
-}
 
 /* AFTER RESULT SEARCH */
 
@@ -751,5 +750,5 @@ p.md {
 }
 
 ::-webkit-scrollbar {
-  display: none !important;
+    display: none !important;
 }

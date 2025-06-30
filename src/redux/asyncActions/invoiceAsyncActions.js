@@ -50,6 +50,26 @@ export const fetchInvoiceByTransactionId =
     }
   };
 
+export const fetchInvoiceByBookingId = (bookingId) => async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `http://localhost:9999/api/v1/invoices/by-booking/${bookingId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (response.data.success) {
+      dispatch(setInvoiceData(response.data.data));
+      dispatch(openInvoiceModal(response.data.data));
+      return { payload: response.data.data };
+    } else {
+      throw new Error(response.data.message || "Không tìm thấy hóa đơn.");
+    }
+  } catch (error) {
+    // Handle error if needed
+    return { error: error.message };
+  }
+};
+
 // import các action cần thiết từ actions/invoiceActions nếu cần
 // Ví dụ:
 // export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {

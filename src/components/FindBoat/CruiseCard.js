@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import {
-  Card,
-  CardMedia,
-  Box,
-  Typography,
-  Stack,
-  Divider,
-  Button,
-  Chip,
-  Badge,
-} from "@mui/material";
 import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 import StarOutline from "@mui/icons-material/StarOutline";
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardMedia,
+  Chip,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 // Custom HotSaleBadge
@@ -119,7 +119,7 @@ const CruiseCard = ({ cruise }) => {
     price,
     launch,
     hullBody,
-    rule,
+    yachtTypeId,
     services = [],
   } = cruise;
 
@@ -264,8 +264,8 @@ const CruiseCard = ({ cruise }) => {
                   color="text.secondary"
                 >
                   Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
-                  {hullBody || "Không xác định"} - {rule || "Không xác định"}{" "}
-                  phòng
+                  {hullBody || "Không xác định"} -{" "}
+                  {yachtTypeId?.name || "Không xác định"}
                 </Typography>
               </Box>
             </Stack>

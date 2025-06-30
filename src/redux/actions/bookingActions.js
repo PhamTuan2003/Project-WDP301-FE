@@ -138,3 +138,11 @@ export const setGuestCounter = (payload) => ({
   type: "SET_GUEST_COUNTER",
   payload,
 });
+export const setRoomServices = (roomId, services) => ({
+  type: "SET_ROOM_SERVICES",
+  payload: { roomId, services },
+});
+export const setSelectedYachtServices = (services) => ({
+  type: "SET_SELECTED_YACHT_SERVICES",
+  payload: services,
+});

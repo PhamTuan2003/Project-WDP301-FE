@@ -27,7 +27,10 @@ import {
   stopPaymentStatusPolling,
   cancelTransaction,
 } from "../../../redux/asyncActions/paymentAsyncActions";
-import { fetchCustomerBookingDetail } from "../../../redux/asyncActions/bookingAsyncActions";
+import {
+  fetchCustomerBookingDetail,
+  fetchCustomerBookings,
+} from "../../../redux/asyncActions/bookingAsyncActions";
 import { fetchInvoiceByTransactionId } from "../../../redux/asyncActions/invoiceAsyncActions";
 import { formatPrice } from "../../../redux/validation";
 import {
@@ -74,10 +77,6 @@ const TransactionModal = ({ onBack }) => {
     if (showTransactionModal) {
       setIsVisible(true);
       if (bookingIdFortransaction) {
-        console.log(
-          "TransactionModal: Fetching booking detail for ID:",
-          bookingIdFortransaction
-        );
         dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
       }
     }
@@ -93,50 +92,48 @@ const TransactionModal = ({ onBack }) => {
       (paymentStatus === "fully_paid" || paymentStatus === "deposit_paid") &&
       showTransactionModal
     ) {
-      // Nếu là development và bank_transfer thì không tự đóng modal
       if (
         process.env.NODE_ENV === "development" &&
         qrCodeData?.paymentMethod === "bank_transfer"
       ) {
         return;
       }
+      // Chỉ xóa bookingId khỏi localStorage khi không còn ở trạng thái test simulate
+      localStorage.removeItem("bookingIdForTransaction");
       dispatch(closeTransactionModal());
       dispatch(clearQRCodeData());
-      // Lấy transactionId từ qrCodeData nếu có
       const transactionId = qrCodeData?.transactionId;
       if (transactionId) {
         dispatch(fetchInvoiceByTransactionId(transactionId));
       }
-      // Cập nhật lại booking detail để trạng thái bên trái đổi
       if (bookingIdFortransaction) {
         dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
       }
+      // Thêm dòng này để cập nhật danh sách booking ngay sau khi thanh toán thành công
+      dispatch(fetchCustomerBookings());
     }
   }, [paymentStatus, showTransactionModal]);
 
-  // Khi mở modal, lưu bookingId vào localStorage
   useEffect(() => {
     if (showTransactionModal && bookingIdFortransaction) {
       localStorage.setItem("bookingIdForTransaction", bookingIdFortransaction);
     }
-    // Khi đóng modal, xóa bookingId khỏi localStorage
-    if (!showTransactionModal) {
+    // Nếu modal đóng hoặc bookingIdFortransaction không còn, xóa localStorage
+    if (!showTransactionModal || !bookingIdFortransaction) {
       localStorage.removeItem("bookingIdForTransaction");
     }
   }, [showTransactionModal, bookingIdFortransaction]);
 
-  // Khi mount, nếu không có bookingIdFortransaction nhưng có trong localStorage thì tự động mở modal
   useEffect(() => {
-    if (!showTransactionModal) {
-      const savedId = localStorage.getItem("bookingIdForTransaction");
-      if (savedId) {
+    const savedId = localStorage.getItem("bookingIdForTransaction");
+    if (!showTransactionModal && savedId) {
+      if (savedId !== bookingIdFortransaction) {
         dispatch({
           type: "OPEN_TRANSACTION_MODAL",
           payload: { bookingId: savedId },
         });
       }
     }
-    // Không cần dependencies để chỉ chạy khi mount
     // eslint-disable-next-line
   }, []);
 
@@ -204,6 +201,8 @@ const TransactionModal = ({ onBack }) => {
       if (isPolling) {
         dispatch(stopPaymentStatusPolling());
       }
+      // Xóa bookingId khỏi localStorage khi đóng modal
+      localStorage.removeItem("bookingIdForTransaction");
     }, 300);
   };
 
@@ -212,9 +211,7 @@ const TransactionModal = ({ onBack }) => {
       await navigator.clipboard.writeText(text);
       setCopiedText(label);
       setTimeout(() => setCopiedText(""), 2000);
-    } catch (err) {
-      console.error("Failed to copy: ", err);
-    }
+    } catch (err) {}
   };
 
   const handleBack = (e) => {
@@ -268,16 +265,16 @@ const TransactionModal = ({ onBack }) => {
         icon: "warning",
         title: "Bạn đang có giao dịch chưa hoàn tất",
         html: `
-          <div style="text-align:left; font-family: 'Archivo', sans-serif;">
+          <div style="text-align:center; font-family: 'Archivo', sans-serif;">
             <b>Chỉ có thể tạo một giao dịch thanh toán cho mỗi booking tại một thời điểm.</b><br/>
             <ul style="margin:8px 0 0 18px;padding:0;">
-              <li>Chọn <b>Quay lại giao dịch đang chờ</b> để tiếp tục thanh toán với phương thức cũ.</li>
+              <li>Chọn <b>Hủy</b> để tiếp tục thanh toán với phương thức cũ.</li>
               <li>Chọn <b>Tạo giao dịch mới</b> để hủy giao dịch cũ và chọn lại phương thức thanh toán.</li>
             </ul>
           </div>
         `,
         showCancelButton: true,
-        confirmButtonText: "Quay lại giao dịch đang chờ",
+        confirmButtonText: "Hủy",
         cancelButtonText: "Tạo giao dịch mới",
       }).then(async (result) => {
         if (result.isConfirmed) {
@@ -454,10 +451,16 @@ const TransactionModal = ({ onBack }) => {
     0;
 
   const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
-
   const bookedRooms = currentBookingDetail.bookedRooms || [];
   const totalRooms = bookedRooms.reduce((sum, r) => sum + (r.quantity || 0), 0);
 
+  const bookedServices =
+    currentBookingDetail.bookedServices &&
+    currentBookingDetail.bookedServices.length > 0
+      ? currentBookingDetail.bookedServices
+      : booking.consultationData.requestServices ||
+        booking.consultationData.selectedServices ||
+        [];
   const handleDepositPayment = async () => {
     if (!bookingIdFortransaction) return;
     dispatch(
@@ -625,6 +628,39 @@ const TransactionModal = ({ onBack }) => {
             </ul>
           </div>
         )}
+        {/* Ngày đặt */}
+        <div className="flex items-center justify-between py-2 border-b border-blue-100">
+          <span className="text-gray-600 flex items-center">
+            <Calendar className="w-4 h-4 mr-2" />
+            Ngày đặt
+          </span>
+          <span className="font-semibold text-gray-900">
+            {booking.checkInDate
+              ? new Date(booking.checkInDate).toLocaleDateString("vi-VN")
+              : booking.createdAt
+              ? new Date(booking.createdAt).toLocaleDateString("vi-VN")
+              : "-"}
+          </span>
+        </div>
+        {/* Dịch vụ */}
+        {bookedServices.length > 0 && (
+          <div className="py-2">
+            <span className="text-gray-600 flex items-center mb-1">
+              <Info className="w-4 h-4 mr-2" />
+              Dịch vụ đã chọn
+            </span>
+            <ul className="text-sm text-gray-700 list-disc ml-6">
+              {bookedServices.map((service, idx) => (
+                <li key={service.serviceId || service._id || idx}>
+                  {service.serviceName || service.name || "Dịch vụ"}
+                  {service.serviceQuantity || service.quantity
+                    ? ` x ${service.serviceQuantity || service.quantity}`
+                    : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -750,9 +786,8 @@ const TransactionModal = ({ onBack }) => {
   );
 
   const renderQRSection = () => {
-    console.log("qrCodeData:", qrCodeData);
     if (!qrCodeData && randomQR) {
-      const { qrData, amount, bookingCode, method } = randomQR;
+      const { qrData, amount, bookingCode } = randomQR;
       const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
         qrData
       )}`;
@@ -966,7 +1001,7 @@ const TransactionModal = ({ onBack }) => {
             href={paymentUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex  items-center bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+            className="inline-flex  items-center bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
             Thanh toán ngay
             <ExternalLink className="w-5 h-5 ml-2" />
@@ -1112,7 +1147,12 @@ const TransactionModal = ({ onBack }) => {
             paymentStatus === "pending" && (
               <button
                 onClick={async () => {
+                  // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
                   if (!qrCodeData?.transactionId) return;
+                  console.log(
+                    "Simulate with transactionId:",
+                    qrCodeData.transactionId
+                  ); // debug
                   const token = localStorage.getItem("token");
                   try {
                     await fetch(
@@ -1159,7 +1199,7 @@ const TransactionModal = ({ onBack }) => {
         {/* Payment Status */}
         <div className="flex items-center justify-center">
           {isPolling && paymentStatus === "pending" && (
-            <div className="flex items-center bg-orange-50 px-4 py-3 rounded-xl border border-orange-200">
+            <div className="flex items-center bg-orange-50 px-4 py-2 rounded-xl border border-orange-200">
               <Loader2 className="w-5 h-5 text-orange-500 animate-spin mr-3" />
               <span className="text-orange-700 font-medium">
                 Đang kiểm tra thanh toán...
@@ -1200,10 +1240,10 @@ const TransactionModal = ({ onBack }) => {
 
         {/* Instructions */}
         {isPolling && paymentMethod !== "bank_transfer" && (
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+          <div className="bg-blue-50 rounded-xl px-4 py-2 border border-blue-200">
             <div className="flex items-start">
               <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-              <p className="text-sm text-blue-800">
+              <p className="text-sm mb-0 text-blue-800">
                 Vui lòng không đóng cửa sổ này. Trạng thái thanh toán sẽ được
                 cập nhật tự động.
               </p>
@@ -1220,6 +1260,10 @@ const TransactionModal = ({ onBack }) => {
                 onClick={async () => {
                   // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
                   if (!qrCodeData?.transactionId) return;
+                  console.log(
+                    "Simulate with transactionId:",
+                    qrCodeData.transactionId
+                  ); // debug
                   const token = localStorage.getItem("token");
                   try {
                     await fetch(
@@ -1259,7 +1303,7 @@ const TransactionModal = ({ onBack }) => {
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-[1100px] w-full h-auto">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-[1200px] w-full h-[700px] min-h-[500px] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between py-3 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
             <div className="flex items-center gap-2">
@@ -1320,16 +1364,16 @@ const TransactionModal = ({ onBack }) => {
           </div>
 
           {/* Content - Horizontal Layout */}
-          <div className="flex flex-row gap-4 p-6 w-full h-auto">
+          <div className="flex gap-4 p-6 w-full flex-1 h-[50vh] overflow-y-auto">
             {/* Left: Booking Info (4/10) */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3 mb-6 border border-blue-100">
-              <div className="flex items-center justify-between pb-3">
-                <h3 className="text-base  font-semibold text-gray-900 flex items-center">
-                  <Calendar className="w-5 h-5 mr-2  text-blue-600" />
+            <div className="bg-gradient-to-br w-5/12 from-blue-50 to-indigo-50 rounded-2xl p-3 border border-blue-100 ">
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-base justify-start  font-semibold text-gray-900 flex items-center">
+                  <Calendar className="w-5 h-5 mr-1  text-blue-600" />
                   Thông tin booking
-                </h3>
+                </span>
                 <span
-                  className={`px-2 rounded-full bg-white border border-gray-600 text-xs font-medium ${getPaymentStatusColor(
+                  className={`px-1 rounded-full justify-end bg-white border items-center border-gray-600 text-xs font-medium ${getPaymentStatusColor(
                     booking.paymentStatus
                   )}`}
                 >
@@ -1337,7 +1381,7 @@ const TransactionModal = ({ onBack }) => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 border-t border-blue-100 gap-2">
+              <div className="grid grid-cols-1 gap-2 ">
                 <div className="flex items-center justify-between py-2 border-b border-blue-100">
                   <span className="text-gray-600 flex items-center">
                     <Building className="w-4 h-4 mr-2" />
@@ -1410,7 +1454,7 @@ const TransactionModal = ({ onBack }) => {
                     {totalGuests} khách
                   </span>
                 </div>
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                <div className="flex items-center justify-between">
                   <span className="text-gray-600 flex items-center">
                     <Building className="w-4 h-4 mr-2" />
                     Số phòng đặt
@@ -1420,8 +1464,8 @@ const TransactionModal = ({ onBack }) => {
                   </span>
                 </div>
                 {bookedRooms.length > 0 && (
-                  <div className="py-2">
-                    <ul className="text-sm text-gray-700 list-disc ml-6">
+                  <div className="py-1 border-b border-blue-100">
+                    <ul className="text-gray-700 pt-0 list-disc ml-3">
                       {bookedRooms.map((room, idx) => (
                         <li key={room._id || idx}>
                           {room.roomId?.name || room.name || "Phòng"} x{" "}
@@ -1431,11 +1475,49 @@ const TransactionModal = ({ onBack }) => {
                     </ul>
                   </div>
                 )}
+                {/* Dịch vụ */}
+                {bookedServices.length > 0 && (
+                  <div className="py-1 border-b border-blue-100">
+                    <span className="text-gray-600 flex items-center">
+                      <Info className="w-4 h-4 mr-2" />
+                      Dịch vụ đã chọn
+                    </span>
+                    <ul className="text-sm text-gray-700 list-disc pt-0 ml-3">
+                      {bookedServices.map((service, idx) => (
+                        <li key={service.serviceId || service._id || idx}>
+                          {service.serviceName || service.name || "Dịch vụ"}
+                          {service.serviceQuantity || service.quantity
+                            ? ` x ${
+                                service.serviceQuantity || service.quantity
+                              }`
+                            : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Ngày đặt */}
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Ngày đặt
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {booking.checkInDate
+                      ? new Date(booking.checkInDate).toLocaleDateString(
+                          "vi-VN"
+                        )
+                      : booking.createdAt
+                      ? new Date(booking.createdAt).toLocaleDateString("vi-VN")
+                      : "-"}
+                  </span>
+                </div>
               </div>
             </div>
             {/* Right: Payment Section (6/10) */}
             <div
-              className="w-6/10 md:w-6/10 flex flex-col justify-between"
+              className="w-7/12 md:w-6/12 flex flex-col "
               style={{ flexBasis: "60%" }}
             >
               {booking.paymentStatus === "fully_paid" ? (
@@ -1559,7 +1641,7 @@ const TransactionModal = ({ onBack }) => {
                   </div>
 
                   {/* payment Tabs */}
-                  <div className="mb-6">
+                  <div className="my-2">
                     <div className="flex bg-gray-100 rounded-3xl p-2">
                       {booking.paymentStatus !== "deposit_paid" &&
                         booking.paymentStatus !== "fully_paid" &&
@@ -1577,11 +1659,11 @@ const TransactionModal = ({ onBack }) => {
                             onClick={() => handleTabChange(0)}
                             disabled={paymentLoading || qrCodeData}
                           >
-                            <div className="flex items-center justify-center">
-                              <Percent className="w-4 h-4 mr-2" />
+                            <div className="flex items-center text-[13px] justify-center">
+                              <Percent className="w-4 h-4 mr-1" />
                               Thanh toán cọc (20%)
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500">
                               {formatPrice(depositAmountValue)}
                             </div>
                           </button>
@@ -1590,7 +1672,7 @@ const TransactionModal = ({ onBack }) => {
                       {booking.paymentStatus !== "fully_paid" &&
                         amountForFullTab > 0 && (
                           <button
-                            className={`flex-1 px-2 rounded-3xl text-sm font-medium transition-all duration-200 ${
+                            className={`flex-1 px-2 rounded-3xl font-medium transition-all duration-200 ${
                               activePaymentTab === 1
                                 ? "bg-white text-green-600 border border-green-600 shadow-md transform scale-105"
                                 : "text-gray-600 hover:text-gray-800"
@@ -1602,13 +1684,13 @@ const TransactionModal = ({ onBack }) => {
                             onClick={() => handleTabChange(1)}
                             disabled={paymentLoading || qrCodeData}
                           >
-                            <div className="flex items-center justify-center">
-                              <CheckCircle className="w-4 h-4 mr-2" />
+                            <div className="flex items-center text-[13px] justify-center">
+                              <CheckCircle className="w-4 h-4 mr-1" />
                               {booking.paymentStatus === "deposit_paid"
                                 ? "Thanh toán còn lại"
                                 : "Thanh toán toàn bộ"}
                             </div>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500">
                               {formatPrice(amountForFullTab)}
                             </div>
                           </button>

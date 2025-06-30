@@ -1,7 +1,7 @@
 // components/RatingOverview.jsx
-import StarRating from "./StarRating";
-import RatingBar from "./RatingBar";
 import { Box } from "@mui/material";
+import RatingBar from "./RatingBar";
+import StarRating from "./StarRating";
 
 const RatingOverview = ({ ratingData }) => {
   return (

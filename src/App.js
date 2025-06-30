@@ -18,12 +18,14 @@ import Enterprise from "./components/Enterprise/Enterprise";
 import BlogDetail from "./components/Blog/BlogDetail";
 import BlogList from "./components/Blog/BlogList";
 import DetailBoat from "./pages/DetailBoat";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { initializeAuth } from "./redux/asyncActions";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "./components/routers/ProtectedRoute";
+import BookingHistory from "./pages/BookingHistory";
+import { openTransactionModal } from "./redux/actions";
 
 //COMPANY
 import Dashboard from "./components/company/Dashboard";
@@ -35,10 +37,23 @@ import ViewYacht from "./components/company/ViewYacht";
 function App() {
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
   const dispatch = useDispatch();
+  const { showTransactionModal, bookingIdFortransaction } = useSelector(
+    (state) => state.ui.modals
+  );
 
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
+
+  useEffect(() => {
+    const bookingId = localStorage.getItem("bookingIdForTransaction");
+    if (
+      bookingId &&
+      (!showTransactionModal || bookingIdFortransaction !== bookingId)
+    ) {
+      dispatch(openTransactionModal(bookingId));
+    }
+  }, [dispatch, showTransactionModal, bookingIdFortransaction]);
 
   const toggleTheme = () => {
     setMode((prevMode) => {
@@ -73,6 +88,7 @@ function App() {
             <Route path="/lien-he-tu-van" element={<ContactSection />} />
             <Route path="/doanh-nghiep" element={<Enterprise />} />
             <Route path="/view-profile" element={<CustomerProfile />} />
+            <Route path="/booking-history" element={<BookingHistory />} />
             <Route path="/blog" element={<BlogList />} />
             <Route path="/blog/:id" element={<BlogDetail />} />
           </Route>

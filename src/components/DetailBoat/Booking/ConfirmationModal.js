@@ -140,8 +140,6 @@ const ConfirmationModal = ({ onBack }) => {
             backdropFilter: "blur(4px)",
           }}
         >
-          {/* Nút Quay lại */}
-
           {showSuccess && (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-40">
               <div className="bg-white rounded-2xl shadow-2xl px-12 py-10 flex flex-col items-center">
@@ -156,28 +154,17 @@ const ConfirmationModal = ({ onBack }) => {
             </div>
           )}
           <motion.div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl mt-14 w-full max-w-4xl max-h-[80vh] overflow-hidden"
             variants={dropInVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-8 py-5 text-white relative">
+            <div className="bg-gradient-to-r pt-3 from-cyan-600 to-cyan-700 px-10 text-white relative">
               <div className="flex items-center justify-between">
-                <div className="flex items-center justify-start">
-                  {" "}
-                  <button
-                    onClick={handleBack}
-                    type="button"
-                    className="text-white hover:text-blue-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
-                    style={{ minWidth: 0 }}
-                  >
-                    <ArrowLeft size={24} /> 2/3
-                  </button>
-                </div>
                 <div className=" items-center justify-center">
-                  <h3 className="text-2xl font-bold mb-1">
+                  <h3 className="text-[22px] font-bold mb-1">
                     Xác nhận thông tin đặt phòng
                   </h3>
                   <p className="text-gray-50 text-sm">
@@ -201,9 +188,9 @@ const ConfirmationModal = ({ onBack }) => {
             </div>
 
             {/* Content */}
-            <div className="p-5 overflow-y-auto max-h-[calc(80vh-200px)]">
-              <div className="bg-gradient-to-r from-amber-100 to-orange-50 border-l-4 border-amber-500 rounded-lg p-3 mb-8">
-                <div className="flex items-center">
+            <div className="px-5 py-3 overflow-y-auto max-h-[calc(80vh-200px)]">
+              <div className="bg-gradient-to-r my-3 from-amber-100 to-orange-50 border-l-4 border-amber-500 rounded-lg p-3">
+                <div className="flex  items-center">
                   <AlertCircle className="text-amber-600 mr-3" size={20} />
                   <span className="font-medium text-amber-800">
                     Thông tin này sẽ được sử dụng để xử lý đặt phòng của bạn
@@ -243,12 +230,12 @@ const ConfirmationModal = ({ onBack }) => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.1 }}
-                        className="bg-gray-100 rounded-lg p-4"
+                        className="bg-gray-100 rounded-lg px-4 py-3"
                       >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-1">
+                        <label className="text-sm font-medium text-cyan-600 flex items-center">
                           {item.icon} {item.label}
                         </label>
-                        <p className="text-gray-800 font-medium">
+                        <p className="text-gray-800 mb-0 font-medium">
                           {item.value}
                         </p>
                       </motion.div>
@@ -298,12 +285,12 @@ const ConfirmationModal = ({ onBack }) => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.1 }}
-                        className="bg-gray-100 rounded-lg p-4"
+                        className="bg-gray-100 rounded-lg px-4 py-3"
                       >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-1">
+                        <label className="text-sm font-medium text-cyan-600 flex items-center">
                           {item.icon} {item.label}
                         </label>
-                        <p className="text-gray-800 font-medium">
+                        <p className="text-gray-800 mb-0 font-medium">
                           {item.value}
                         </p>
                       </motion.div>
@@ -313,9 +300,9 @@ const ConfirmationModal = ({ onBack }) => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="bg-gray-100 rounded-lg p-4"
+                        className="bg-gray-100 rounded-lg px-4 py-3"
                       >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-2">
+                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-1">
                           <Home size={16} className="mr-2 text-cyan-700" />
                           Phòng đã chọn
                         </label>
@@ -326,13 +313,52 @@ const ConfirmationModal = ({ onBack }) => {
                               className="flex justify-between items-center bg-white rounded-md p-2"
                             >
                               <span className="font-medium">
-                                {room.name} × {room.quantity}
+                                {room.roomName} × {room.roomQuantity}
                               </span>
                               <span className="text-cyan-600 font-semibold">
-                                {formatPrice(room.price * room.quantity)}
+                                {formatPrice(
+                                  room.roomPrice * room.roomQuantity
+                                )}
                               </span>
                             </div>
                           ))}
+                        </div>
+                      </motion.div>
+                    )}
+                    {/* Dịch vụ đã chọn */}
+                    {confirmationData.selectedServices?.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        className="bg-gray-100 rounded-lg px-4 py-3"
+                      >
+                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-1">
+                          <Users size={16} className="mr-2 text-cyan-700" />
+                          Dịch vụ đã chọn
+                        </label>
+                        <div className="space-y-2">
+                          {confirmationData.selectedServices.map(
+                            (service, i) => (
+                              <div
+                                key={i}
+                                className="flex flex-col justify-between items-center bg-white rounded-md p-2"
+                              >
+                                <span className="font-medium">
+                                  {service.serviceName}
+                                  {service.serviceQuantity
+                                    ? ` × ${service.serviceQuantity}`
+                                    : ""}
+                                </span>
+                                <span className="text-cyan-600 font-semibold">
+                                  {formatPrice(
+                                    service.servicePrice *
+                                      (service.serviceQuantity || 1)
+                                  )}
+                                </span>
+                              </div>
+                            )
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -346,14 +372,14 @@ const ConfirmationModal = ({ onBack }) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="mb-8 bg-cyan-50 rounded-lg p-4 border border-cyan-200"
+                  className="mb-8 bg-cyan-50 rounded-lg px-4 py-3 border border-cyan-200"
                 >
-                  <label className="text-sm font-medium text-cyan-600 flex items-center mb-3">
+                  <label className="text-sm font-medium text-cyan-600 flex items-center">
                     <MessageSquare size={16} className="mr-2 text-cyan-700" />
                     Yêu cầu đặc biệt
                   </label>
-                  <p className="text-gray-800 leading-relaxed">
-                    {confirmationData.requirements}
+                  <p className="text-gray-800 px-4 leading-relaxed mb-0">
+                    <li> {confirmationData.requirements}</li>
                   </p>
                 </motion.div>
               )}
@@ -363,16 +389,19 @@ const ConfirmationModal = ({ onBack }) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5 }}
-                className="bg-gradient-to-r from-cyan-100 to-cyan-50 border border-cyan-200 rounded-xl p-6 mb-8"
+                className="bg-gradient-to-r from-cyan-100 to-cyan-50 border border-cyan-200 rounded-xl p-4 mb-8"
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <DollarSign className="text-cyan-600 mr-2" size={24} />
-                    <span className="text-xl font-bold text-gray-800">
+                    <DollarSign
+                      className="text-cyan-600 font-bold mr-2"
+                      size={24}
+                    />
+                    <span className="text-lg font-bold text-gray-800">
                       Tổng tiền thanh toán:
                     </span>
                   </div>
-                  <span className="text-3xl font-bold text-cyan-600">
+                  <span className="text-2xl font-bold text-cyan-600">
                     {formatPrice(confirmationData.totalPrice)}
                   </span>
                 </div>

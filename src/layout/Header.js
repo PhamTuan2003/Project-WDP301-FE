@@ -75,7 +75,12 @@ export default function Header({ toggleTheme, mode }) {
   };
 
   return (
-    <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 0, py: 1 }}>
+    <AppBar
+      position="sticky"
+      color="inherit"
+      elevation={0}
+      sx={{ borderBottom: 0, py: 1 }}
+    >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* Logo */}
         <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
@@ -152,7 +157,12 @@ export default function Header({ toggleTheme, mode }) {
           </Stack>
         ) : (
           <>
-            <IconButton size="large" edge="end" aria-label="menu" onClick={handleMenuOpen}>
+            <IconButton
+              size="large"
+              edge="end"
+              aria-label="menu"
+              onClick={handleMenuOpen}
+            >
               <MenuIcon />
             </IconButton>
             <Menu
@@ -163,7 +173,12 @@ export default function Header({ toggleTheme, mode }) {
               transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
               {menuLinks.map((link) => (
-                <MenuItem key={link.label} onClick={handleMenuClose} component={Link} to={link.href}>
+                <MenuItem
+                  key={link.label}
+                  onClick={handleMenuClose}
+                  component={Link}
+                  to={link.href}
+                >
                   {link.label}
                 </MenuItem>
               ))}
@@ -201,7 +216,11 @@ export default function Header({ toggleTheme, mode }) {
         <Stack direction="row" spacing={1} ml={3} alignItems="center">
           {customer ? (
             <>
-              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 500 }}>
+              <Typography
+                variant="body1"
+                color="text.primary"
+                sx={{ fontWeight: 500 }}
+              >
                 Xin chào, {customer.fullName || customer.username}
               </Typography>
               <IconButton onClick={handleUserMenuOpen}>
@@ -219,8 +238,19 @@ export default function Header({ toggleTheme, mode }) {
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 transformOrigin={{ vertical: "top", horizontal: "right" }}
               >
-                <MenuItem onClick={handleUserMenuClose} component={Link} to="/view-profile">
+                <MenuItem
+                  onClick={handleUserMenuClose}
+                  component={Link}
+                  to="/view-profile"
+                >
                   Xem trang cá nhân
+                </MenuItem>
+                <MenuItem
+                  onClick={handleUserMenuClose}
+                  component={Link}
+                  to="/booking-history"
+                >
+                  Lịch sử booking
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
@@ -229,8 +259,12 @@ export default function Header({ toggleTheme, mode }) {
                   }}
                 >
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography>Đổi sang màn hình</Typography>
-                    {mode === "light" ? <AiOutlineMoon size={20} /> : <AiOutlineSun size={20} />}
+                    <Typography>Đổi chế độ</Typography>
+                    {mode === "light" ? (
+                      <AiOutlineMoon size={20} />
+                    ) : (
+                      <AiOutlineSun size={20} />
+                    )}
                   </Stack>
                 </MenuItem>
                 <MenuItem
@@ -239,7 +273,9 @@ export default function Header({ toggleTheme, mode }) {
                   to="/change-password"
                   disabled={!customer.accountId}
                   sx={{
-                    color: !customer.accountId ? "text.disabled" : "text.primary",
+                    color: !customer.accountId
+                      ? "text.disabled"
+                      : "text.primary",
                     "&.Mui-disabled": { color: "text.disabled" },
                   }}
                 >
@@ -280,7 +316,11 @@ export default function Header({ toggleTheme, mode }) {
                 Đăng ký
               </Button>
               <IconButton onClick={toggleTheme} color="inherit" sx={{ p: 1 }}>
-                {mode === "light" ? <AiOutlineMoon size={24} /> : <AiOutlineSun size={24} />}
+                {mode === "light" ? (
+                  <AiOutlineMoon size={24} />
+                ) : (
+                  <AiOutlineSun size={24} />
+                )}
               </IconButton>
             </>
           )}

@@ -22,6 +22,7 @@ import {
   resetBookingForm,
   setEditingBookingId,
   clearAllErrors,
+  setSelectedYachtServices,
 } from "../../redux/actions/bookingActions";
 import {
   openRoomModal,
@@ -35,6 +36,7 @@ import { fetchRoomsAndSchedules } from "../../redux/asyncActions/bookingAsyncAct
 import ConfirmationModal from "./Booking/ConfirmationModal";
 import TransactionModal from "./Booking/TransactionModal";
 import InvoiceModal from "./Booking/InvoiceModal";
+import RoomServicesModal from "./RoomServicesModal";
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -48,10 +50,13 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     selectedSchedule,
     selectedMaxPeople,
     maxPeopleOptions,
+    selectedYachtServices,
   } = useSelector((state) => state.booking);
   const { showRoomModal, showBookingModal, selectedRoomForModal } = useSelector(
     (state) => state.ui.modals
   );
+  const [editBookingData, setEditBookingData] = useState(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
 
   // Fetch rooms and schedules when yachtId or selectedSchedule changes
   useEffect(() => {
@@ -81,7 +86,12 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     dispatch(openRoomModal(room));
   };
 
-  // Filter rooms based on selectedMaxPeople
+  // Callback khi chọn dịch vụ từ RoomServicesModal
+  const handleSelectYachtServices = (services) => {
+    dispatch(setSelectedYachtServices(services));
+    setShowServiceModal(false);
+  };
+
   const filteredRooms =
     selectedMaxPeople === "all"
       ? rooms
@@ -92,7 +102,15 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     return rooms.filter((room) => room.quantity > 0);
   };
 
-  const [editBookingData, setEditBookingData] = useState(null);
+  // Tính tổng tiền dịch vụ theo du thuyền
+  const totalServicePrice = selectedYachtServices.reduce(
+    (sum, sv) =>
+      sum + sv.price * rooms.reduce((acc, room) => acc + room.quantity, 0),
+    0
+  );
+  const totalPrice =
+    rooms.reduce((sum, room) => sum + room.price * room.quantity, 0) +
+    totalServicePrice;
 
   return (
     <div>
@@ -108,8 +126,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
           boxShadow: 3,
         }}
       >
-        {/* Luôn hiển thị nút "Xoá lựa chọn" */}
-        <div className="flex justify-end mb-4">
+        {/* Nút chọn dịch vụ cho toàn bộ du thuyền */}
+        <Box className="flex justify-end mb-4">
           <Button
             onClick={handleClearSelection}
             variant="outlined"
@@ -118,19 +136,18 @@ function RoomSelector({ yachtId, yachtData = {} }) {
               fontFamily: (theme) => theme.typography.fontFamily,
               borderRadius: "20px",
               textTransform: "none",
-              borderColor: (theme) => theme.palette.purple.main, // Viền tím
-              color: (theme) => theme.palette.purple.main, // Chữ tím
-              position: "relative", // Để tạo hiệu ứng lan tỏa
-              overflow: "hidden", // Ẩn phần lan tỏa thừa
+              borderColor: (theme) => theme.palette.purple.main,
+              color: (theme) => theme.palette.purple.main,
+              position: "relative",
+              overflow: "hidden",
               "&:hover": {
-                borderColor: (theme) => theme.palette.purple.dark, // Viền đậm hơn khi hover
-                color: (theme) => theme.palette.purple.dark, // Chữ đậm hơn khi hover
-                backgroundColor: (theme) => theme.palette.background.default, // Hover nhẹ
-                boxShadow: (theme) => theme.shadows[2], // Hiệu ứng shadow khi hover
-                transform: "translateY(-1px)", // Nâng nhẹ
+                borderColor: (theme) => theme.palette.purple.dark,
+                color: (theme) => theme.palette.purple.dark,
+                backgroundColor: (theme) => theme.palette.background.default,
+                boxShadow: (theme) => theme.shadows[2],
+                transform: "translateY(-1px)",
               },
               "&:active::after": {
-                // Hiệu ứng lan tỏa khi click
                 content: '""',
                 position: "absolute",
                 width: "100px",
@@ -143,7 +160,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                 pointerEvents: "none",
               },
               "@keyframes ripple": {
-                // Animation lan tỏa
                 to: {
                   transform: "scale(4)",
                   opacity: 0,
@@ -153,7 +169,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
           >
             Xoá lựa chọn
           </Button>
-        </div>
+        </Box>
 
         {/* Danh sách chọn lịch trình (hiển thị chi tiết ngày tháng nào) */}
         <FormControl
@@ -216,10 +232,13 @@ function RoomSelector({ yachtId, yachtData = {} }) {
           </FormControl>
         )}
 
-        {loading && <div>Đang tải dữ liệu...</div>}
-        {error && <div className="text-red-500">{error}</div>}
-        {!loading && !error && schedules.length === 0 && yachtId && (
-          <div>Không tìm thấy lịch trình cho Yacht ID này</div>
+        {loading && (
+          <Typography sx={{ color: "text.primary", p: 2 }}>
+            Đang tải dữ liệu...
+          </Typography>
+        )}
+        {error && (
+          <Typography sx={{ color: "text.primary", p: 2 }}>{error}</Typography>
         )}
 
         {selectedSchedule && (
@@ -389,21 +408,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               / khách
                             </Typography>
                           </Box>
-                          <Button
-                            onClick={() => handleOpenRoomModal(room)}
-                            variant="outlined"
-                            sx={{
-                              borderRadius: (theme) =>
-                                theme.shape.borderRadius / 2,
-                              textTransform: "none",
-                              borderColor: "divider",
-                              color: "text.primary",
-                              "&:hover": { bgcolor: "background.default" },
-                              mt: 1, // Khoảng cách trên cho nút
-                            }}
-                          >
-                            Chọn dịch vụ
-                          </Button>
                         </Box>
                         <Box
                           sx={{
@@ -460,10 +464,156 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                     </Box>
                   ))}
                 </Box>
+                {rooms.some((room) => room.quantity > 0) && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 2,
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Button
+                      onClick={() => setShowServiceModal(true)}
+                      variant="outlined"
+                      sx={{
+                        fontFamily: (theme) => theme.typography.fontFamily,
+                        borderRadius: "20px",
+                        textTransform: "none",
+                        fontSize: "1rem",
+                        borderColor: (theme) => theme.palette.purple.main,
+                        color: (theme) => theme.palette.purple.main,
+                        mr: 2,
+                        width: "fit-content",
+                        height: "fit-content",
+                      }}
+                    >
+                      Chọn dịch vụ
+                    </Button>
+                    <Box
+                      sx={{
+                        border: "1px solid white",
+                        width: "fit-content",
+                        p: 1,
+                        borderRadius: (theme) => theme.shape.borderRadius / 6,
+                        boxShadow: (theme) => theme.shadows[1],
+                        bgcolor: "background.paper",
+                      }}
+                    >
+                      {rooms
+                        .filter((room) => room.quantity > 0)
+                        .map((room) => {
+                          const roomTotal = room.price * room.quantity;
+                          return (
+                            <Box key={room.id} sx={{ mb: 1 }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: "bold",
+                                  fontSize: "1rem",
+                                  color: "text.primary",
+                                  fontFamily: "Archivo, sans-serif",
+                                }}
+                              >
+                                {room.name} x {room.quantity}:{" "}
+                                {roomTotal.toLocaleString()}đ (
+                                {room.price.toLocaleString()}đ/phòng)
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                      {/* Hiển thị dịch vụ đã chọn */}
+                      {selectedYachtServices.length > 0 && (
+                        <Box>
+                          {selectedYachtServices.map((sv, idx) => (
+                            <Box
+                              key={sv.id || idx}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                fontWeight: "semibold",
+                                justifyContent: "space-between",
+                                fontSize: "1rem",
+                                color: "text.secondary",
+                                fontFamily: "Archivo, sans-serif",
+                              }}
+                            >
+                              <Box>
+                                Dịch vụ: {sv.serviceName}:{" "}
+                                {sv.price.toLocaleString()}đ x{" "}
+                                {rooms.reduce(
+                                  (acc, room) => acc + room.quantity,
+                                  0
+                                )}{" "}
+                                khách ={" "}
+                                {(
+                                  sv.price *
+                                  rooms.reduce(
+                                    (acc, room) => acc + room.quantity,
+                                    0
+                                  )
+                                ).toLocaleString()}
+                                đ
+                              </Box>
+                              <X
+                                size={16}
+                                style={{
+                                  cursor: "pointer",
+                                  color: "#e57373",
+                                  border: "1px solid #e57373",
+                                  borderRadius: "50%",
+                                  padding: "2px",
+                                }}
+                                onClick={() => {
+                                  dispatch(
+                                    setSelectedYachtServices(
+                                      selectedYachtServices.filter(
+                                        (item, i) =>
+                                          (item.id || i) !== (sv.id || idx)
+                                      )
+                                    )
+                                  );
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                      {/* Tổng phụ */}
+                      <Box sx={{ mt: 1, ml: 1 }}>
+                        <Typography
+                          sx={{
+                            fontSize: "1rem",
+                            color: "text.primary",
+                            fontFamily: "Archivo, sans-serif",
+                          }}
+                        >
+                          Tổng tiền phòng:{" "}
+                          {rooms
+                            .reduce(
+                              (sum, room) => sum + room.price * room.quantity,
+                              0
+                            )
+                            .toLocaleString()}{" "}
+                          đ
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "1rem",
+                            color: "text.primary",
+                            fontFamily: "Archivo, sans-serif",
+                          }}
+                        >
+                          Tổng tiền dịch vụ:{" "}
+                          {totalServicePrice.toLocaleString()} đ
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
                 <Box
                   sx={{
-                    mt: 4,
-                    p: 3,
+                    mt: 1,
+                    p: 1,
                     borderRadius: (theme) => theme.shape.borderRadius / 2,
                     boxShadow: (theme) => theme.shadows[1],
                     bgcolor: "background.paper",
@@ -500,13 +650,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         fontWeight: "bold",
                       }}
                     >
-                      {rooms
-                        .reduce(
-                          (sum, room) => sum + room.price * room.quantity,
-                          0
-                        )
-                        .toLocaleString()}{" "}
-                      đ
+                      {totalPrice.toLocaleString()} đ
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -525,7 +669,15 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         "&:hover": { bgcolor: "primary.dark" },
                       }}
                     >
-                      <span style={{ fontSize: "1.05rem" }}>Đặt ngay</span>
+                      <span
+                        style={{
+                          fontSize: "1.05rem",
+                          fontWeight: "semibold",
+                          fontFamily: "Archivo, sans-serif",
+                        }}
+                      >
+                        Đặt ngay
+                      </span>
                       <Box
                         component="svg"
                         sx={{ width: 16, height: 16, fill: "currentColor" }}
@@ -559,6 +711,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         show={showBookingModal}
         onClose={() => dispatch(closeBookingModal())}
         selectedRooms={getSelectedRooms()}
+        selectedYachtServices={selectedYachtServices}
         yachtData={yachtData}
         onBack={null}
         editData={editBookingData}
@@ -583,6 +736,14 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
       {/* Modal hoá đơn */}
       <InvoiceModal />
+
+      <RoomServicesModal
+        show={showServiceModal}
+        yachtId={yachtId}
+        onClose={() => setShowServiceModal(false)}
+        onSelectServices={handleSelectYachtServices}
+        selectedServices={selectedYachtServices}
+      />
     </div>
   );
 }

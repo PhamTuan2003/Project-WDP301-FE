@@ -49,9 +49,7 @@ const Dashboard = () => {
       } else if (res.data.data === 0) {
         setTotalBooking(res.data.data);
       }
-    } catch (error) {
-      console.log("Get Total Booking Error");
-    }
+    } catch (error) {}
   };
   const getTotalService = async () => {
     try {
@@ -61,9 +59,7 @@ const Dashboard = () => {
       } else if (res.data.data === 0) {
         setTotalService(res.data.data);
       }
-    } catch (error) {
-      console.log("Get Total Service Error");
-    }
+    } catch (error) {}
   };
   const getAllBookingStatus = async () => {
     try {
@@ -71,9 +67,7 @@ const Dashboard = () => {
       if (res && res.data && res.data.data) {
         setAllBooking(res.data.data);
       }
-    } catch (error) {
-      console.log("Get Booking By Status Error");
-    }
+    } catch (error) {}
   };
   const getAllBookingByYear = async () => {
     try {
@@ -81,9 +75,7 @@ const Dashboard = () => {
       if (res && res.data && res.data.data) {
         setAllBookingByYear(res.data.data);
       }
-    } catch (error) {
-      console.log("Get Booking By Year Error");
-    }
+    } catch (error) {}
   };
 
   const reportBookingOrder = async () => {
@@ -96,9 +88,7 @@ const Dashboard = () => {
       link.setAttribute("download", `YachtBooking_${month}/${year}.xls`); // Tên file khi tải về
       document.body.appendChild(link);
       link.click();
-    } catch (error) {
-      console.log("Export error");
-    }
+    } catch (error) {}
   };
   const total = Object.values(allBooking).reduce(
     (sum, count) => sum + count,

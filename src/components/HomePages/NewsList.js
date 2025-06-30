@@ -1,5 +1,14 @@
 import React from "react";
-import { Box, Typography, Grid, Card, CardContent, CardMedia, Button, CardActions } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  Button,
+  CardActions,
+} from "@mui/material";
 import { Link } from "react-router-dom";
 
 const news = [
@@ -34,6 +43,9 @@ export default function NewsList() {
         mx: "auto",
         px: 2,
         py: 8,
+        backgroundColor: (theme) => theme.palette.background.default,
+        borderRadius: 2,
+        boxShadow: (theme) => theme.shadows[2],
         color: (theme) => theme.palette.text.primary,
         fontFamily: "Archivo, sans-serif",
       }}
@@ -70,7 +82,12 @@ export default function NewsList() {
                 },
               }}
             >
-              <CardMedia component="img" image={n.img} alt={n.title} sx={{ objectFit: "cover", maxHeight: 250 }} />
+              <CardMedia
+                component="img"
+                image={n.img}
+                alt={n.title}
+                sx={{ objectFit: "cover", maxHeight: 250 }}
+              />
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography
                   variant="subtitle1"
@@ -98,7 +115,11 @@ export default function NewsList() {
                 >
                   {n.desc}
                 </Typography>
-                <Typography fontFamily={"Archivo, sans-serif"} variant="caption" color="text.secondary">
+                <Typography
+                  fontFamily={"Archivo, sans-serif"}
+                  variant="caption"
+                  color="text.secondary"
+                >
                   {n.date}
                 </Typography>
               </CardContent>
