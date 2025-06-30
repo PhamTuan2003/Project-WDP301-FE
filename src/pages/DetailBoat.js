@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Breadcrumbs, Container, Typography } from "@mui/material";
 import { HouseFill } from "react-bootstrap-icons";
-import Swal from "sweetalert2";
 import { useSelector, useDispatch } from "react-redux";
 import ImageCarousel from "../components/DetailBoat/ImageCarousel";
 import Tabs from "../components/DetailBoat/Tabs";
@@ -11,16 +10,9 @@ import BoatInfo from "../components/DetailBoat/BoatInfo";
 import ReviewSection from "../components/DetailBoat/ReviewSection";
 import { Image } from "react-bootstrap";
 import { ArrowRight, CircleCheckBig } from "lucide-react";
-import NewWindow from "react-new-window";
-import {
-  fetchReviews,
-  openRegulationsWindow,
-  closeRegulationsWindow,
-  openFaqWindow,
-  closeFaqWindow,
-  setActiveTab,
-} from "../redux/action";
-import { fetchServices, fetchYachtById } from "../redux/asyncActions";
+import { fetchReviews, setActiveTab } from "../redux/actions";
+import { fetchServices } from "../redux/asyncActions/servicesAsyncActions";
+import { fetchYachtById } from "../redux/asyncActions/yachtAsyncActions";
 
 function DetailBoat() {
   const { id } = useParams();
@@ -32,9 +24,6 @@ function DetailBoat() {
   const totalReviews = useSelector(
     (state) => state.reviews.ratingData?.total || 0
   );
-  const {
-    windows: { showRegulationsWindow, showFaqWindow },
-  } = useSelector((state) => state.ui);
 
   const sectionRefs = useRef({
     features: null,
@@ -77,15 +66,6 @@ function DetailBoat() {
       });
     };
   }, [dispatch]);
-
-  // const handleBookNow = () => {
-  //   Swal.fire({
-  //     title: "Đặt hàng thành công!",
-  //     text: "Cảm ơn bạn đã đặt hàng với chúng tôi!",
-  //     icon: "success",
-  //     confirmButtonText: "OK",
-  //   });
-  // };
 
   const handleScrollToMap = (e) => {
     e.preventDefault();
@@ -177,14 +157,17 @@ function DetailBoat() {
       </Container>
       <ImageCarousel yachtId={id} />
       <Container className="py-20">
-        <div className="sticky top-[83px] z-10 rounded-3xl">
+        {/* Thanh điều hướng */}
+        <div className="sticky top-[100px] z-10 rounded-3xl">
           <Tabs />
         </div>
+
         <div className="flex flex-col md:flex-row mt-10 gap-6">
           <div className="md:w-8/12">
+            {/* Đặc điểm nổi bật của YACHT */}
             <div
               id="features"
-              className="scroll-mt-32"
+              className="scroll-mt-44"
               ref={(el) => (sectionRefs.current.features = el)}
             >
               <h2 className="text-4xl font-bold light:text-gray-900 dark:text.primary">
@@ -202,7 +185,7 @@ function DetailBoat() {
                       <CircleCheckBig size={20} color="#04efef" />
                       <p
                         className="text-base"
-                        style={{ fontSize: "16px", color: "#457467" }}
+                        style={{ fontSize: "18px", color: "text.primary" }}
                       >
                         {service.serviceId?.serviceName || "Unnamed Service"}
                       </p>
@@ -222,20 +205,26 @@ function DetailBoat() {
                       fill="none"
                     />
                   </svg>
-                  <p className="text-base">{currentYacht.description}</p>
+                  <p className="text-base" style={{ fontSize: "18px" }}>
+                    {currentYacht.description}
+                  </p>
                 </div>
               </div>
             </div>
+
+            {/* Phòng & Giá để đặt phòng của YACHT */}
             <div
               id="rooms"
-              className="mt-16 scroll-mt-32"
+              className="mt-16 scroll-mt-44"
               ref={(el) => (sectionRefs.current.rooms = el)}
             >
               <RoomSelector yachtId={id} yachtData={currentYacht} />
             </div>
+
+            {/* Giới thiệu của YACHT */}
             <div
               id="introduction"
-              className="mt-16 scroll-mt-32"
+              className="mt-16 scroll-mt-44"
               ref={(el) => (sectionRefs.current.introduction = el)}
             >
               <h2 className="text-4xl font-bold light:text-gray-900 dark:text.primary">
@@ -267,96 +256,50 @@ function DetailBoat() {
                 </p>
               </div>
             </div>
+
+            {/* Quy định chung và lưu ý */}
             <div
               id="regulations"
-              className="mt-16 scroll-mt-32"
+              className="mt-16 scroll-mt-44"
               ref={(el) => (sectionRefs.current.regulations = el)}
             >
-              <h2 className="text-4xl font-bold light:light:text-gray-900">
-                Quy định chung và lưu ý
+              <h2 className="text-4xl font-bold light:text-gray-900">
+                Quy Định Chung Và Lưu Ý
               </h2>
-              <img
-                src="../icons/heading-border.webp"
-                alt="Divider"
-                className="my-6"
-              />
+              <img src="/images/border.jpg" alt="Divider" className="my-6" />
               <p className="flex items-center gap-2 text-base font-medium">
-                Bạn có thể xem Quy định chung và lưu ý:{" "}
+                Bạn có thể xem Quy Định Chung Và Lưu Ý:{" "}
                 <Link
-                  to="#"
-                  onClick={() => dispatch(openRegulationsWindow())}
-                  className="flex items-center text-teal-800 hover:text-teal-400"
+                  to="/quy-dinh-chung-va-luu-y"
+                  className="flex items-center text-teal-400 hover:text-teal-800"
+                  target="_blank" //mở trong tab mới
+                  rel="noopener noreferrer" // bảo mật khi mở tab mới
                 >
                   Tại đây <ArrowRight size={20} />
                 </Link>
-                {showRegulationsWindow && (
-                  <NewWindow
-                    onUnload={() => dispatch(closeRegulationsWindow())}
-                    title="Quy định chung và lưu ý"
-                    features={{ width: 800, height: 600 }}
-                  >
-                    <div className="p-6">
-                      <div className="flex flex-col gap-3 font-archivo justify-between items-start mb-4">
-                        <h2 className="text-3xl font-bold">
-                          Quy định chung và lưu ý
-                        </h2>
-                        <img src="../icons/heading-border.webp" alt="Divider" />
-                      </div>
-                      <div className="space-y-4 font-archivo">
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                          <h3 className="font-semibold">
-                            Thời gian nhận phòng:
-                          </h3>
-                          <p>
-                            Giờ nhận phòng từ 12h15-12h30. Nếu quý khách không
-                            sử dụng dịch vụ xe đưa đón của tàu và tự di chuyển,
-                            vui lòng có mặt tại bến tàu muộn nhất là 11h45 để
-                            làm thủ tục trước khi lên tàu.
-                          </p>
-                        </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                          <h3 className="font-semibold">Thời gian trả phòng</h3>
-                          <p>
-                            Giờ trả phòng từ 9h30-10h30 tùy thuộc vào lịch trình
-                            của tàu. Sau khi trả phòng, quý khách sẽ được phục
-                            vụ bữa trưa trên tàu trước khi tàu cập bến.
-                          </p>
-                        </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                          <h3 className="font-semibold">
-                            Giá phòng đã bao gồm
-                          </h3>
-                          <ul className="list-disc list-inside">
-                            <li>Hướng dẫn viên trên tàu</li>
-                            <li>
-                              Các bữa ăn theo tiêu chuẩn (01 bữa trưa, 01 bữa
-                              tối, 01 bữa sáng, 1 bữa trưa nhẹ)
-                            </li>
-                            <li>
-                              Lớp học nấu ăn, Bơi lội (nếu thời tiết cho phép),
-                              xem phim, câu mực, xem tivi vệ tinh
-                            </li>
-                            <li>Phòng tập gym trên tàu</li>
-                            <li>
-                              Vé tham quan các điểm trong lịch trình (nếu có)
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                          <h3 className="font-semibold">Huỷ đặt phòng</h3>
-                          <p>
-                            Những mức giá tốt trên đây đều có điều kiện chung là
-                            không được hoàn/hủy và được phép đổi ngày. Quý khách
-                            vui lòng liên hệ với chúng tôi để nhận được sự hỗ
-                            trợ tốt nhất.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </NewWindow>
-                )}
               </p>
-            </div>{" "}
+            </div>
+
+            {/* Các câu hỏi thường gặp */}
+            <div id="faq" className="mt-16 scroll-mt-44">
+              <h2 className="text-4xl font-bold light:text-gray-900">
+                Các Câu Hỏi Thường Gặp
+              </h2>
+              <img src="/images/border.jpg" alt="Divider" className="my-6" />
+              <p className="flex items-center gap-2 text-base font-medium">
+                Bạn có thể xem Các Câu Hỏi Thường Gặp:{" "}
+                <Link
+                  to="/cau-hoi-thuong-gap"
+                  className="flex items-center text-teal-400 hover:text-teal-800"
+                  target="_blank" // mở trong tab mới
+                  rel="noopener noreferrer" // bảo mật khi mở tab mới
+                >
+                  Tại đây <ArrowRight size={20} />
+                </Link>
+              </p>
+            </div>
+
+            {/* bản đồ và lịch trình */}
             <div id="map" className="mt-16 scroll-mt-32">
               <h2 className="text-4xl font-bold light:text-gray-900">
                 Bản đồ và lịch trình
@@ -378,6 +321,8 @@ function DetailBoat() {
                 ></iframe>
               </div>
             </div>
+
+            {/* đánh giá sao */}
             <div
               id="reviews"
               className="mt-16 scroll-mt-32"
@@ -389,46 +334,6 @@ function DetailBoat() {
           <BoatInfo />
         </div>
       </Container>
-      {showFaqWindow && (
-        <NewWindow
-          onUnload={() => dispatch(closeFaqWindow())}
-          title="Câu hỏi thường gặp"
-          features={{ width: 800, height: 600 }}
-        >
-          <div className="p-6">
-            <div className="flex flex-col gap-3 font-archivo justify-between items-start mb-4">
-              <h2 className="text-3xl font-bold">Câu hỏi thường gặp</h2>
-              <img src="../icons/heading-border.webp" alt="Divider" />
-            </div>
-            <div className="space-y-4 font-archivo">
-              <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                <h3 className="font-semibold">Thời gian nhận phòng:</h3>
-                <p>
-                  Giờ nhận phòng từ 12h15-12h30. Nếu quý khách không sử dụng
-                  dịch vụ xe đưa đón của tàu và tự di chuyển, vui lòng có mặt
-                  tại bến tàu muộn nhất là 11h45 để làm thủ tục trước khi lên
-                  tàu.
-                </p>
-              </div>
-              <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                <h3 className="font-semibold">Thời gian trả phòng</h3>
-                <p>
-                  Giờ trả phòng từ 9h30-10h30 tùy thuộc vào lịch trình của tàu.
-                  Sau khi trả phòng, quý khách sẽ được phục vụ bữa trưa trên tàu
-                  trước khi tàu cập bến.
-                </p>
-              </div>
-              <div className="space-y-2 border p-4 rounded-2xl bg-gray-100 shadow-2xl">
-                <h3 className="font-semibold">Chính sách hủy phòng</h3>
-                <p>
-                  Đặt phòng không được hoàn/hủy nhưng có thể đổi ngày nếu thông
-                  báo trước ít nhất 7 ngày. Vui lòng liên hệ để được hỗ trợ.
-                </p>
-              </div>
-            </div>
-          </div>
-        </NewWindow>
-      )}
     </div>
   );
 }

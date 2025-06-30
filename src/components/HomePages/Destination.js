@@ -37,7 +37,7 @@ export default function Destination() {
         fontFamily={"Archivo, sans-serif"}
         gutterBottom
       >
-        Các điểm đến của LongWave
+        <p>Các điểm đến của LongWave</p>
       </Typography>
       <Typography
         fontFamily={"Archivo, sans-serif"}
