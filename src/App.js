@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -34,8 +34,8 @@ import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 // Layout & Routing
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "./components/routers/ProtectedRoute";
-import Footer from "./layout/Footer";
-import Header from "./layout/Header";
+// import Footer from "./layout/Footer";
+// import Header from "./layout/Header";
 
 // Company
 import Dashboard from "./components/company/Dashboard";
@@ -51,7 +51,6 @@ import Enterprise from "./components/Enterprise/Enterprise";
 import Admin from "./components/Admin/AdminDashboard";
 
 function AppWrapper() {
-  const location = useLocation();
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
   const dispatch = useDispatch();
   const { showTransactionModal, bookingIdFortransaction } = useSelector(
@@ -79,12 +78,12 @@ function AppWrapper() {
   };
 
   const theme = getTheme(mode);
-  const hideHeaderFooter = ["/admin"].includes(location.pathname);
+  // const hideHeaderFooter = ["/admin"].includes(location.pathname);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {!hideHeaderFooter && <Header toggleTheme={toggleTheme} mode={mode} />}
+      {/* {!hideHeaderFooter && <Header toggleTheme={toggleTheme} mode={mode} />} */}
       <Routes>
         {/* User & Public Routes */}
         <Route element={<MainLayout toggleTheme={toggleTheme} mode={mode} />}>
@@ -125,10 +124,10 @@ function AppWrapper() {
         </Route>
 
         {/* Admin Route */}
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={<Admin toggleTheme={toggleTheme} mode={mode} />} />
       </Routes>
 
-      {!hideHeaderFooter && <Footer />}
+      {/* {!hideHeaderFooter && <Footer />} */}
 
       <ToastContainer
         position="top-right"

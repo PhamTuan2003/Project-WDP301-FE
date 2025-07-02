@@ -41,7 +41,7 @@ export default function CompanyManagement() {
 
     // Lấy danh sách công ty từ BE khi load trang
     useEffect(() => {
-        axios.get('http://localhost:9999/api/v1/account-companies')
+        axios.get('http://localhost:9999/api/v1/companies/all')
             .then(res => setCompanies(Array.isArray(res.data) ? res.data : []))
             .catch(() => setCompanies([]));
     }, []);
@@ -74,7 +74,7 @@ export default function CompanyManagement() {
                 return;
             }
             try {
-                const res = await axios.post('http://localhost:9999/api/v1/account-companies', {
+                const res = await axios.post('http://localhost:9999/api/v1/companies', {
                     name: formData.name,
                     address: formData.address,
                     email: formData.email,
@@ -82,7 +82,7 @@ export default function CompanyManagement() {
                     password: formData.password
                 });
                 toast.success(res.data.message || 'Thêm mới thành công!');
-                const resList = await axios.get('http://localhost:9999/api/v1/account-companies');
+                const resList = await axios.get('http://localhost:9999/api/v1/companies');
                 setCompanies(Array.isArray(resList.data) ? resList.data : []);
                 handleCloseDialog();
             } catch (err) {
@@ -95,14 +95,14 @@ export default function CompanyManagement() {
             }
         } else {
             try {
-                const res = await axios.put(`http://localhost:9999/api/v1/account-companies/${editingCompany._id}`, {
+                const res = await axios.put(`http://localhost:9999/api/v1/companies/${editingCompany._id}`, {
                     name: formData.name,
                     address: formData.address,
                     email: formData.email,
                     username: formData.username
                 });
                 toast.success(res.data.message || 'Cập nhật thành công!');
-                const resList = await axios.get('http://localhost:9999/api/v1/account-companies');
+                const resList = await axios.get('http://localhost:9999/api/v1/companies');
                 setCompanies(Array.isArray(resList.data) ? resList.data : []);
                 handleCloseDialog();
             } catch (err) {
@@ -114,7 +114,7 @@ export default function CompanyManagement() {
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa công ty này?')) return;
         try {
-            const res = await axios.delete(`http://localhost:9999/api/v1/account-companies/${id}`);
+            const res = await axios.delete(`http://localhost:9999/api/v1/companies/${id}`);
             toast.success(res.data.message || 'Xóa thành công!');
             setCompanies(prev => prev.filter(c => c._id !== id));
         } catch (err) {
