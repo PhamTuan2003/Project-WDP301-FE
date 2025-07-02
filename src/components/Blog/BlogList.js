@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Box, Typography, Container, Grid, Card, CardMedia, CardContent, CardActionArea } from "@mui/material";
 import { Link } from "react-router-dom";
@@ -89,4 +90,5 @@ export default function BlogList() {
       </Container>
     </Box>
   );
+
 }
