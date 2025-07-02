@@ -32,7 +32,7 @@ import {
   closeConfirmationModal,
   closeTransactionModal,
 } from "../../redux/actions/uiActions";
-import { fetchRoomsAndSchedules } from "../../redux/asyncActions/bookingAsyncActions";
+import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
 import ConfirmationModal from "./Booking/ConfirmationModal";
 import TransactionModal from "./Booking/TransactionModal";
 import InvoiceModal from "./Booking/InvoiceModal";

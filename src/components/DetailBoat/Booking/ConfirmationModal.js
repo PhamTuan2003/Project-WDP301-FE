@@ -17,7 +17,7 @@ import {
 import {
   customerCancelBooking,
   customerConfirmConsultation,
-} from "../../../redux/asyncActions";
+} from "../../../redux/asyncActions/bookingAsyncActions";
 import { formatPrice } from "../../../redux/validation";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";

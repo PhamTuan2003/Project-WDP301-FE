@@ -189,11 +189,11 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
       <div className="mb-4">
         <TextField
           focused
-          label="Đánh giá của bạn *"
+          label="Đánh giá của bạn"
           placeholder="Nhập đánh giá của bạn"
           value={description}
           onChange={(e) => dispatch(setReviewDescription(e.target.value))}
-          className="w-full border border-gray-300 text-sm"
+          className="w-full border-gray-300 text-sm"
           multiline
           rows={5}
           required
