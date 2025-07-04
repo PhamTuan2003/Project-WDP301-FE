@@ -36,7 +36,7 @@ function DetailBoat() {
   useEffect(() => {
     dispatch(fetchYachtById(id));
     dispatch(fetchReviews(id));
-    dispatch(fetchServices(id)); // Updated to pass yachtId
+    dispatch(fetchServices(id));
   }, [dispatch, id]);
 
   useEffect(() => {

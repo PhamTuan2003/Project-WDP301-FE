@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { User, Minus, Plus, X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import {
   Box,
   Select,
@@ -32,7 +32,10 @@ import {
   closeConfirmationModal,
   closeTransactionModal,
 } from "../../redux/actions/uiActions";
-import { fetchRoomsAndSchedules } from "../../redux/asyncActions";
+import {
+  fetchSchedulesOnly,
+  fetchRoomsOnly,
+} from "../../redux/asyncActions/bookingAsyncActions";
 import ConfirmationModal from "./Booking/ConfirmationModal";
 import TransactionModal from "./Booking/TransactionModal";
 import InvoiceModal from "./Booking/InvoiceModal";
@@ -58,16 +61,17 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   const [editBookingData, setEditBookingData] = useState(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
 
-  // Fetch rooms and schedules when yachtId or selectedSchedule changes
   useEffect(() => {
     if (yachtId) {
-      dispatch(fetchRoomsAndSchedules(yachtId, selectedSchedule));
+      dispatch(fetchSchedulesOnly(yachtId));
+      if (selectedSchedule) {
+        dispatch(fetchRoomsOnly(yachtId, selectedSchedule));
+      }
     } else {
       dispatch(clearSelection());
     }
   }, [yachtId, selectedSchedule, dispatch]);
 
-  // Handlers for buttons
   const handleBookNow = () => {
     dispatch(resetBookingForm());
     dispatch(clearAllErrors());
@@ -81,17 +85,15 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     dispatch(setSelectedMaxPeople("all"));
   };
 
-  // Handler for opening room modal
   const handleOpenRoomModal = (room) => {
     dispatch(openRoomModal(room));
   };
-
-  // Callback khi chọn dịch vụ từ RoomServicesModal
   const handleSelectYachtServices = (services) => {
     dispatch(setSelectedYachtServices(services));
     setShowServiceModal(false);
   };
 
+  // Filter rooms theo số người tối đa (max_people)
   const filteredRooms =
     selectedMaxPeople === "all"
       ? rooms
@@ -206,32 +208,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
           </Select>
         </FormControl>
 
-        {/* Max People Selection */}
-        {selectedSchedule && (
-          <FormControl fullWidth sx={{ mb: 4 }}>
-            <InputLabel>Số người tối đa</InputLabel>
-            <Select
-              value={selectedMaxPeople}
-              onChange={(e) => dispatch(setSelectedMaxPeople(e.target.value))}
-              label="Số người tối đa"
-              disabled={loading || !rooms.length}
-              sx={{
-                bgcolor: (theme) => theme.palette.background.paper,
-                borderColor: (theme) => theme.palette.divider,
-                boxShadow: (theme) => theme.shadows[1],
-                color: (theme) => theme.palette.primary.main,
-              }}
-            >
-              <MenuItem value="all">Hiển thị tất cả</MenuItem>
-              {maxPeopleOptions.map((maxPeople) => (
-                <MenuItem key={maxPeople} value={maxPeople}>
-                  {maxPeople} {maxPeople > 1 ? "người" : "người"}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-
         {loading && (
           <Typography sx={{ color: "text.primary", p: 2 }}>
             Đang tải dữ liệu...
@@ -340,27 +316,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               >
                                 <path d="M10,2H14A2,2 0 0,1 16,4V6H20A2,2 0 0,1 22,8V19A2,2 0 0,1 20,21H4C2.89,21 2,20.1 2,19V8C2,6.89 2.89,6 4,6H8V4C8,2.89 8.89,2 10,2M14,6V4H10V6H14Z" />
                               </Box>
-                              {room.area} m{"\u00B2"} {/*mét vuông*/}
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <Box
-                                component="svg"
-                                sx={{
-                                  width: 16,
-                                  height: 16,
-                                  fill: "currentColor",
-                                }}
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M19,7H5C3.89,7 3,7.89 3,9V17H5V13H19V17H21V9C21,7.89 20.11,7 19,7M19,11H5V9H19V11Z" />
-                              </Box>
-                              Tối đa: {room.beds} <User size={15} />
+                              {room.area} m{"\u00B2"} {/* diện tích */}
                             </Box>
                           </Box>
                         </Box>
@@ -395,7 +351,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 fontWeight: "bold",
                               }}
                             >
-                              {room.price.toLocaleString()}đ{" "}
+                              {room.price.toLocaleString()}đ
                             </Typography>
                             <Typography
                               sx={{

@@ -1,10 +1,11 @@
-import { Box, TextField } from "@mui/material";
+import { useSelector, useDispatch } from "react-redux";
 import { Send } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
-import { setReviewDescription, setUserRating } from "../../../redux/action";
-import { submitReview } from "../../../redux/asyncActions";
 import StarRating from "./StarRating";
+import { Box, TextField } from "@mui/material";
+import { setUserRating, setReviewDescription } from "../../../redux/actions";
+import { validateReviewForm } from "../../../redux/validation";
+import { submitReview } from "../../../redux/asyncActions";
 
 const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
   const dispatch = useDispatch();
@@ -193,7 +194,7 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
           placeholder="Nhập đánh giá của bạn"
           value={description}
           onChange={(e) => dispatch(setReviewDescription(e.target.value))}
-          className="w-full border-gray-300 text-sm"
+          className="w-full text-sm"
           multiline
           rows={5}
           required

@@ -5,26 +5,26 @@
 
 
 html {
-    font-family: "Archivo", serif;
+  font-family: "Archivo", sans-serif;
 }
 
 .button {
-    border-radius: 100px;
-    box-shadow: 0px 1px 2px 0px #1018280d;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  border-radius: 100px;
+  box-shadow: 0px 1px 2px 0px #1018280d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .h4,
 .h5 {
-    font-weight: 700;
-    color: #101828;
+  font-weight: 700;
+  color: #101828;
 }
 
 .h4 {
-    font-size: 36px;
-    line-height: 44px;
+  font-size: 36px;
+  line-height: 44px;
 }
 
 .input_group {
@@ -750,5 +750,5 @@ label {
 }
 
 ::-webkit-scrollbar {
-    display: none !important;
+  display: none !important;
 }

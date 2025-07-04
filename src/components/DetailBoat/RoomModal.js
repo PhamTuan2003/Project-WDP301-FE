@@ -3,9 +3,9 @@ import { BedDouble, Check, Minus, Plus, User, X } from "lucide-react";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  incrementRoomQuantity,
   decrementRoomQuantity,
-} from "../../redux/action";
+  incrementRoomQuantity,
+} from "../../redux/actions";
 
 const RoomModal = ({ show, room, onClose }) => {
   const dispatch = useDispatch();
@@ -63,15 +63,16 @@ const RoomModal = ({ show, room, onClose }) => {
             <div className="flex items-center space-x-4 mb-4">
               <div className="flex items-center">
                 <span className="text-sm font-medium flex items-center gap-1 text-gray-600">
-                  <BedDouble size={16} /> <p>{room.area || "33"} m²</p>
+                  <BedDouble size={16} />{" "}
+                  <p className="mb-0">{room.area || "33"} m²</p>
                 </span>
               </div>
-              <div className="flex items-center">
+              <Box className="flex items-center">
                 <span className="text-sm font-medium flex gap-1 items-center text-gray-600">
-                  <p>Tối đa: {room.beds || 0}</p>
+                  <p className="mb-0">Tối đa: {room.beds || 0}</p>
                   <User size={16} className="mr-1" />
                 </span>
-              </div>
+              </Box>
             </div>
             <div className="my-6">
               <div className="grid grid-cols-2 gap-2">
@@ -109,7 +110,7 @@ const RoomModal = ({ show, room, onClose }) => {
                   </button>
                 </div>
                 <button
-                  className="bg-teal-400 text-white px-6 py-2 hover:bg-teal-500"
+                  className="bg-teal-400 rounded-full text-white px-6 py-2 hover:bg-teal-500"
                   onClick={onClose}
                 >
                   Chọn phòng

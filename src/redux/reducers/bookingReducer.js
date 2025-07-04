@@ -53,20 +53,27 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...room,
         id: room.id || room._id,
         quantity: 0,
-        beds: room.max_people,
+        beds:
+          room.max_people ||
+          (room.roomTypeId && room.roomTypeId.max_people) ||
+          1,
         image: room.avatar,
-        price: room.price || 0,
+        price: room.price || (room.roomTypeId && room.roomTypeId.price) || 0,
         area: room.area || "33",
         description: room.description || "Phòng thoải mái với view đẹp",
       }));
       const maxPeopleOptions = [
-        ...new Set(processedRooms.map((r) => r.beds)),
+        ...new Set(
+          processedRooms
+            .map((r) => r.beds)
+            .filter((v) => typeof v === "number" && !isNaN(v) && v > 0)
+        ),
       ].sort((a, b) => a - b);
       return {
         ...state,
         loading: false,
         rooms: processedRooms,
-        schedules: schedules, // Giữ nguyên schedules từ formattedSchedules
+        schedules: schedules,
         maxPeopleOptions,
       };
     }

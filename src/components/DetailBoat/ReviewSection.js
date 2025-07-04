@@ -1,15 +1,18 @@
-import { Box } from "@mui/material";
-import { useEffect } from "react";
-import { Image } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { setReviewCurrentPage, setReviewSearchTerm } from "../../redux/action";
-import { fetchReviews } from "../../redux/asyncActions";
-import RatingOverview from "./Reviews/RatingOverview";
-import ReviewForm from "./Reviews/ReviewForm";
+import { Box } from "@mui/material";
 import ReviewHeader from "./Reviews/ReviewHeader";
 import ReviewList from "./Reviews/ReviewList";
+import ReviewForm from "./Reviews/ReviewForm";
 import ReviewPagination from "./Reviews/ReviewPagination";
+import RatingOverview from "./Reviews/RatingOverview";
+import { Image } from "react-bootstrap";
+import { fetchReviews } from "../../redux/asyncActions";
+import {
+  setReviewCurrentPage,
+  setReviewSearchTerm,
+} from "../../redux/actions/reviewActions";
 
 export default function ReviewSection({ yachtId }) {
   const dispatch = useDispatch();

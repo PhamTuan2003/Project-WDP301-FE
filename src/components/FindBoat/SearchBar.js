@@ -6,7 +6,7 @@ import {
   InputAdornment,
   MenuItem,
   Stack,
-  TextField
+  TextField,
 } from "@mui/material";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import {
   setDeparturePoint,
   setPriceRange,
   setSearchTerm,
-} from "../../redux/action";
+} from "../../redux/actions";
 
 const SearchBar = ({ uniqueDeparturePoints, priceRanges, setCurrentPage }) => {
   const dispatch = useDispatch();

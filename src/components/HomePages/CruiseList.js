@@ -14,7 +14,6 @@ import {
   Stack,
 } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PersonIcon from "@mui/icons-material/Person";
 import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
 
 export default function CruiseList() {

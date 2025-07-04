@@ -13,6 +13,14 @@ import { resetBookingForm } from "../actions/bookingActions";
 export const fetchRoomsAndSchedules =
   (yachtId, scheduleId) => async (dispatch) => {
     dispatch(bookingActions.fetchRoomsRequest());
+    if (!scheduleId) {
+      dispatch(
+        bookingActions.fetchRoomsFailure(
+          "Vui lòng chọn lịch trình trước khi xem phòng."
+        )
+      );
+      return;
+    }
     try {
       const [roomsResponse, schedulesResponse] = await Promise.all([
         axios.get("http://localhost:9999/api/v1/rooms", {
@@ -531,6 +539,68 @@ export const deleteBookingById = (bookingId) => async (dispatch) => {
     const errorMessage = error.response?.data?.message || error.message;
     Swal.fire({ icon: "error", title: "Lỗi xóa booking!", text: errorMessage });
     return { success: false, error: errorMessage };
+  }
+};
+
+// Action chỉ lấy schedules
+export const fetchSchedulesOnly = (yachtId) => async (dispatch) => {
+  dispatch(bookingActions.fetchRoomsRequest());
+  try {
+    const schedulesResponse = await axios.get(
+      `http://localhost:9999/api/v1/yachts/${yachtId}/schedules`
+    );
+    const formattedSchedules = schedulesResponse.data.data.map((schedule) => {
+      const startDateRaw = schedule.scheduleId?.startDate;
+      const endDateRaw = schedule.scheduleId?.endDate;
+      const startDate = startDateRaw ? new Date(startDateRaw) : null;
+      const endDate = endDateRaw ? new Date(endDateRaw) : null;
+      if (
+        !startDate ||
+        isNaN(startDate.getTime()) ||
+        !endDate ||
+        isNaN(endDate.getTime())
+      ) {
+        return {
+          ...schedule,
+          durationText: "Không xác định",
+          displayText: "Không xác định",
+        };
+      }
+      const formatDate = (date) =>
+        `${String(date.getDate()).padStart(2, "0")}/${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}/${date.getFullYear()}`;
+      const formattedStartDate = formatDate(startDate);
+      const formattedEndDate = formatDate(endDate);
+      const durationDays = Math.ceil(
+        (endDate - startDate) / (1000 * 60 * 60 * 24)
+      );
+      const durationNights = durationDays - 1;
+      const durationText = `${durationDays} ngày ${durationNights} đêm`;
+      const displayText = `${durationText} (từ ${formattedStartDate} đến ${formattedEndDate})`;
+      return { ...schedule, durationText, displayText };
+    });
+    dispatch(bookingActions.fetchRoomsSuccess([], formattedSchedules));
+  } catch (error) {
+    dispatch(bookingActions.fetchRoomsFailure(error.message));
+  }
+};
+
+// Action chỉ lấy rooms
+export const fetchRoomsOnly = (yachtId, scheduleId) => async (dispatch) => {
+  dispatch(bookingActions.fetchRoomsRequest());
+  try {
+    const roomsResponse = await axios.get(
+      "http://localhost:9999/api/v1/rooms",
+      {
+        params: { yachtId, scheduleId },
+      }
+    );
+    dispatch(
+      bookingActions.fetchRoomsSuccess(roomsResponse.data.data.rooms, [])
+    );
+  } catch (error) {
+    dispatch(bookingActions.fetchRoomsFailure(error.message));
   }
 };
 
