@@ -97,13 +97,16 @@ function DetailBoat() {
             aria-label="breadcrumb"
             className="flex gap-3"
           >
-            <Link to="/" className="flex items-center hover:text-cyan-500">
+            <Link
+              to="/"
+              className="flex items-center text-teal-600 hover:text-cyan-500"
+            >
               <HouseFill size={25} className="mr-2" />
             </Link>
             <Link
               to="/find-boat"
-              className="flex items-center hover:text-cyan-500 !font-archivo"
-              color="text.secondary"
+              className="flex items-center text-teal-600 hover:text-cyan-500 !font-archivo"
+              color="text.primary"
             >
               Tìm du thuyền
             </Link>

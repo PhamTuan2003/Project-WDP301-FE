@@ -22,6 +22,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
+  Tooltip,
+  Badge,
+  Menu,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -32,11 +36,21 @@ import {
   Dashboard as DashboardIcon,
   ChevronLeft,
   ChevronRight,
+  Logout,
 } from "@mui/icons-material";
 import { AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
 import CompanyManagement from "./CompanyManagement";
 import RevenueSummary from "./RevenueSummary";
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import { useTheme } from "@mui/material";
 
 export default function Dashboard({ toggleTheme, mode }) {
   const [open, setOpen] = useState(true);
@@ -49,123 +63,101 @@ export default function Dashboard({ toggleTheme, mode }) {
   const [earningsByMonth, setEarningsByMonth] = useState([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [yearOptions, setYearOptions] = useState([]);
+  const theme = useTheme();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingCompany, setLoadingCompany] = useState(true);
+  const [loadingRevenue, setLoadingRevenue] = useState(true);
+  const [notificationCount, setNotificationCount] = useState(3); // demo
+
+  // Thêm biến tính vị trí left cho button
+  const buttonLeft = (open ? drawerWidthOpen : drawerWidthClosed) - 15;
 
   useEffect(() => {
+    setLoadingCompany(true);
     fetch("http://localhost:9999/api/v1/companies/count")
       .then((res) => res.json())
-      .then((data) => setCompanyCount(data.count));
+      .then((data) => setCompanyCount(data.count))
+      .finally(() => setLoadingCompany(false));
   }, []);
 
   useEffect(() => {
+    setLoadingStats(true);
     fetch("http://localhost:9999/admin/stats")
       .then((res) => res.json())
-      .then((data) => setStats(data));
+      .then((data) => setStats(data))
+      .finally(() => setLoadingStats(false));
   }, []);
 
   useEffect(() => {
+    setLoadingRevenue(true);
     fetch("http://localhost:9999/api/v1/companies/revenue/monthly")
       .then((res) => res.json())
       .then((data) => {
         setEarningsByMonth(data);
-      });
+      })
+      .finally(() => setLoadingRevenue(false));
   }, []);
 
   useEffect(() => {
     if (earningsByMonth.length > 0) {
-      const years = Array.from(new Set(earningsByMonth.map((row) => row.year))).sort((a, b) => b - a);
+      const years = Array.from(
+        new Set(earningsByMonth.map((row) => row.year))
+      ).sort((a, b) => b - a);
       setYearOptions(years);
       if (!years.includes(selectedYear)) setSelectedYear(years[0]);
     }
   }, [earningsByMonth]);
 
-  const filteredData = earningsByMonth.filter((row) => row.year === selectedYear);
-  const totalCommission = filteredData.reduce((sum, row) => sum + row.earnings * 0.05, 0);
+  const filteredData = earningsByMonth.filter(
+    (row) => row.year === selectedYear
+  );
+  const totalCommission = filteredData.reduce(
+    (sum, row) => sum + row.earnings * 0.05,
+    0
+  );
+
+  // Avatar menu
+  const handleAvatarClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   return (
     <Box
       display="flex"
-      flexDirection="column"
       minHeight="100vh"
-      bgcolor={(theme) => theme.palette.background.default}
+      bgcolor={theme.palette.background.default}
       fontFamily="'Inter', sans-serif"
     >
-      <AppBar
-        position="static"
+      {/* Sidebar */}
+      <Drawer
+        variant="permanent"
         sx={{
-          bgcolor: (theme) => theme.palette.background.paper,
-          boxShadow: (theme) => theme.shadows[1],
+          width: drawerWidth,
+          flexShrink: 0,
+          zIndex: 1201,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            bgcolor: theme.palette.background.paper,
+            borderRight: "none",
+            borderRadius: open ? "0 24px 24px 0" : "0 16px 16px 0",
+            boxShadow: theme.shadows[2],
+            transition: "width 0.3s",
+            top: 0,
+            left: 0,
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            p: 0,
+          },
         }}
       >
-        <Toolbar
-          sx={{
-            justifyContent: "space-between",
-            minHeight: 64,
-          }}
-        >
-          <Typography variant="h6" fontWeight="800" color={(theme) => theme.palette.primary.main} letterSpacing={1}>
-            Admin Dashboard
-          </Typography>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Paper
-              component="form"
-              sx={{
-                p: "2px 8px",
-                display: "flex",
-                alignItems: "center",
-                width: 250,
-                borderRadius: (theme) => theme.shape.borderRadius,
-                bgcolor: (theme) => theme.palette.background.default,
-                boxShadow: "none",
-              }}
-            >
-              <SearchIcon sx={{ color: (theme) => theme.palette.primary.main }} />
-              <InputBase
-                placeholder="Search…"
-                sx={{
-                  ml: 1,
-                  flex: 1,
-                  color: (theme) => theme.palette.text.primary,
-                }}
-                inputProps={{ "aria-label": "search" }}
-              />
-            </Paper>
-            <IconButton onClick={toggleTheme} sx={{ color: (theme) => theme.palette.text.primary, p: 1 }}>
-              {mode === "light" ? <AiOutlineMoon size={24} /> : <AiOutlineSun size={24} />}
-            </IconButton>
-            <IconButton color="primary">
-              <NotificationsIcon />
-            </IconButton>
-            <Avatar
-              sx={{
-                bgcolor: (theme) => theme.palette.primary.main,
-                width: 36,
-                height: 36,
-              }}
-            >
-              A
-            </Avatar>
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      <Box display="flex" flexGrow={1}>
-        <Drawer
-          variant="permanent"
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            "& .MuiDrawer-paper": {
-              width: drawerWidth,
-              boxSizing: "border-box",
-              bgcolor: (theme) => theme.palette.background.paper,
-              borderRight: "none",
-              borderRadius: open ? "0 24px 24px 0" : "0 16px 16px 0",
-              boxShadow: (theme) => theme.shadows[1],
-              transition: "width 0.3s",
-              top: "auto",
-            },
-          }}
-        >
+        <Box>
           <Toolbar
             sx={{
               px: 2,
@@ -173,19 +165,25 @@ export default function Dashboard({ toggleTheme, mode }) {
               minHeight: 64,
             }}
           >
+            {!open && (
+              <Avatar src="/icons/logo192.png" sx={{ width: 36, height: 36 }} />
+            )}
             {open && (
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="h6" color={(theme) => theme.palette.primary.main} fontWeight={700}>
-                  𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
+                <Typography
+                  variant="h6"
+                  color={theme.palette.primary.main}
+                  fontWeight={700}
+                >
+                  LongWave Admin
                 </Typography>
               </Box>
             )}
-            <IconButton onClick={() => setOpen(!open)}>{open ? <ChevronLeft /> : <ChevronRight />}</IconButton>
           </Toolbar>
           <Divider
             sx={{
               height: 0.004,
-              backgroundColor: (theme) => theme.palette.text.primary,
+              backgroundColor: theme.palette.text.primary,
               opacity: 0.5,
               my: 2,
             }}
@@ -193,107 +191,315 @@ export default function Dashboard({ toggleTheme, mode }) {
           <List>
             {/* Dashboard */}
             <ListItem disablePadding>
-              <ListItemButton
-                selected={selectedMenu === "dashboard"}
-                onClick={() => setSelectedMenu("dashboard")}
-                sx={{
-                  borderRadius: 1.5,
-                  mx: 1,
-                  my: 0.5,
-                  "&.Mui-selected": {
-                    bgcolor: (theme) => theme.palette.primary.light,
-                    color: (theme) => theme.palette.text.primary,
-                  },
-                  "&:hover": {
-                    bgcolor: (theme) => theme.palette.primary.lighter,
-                  },
-                }}
+              <Tooltip
+                title="Dashboard"
+                placement="right"
+                arrow
+                disableHoverListener={open ? true : false}
               >
-                <ListItemIcon>
-                  <DashboardIcon color={selectedMenu === "dashboard" ? "primary" : "action"} />
-                </ListItemIcon>
-                {open && <ListItemText primary="Dashboard" />}
-              </ListItemButton>
+                <ListItemButton
+                  selected={selectedMenu === "dashboard"}
+                  onClick={() => setSelectedMenu("dashboard")}
+                  sx={{
+                    borderRadius: 2,
+                    mx: 1,
+                    my: 0.5,
+                    transition: "background 0.2s, color 0.2s",
+                    "&.Mui-selected": {
+                      bgcolor: theme.palette.primary.light,
+                      color: theme.palette.text.primary,
+                      boxShadow: theme.shadows[2],
+                    },
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.lighter,
+                      boxShadow: theme.shadows[2],
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <DashboardIcon
+                      color={
+                        selectedMenu === "dashboard" ? "primary" : "action"
+                      }
+                    />
+                  </ListItemIcon>
+                  {open && <ListItemText primary="Dashboard" />}
+                </ListItemButton>
+              </Tooltip>
             </ListItem>
-
             {/* Company */}
             <ListItem disablePadding>
-              <ListItemButton
-                selected={selectedMenu === "company"}
-                onClick={() => setSelectedMenu("company")}
-                sx={{
-                  borderRadius: 1.5,
-                  mx: 1,
-                  my: 0.5,
-                  "&.Mui-selected": {
-                    bgcolor: (theme) => theme.palette.primary.light,
-                    color: (theme) => theme.palette.text.primary,
-                  },
-                  "&:hover": {
-                    bgcolor: (theme) => theme.palette.primary.lighter,
-                  },
-                }}
+              <Tooltip
+                title="Quản lý công ty"
+                placement="right"
+                arrow
+                disableHoverListener={open ? true : false}
               >
-                <ListItemIcon>
-                  <AccountCircle color={selectedMenu === "company" ? "primary" : "action"} />
-                </ListItemIcon>
-                {open && <ListItemText primary="Company" />}
-              </ListItemButton>
+                <ListItemButton
+                  selected={selectedMenu === "company"}
+                  onClick={() => setSelectedMenu("company")}
+                  sx={{
+                    borderRadius: 2,
+                    mx: 1,
+                    my: 0.5,
+                    transition: "background 0.2s, color 0.2s",
+                    "&.Mui-selected": {
+                      bgcolor: theme.palette.primary.light,
+                      color: theme.palette.text.primary,
+                      boxShadow: theme.shadows[2],
+                    },
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.lighter,
+                      boxShadow: theme.shadows[2],
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <AccountCircle
+                      color={selectedMenu === "company" ? "primary" : "action"}
+                    />
+                  </ListItemIcon>
+                  {open && <ListItemText primary="Company" />}
+                </ListItemButton>
+              </Tooltip>
             </ListItem>
-
             {/* Revenue */}
             <ListItem disablePadding>
-              <ListItemButton
-                selected={selectedMenu === "revenue"}
-                onClick={() => setSelectedMenu("revenue")}
-                sx={{
-                  borderRadius: 1.5,
-                  mx: 1,
-                  my: 0.5,
-                  "&.Mui-selected": {
-                    bgcolor: (theme) => theme.palette.primary.light,
-                    color: (theme) => theme.palette.text.primary,
-                  },
-                  "&:hover": {
-                    bgcolor: (theme) => theme.palette.primary.lighter,
-                  },
-                }}
+              <Tooltip
+                title="Doanh thu"
+                placement="right"
+                arrow
+                disableHoverListener={open ? true : false}
               >
-                <ListItemIcon>
-                  <AttachMoney color={selectedMenu === "revenue" ? "primary" : "action"} />
-                </ListItemIcon>
-                {open && <ListItemText primary="Doanh thu" />}
-              </ListItemButton>
+                <ListItemButton
+                  selected={selectedMenu === "revenue"}
+                  onClick={() => setSelectedMenu("revenue")}
+                  sx={{
+                    borderRadius: 2,
+                    mx: 1,
+                    my: 0.5,
+                    transition: "background 0.2s, color 0.2s",
+                    "&.Mui-selected": {
+                      bgcolor: theme.palette.primary.light,
+                      color: theme.palette.text.primary,
+                      boxShadow: theme.shadows[2],
+                    },
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.lighter,
+                      boxShadow: theme.shadows[2],
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <AttachMoney
+                      color={selectedMenu === "revenue" ? "primary" : "action"}
+                    />
+                  </ListItemIcon>
+                  {open && <ListItemText primary="Doanh thu" />}
+                </ListItemButton>
+              </Tooltip>
             </ListItem>
           </List>
-        </Drawer>
-
-        <Box flexGrow={1} p={4} overflow="auto" sx={{ backgroundColor: (theme) => theme.palette.background.default }}>
+        </Box>
+        {/* Logout at bottom */}
+        <Box mb={2}>
+          <Divider sx={{ my: 1 }} />
+          <Tooltip
+            title="Đăng xuất"
+            placement="right"
+            arrow
+            disableHoverListener={open ? true : false}
+          >
+            <ListItemButton sx={{ borderRadius: 2, mx: 1 }}>
+              <ListItemIcon>
+                <Logout color="action" />
+              </ListItemIcon>
+              {open && <ListItemText primary="Đăng xuất" />}
+            </ListItemButton>
+          </Tooltip>
+        </Box>
+      </Drawer>
+      <IconButton
+        color="primary"
+        onClick={() => setOpen(!open)}
+        sx={{
+          position: "fixed",
+          top: 68,
+          left: `${buttonLeft}px`,
+          zIndex: 2002,
+          bgcolor: theme.palette.background.paper,
+          boxShadow: 3,
+          border: "1px solid #e0e0e0",
+          borderRadius: 2,
+          p: 0.1,
+          transition: "left 0.3s",
+        }}
+        className="!shadow-lg hover:!shadow-2xl hover:!bg-gray-400"
+      >
+        {open ? <ChevronLeft /> : <ChevronRight />}
+      </IconButton>
+      {/* Main content + Header */}
+      <Box flexGrow={1} minHeight="100vh" display="flex" flexDirection="column">
+        {/* Header */}
+        <AppBar
+          position="sticky"
+          elevation={0}
+          sx={{
+            bgcolor: theme.palette.background.paper,
+            boxShadow: "0 2px 8px 0 rgba(0,0,0,0.04)",
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            zIndex: 20,
+          }}
+        >
+          <Toolbar
+            sx={{ justifyContent: "space-between", minHeight: 64, px: 3 }}
+          >
+            <Box display="flex" alignItems="center" gap={2}>
+              <Typography
+                variant="h6"
+                fontWeight="800"
+                color={theme.palette.primary.main}
+                letterSpacing={1}
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
+                LongWave Admin
+              </Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Paper
+                component="form"
+                sx={{
+                  p: "2px 8px",
+                  display: "flex",
+                  alignItems: "center",
+                  width: { xs: 120, sm: 200, md: 250 },
+                  borderRadius: 99,
+                  bgcolor: theme.palette.background.default,
+                  boxShadow: "none",
+                }}
+              >
+                <Tooltip title="Tìm kiếm">
+                  <SearchIcon
+                    sx={{ color: theme.palette.primary.main, mr: 1 }}
+                  />
+                </Tooltip>
+                <InputBase
+                  placeholder="Tìm kiếm..."
+                  sx={{
+                    flex: 1,
+                    color: theme.palette.text.primary,
+                    fontSize: 15,
+                  }}
+                  inputProps={{ "aria-label": "search" }}
+                />
+              </Paper>
+              <Tooltip
+                title={
+                  mode === "light"
+                    ? "Chuyển sang dark mode"
+                    : "Chuyển sang light mode"
+                }
+              >
+                <IconButton
+                  onClick={toggleTheme}
+                  sx={{ color: theme.palette.text.primary, p: 1 }}
+                >
+                  {mode === "light" ? (
+                    <AiOutlineMoon size={24} />
+                  ) : (
+                    <AiOutlineSun size={24} />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Thông báo">
+                <IconButton color="primary">
+                  <Badge badgeContent={notificationCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Tài khoản">
+                <IconButton onClick={handleAvatarClick}>
+                  <Avatar
+                    sx={{
+                      bgcolor: theme.palette.primary.main,
+                      width: 36,
+                      height: 36,
+                    }}
+                    src="/icons/avatar.png"
+                  >
+                    A
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+                <MenuItem onClick={handleMenuClose}>Logout</MenuItem>
+              </Menu>
+            </Box>
+          </Toolbar>
+        </AppBar>
+        {/* Main content */}
+        <Box
+          flexGrow={1}
+          p={4}
+          overflow="auto"
+          sx={{ backgroundColor: theme.palette.background.default }}
+        >
           {selectedMenu === "dashboard" && (
             <>
               <Grid container spacing={4} justifyContent="center">
                 <Grid item xs={12} sm={6} md={4} lg={3}>
                   <Card
                     sx={{
-                      borderRadius: (theme) => theme.shape.borderRadius,
-                      boxShadow: (theme) => theme.shadows[1],
+                      borderRadius: theme.shape.borderRadius,
+                      boxShadow: theme.shadows[2],
                       p: 1,
-                      transition: "transform 0.2s",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      minHeight: 170,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       "&:hover": {
                         transform: "translateY(-4px) scale(1.03)",
+                        boxShadow: theme.shadows[4],
                       },
                     }}
                   >
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <CardContent sx={{ width: "100%" }}>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <Box>
-                          <Typography variant="subtitle2" color={(theme) => theme.palette.text.secondary}>
+                          <Typography
+                            variant="subtitle2"
+                            color={theme.palette.text.secondary}
+                          >
                             Khách hàng
                           </Typography>
-                          <Typography variant="h4" color={(theme) => theme.palette.error.main} fontWeight={700}>
-                            {stats ? stats.customer : "..."}
+                          <Typography
+                            variant="h4"
+                            color={theme.palette.error.main}
+                            fontWeight={700}
+                          >
+                            {loadingStats ? (
+                              <CircularProgress size={28} color="inherit" />
+                            ) : stats ? (
+                              stats.customer
+                            ) : (
+                              "..."
+                            )}
                           </Typography>
-                          <Typography variant="body2" color={(theme) => theme.palette.text.secondary}>
+                          <Typography
+                            variant="body2"
+                            color={theme.palette.text.secondary}
+                          >
                             Cập nhật:{" "}
                             {new Date().toLocaleString("vi-VN", {
                               day: "2-digit",
@@ -307,7 +513,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                         </Box>
                         <Avatar
                           sx={{
-                            bgcolor: (theme) => theme.palette.primary.dark,
+                            bgcolor: theme.palette.primary.dark,
                             width: 48,
                             height: 48,
                           }}
@@ -321,25 +527,48 @@ export default function Dashboard({ toggleTheme, mode }) {
                 <Grid item xs={12} sm={6} md={4} lg={3}>
                   <Card
                     sx={{
-                      borderRadius: (theme) => theme.shape.borderRadius,
-                      boxShadow: (theme) => theme.shadows[1],
+                      borderRadius: theme.shape.borderRadius,
+                      boxShadow: theme.shadows[2],
                       p: 1,
-                      transition: "transform 0.2s",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      minHeight: 170,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       "&:hover": {
                         transform: "translateY(-4px) scale(1.03)",
+                        boxShadow: theme.shadows[4],
                       },
                     }}
                   >
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <CardContent sx={{ width: "100%" }}>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <Box>
-                          <Typography variant="subtitle2" color={(theme) => theme.palette.text.secondary}>
+                          <Typography
+                            variant="subtitle2"
+                            color={theme.palette.text.secondary}
+                          >
                             Tất cả công ty
                           </Typography>
-                          <Typography variant="h4" color={(theme) => theme.palette.primary.main} fontWeight={700}>
-                            {companyCount}
+                          <Typography
+                            variant="h4"
+                            color={theme.palette.primary.main}
+                            fontWeight={700}
+                          >
+                            {loadingCompany ? (
+                              <CircularProgress size={28} color="inherit" />
+                            ) : (
+                              companyCount
+                            )}
                           </Typography>
-                          <Typography variant="body2" color={(theme) => theme.palette.text.secondary}>
+                          <Typography
+                            variant="body2"
+                            color={theme.palette.text.secondary}
+                          >
                             Cập nhật:{" "}
                             {new Date().toLocaleString("vi-VN", {
                               day: "2-digit",
@@ -353,7 +582,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                         </Box>
                         <Avatar
                           sx={{
-                            bgcolor: (theme) => theme.palette.error.light,
+                            bgcolor: theme.palette.error.light,
                             width: 48,
                             height: 48,
                           }}
@@ -367,25 +596,49 @@ export default function Dashboard({ toggleTheme, mode }) {
                 <Grid item xs={12} sm={6} md={4} lg={3}>
                   <Card
                     sx={{
-                      borderRadius: (theme) => theme.shape.borderRadius,
-                      boxShadow: (theme) => theme.shadows[1],
+                      borderRadius: theme.shape.borderRadius,
+                      boxShadow: theme.shadows[2],
                       p: 1,
-                      transition: "transform 0.2s",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      minHeight: 170,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       "&:hover": {
                         transform: "translateY(-4px) scale(1.03)",
+                        boxShadow: theme.shadows[4],
                       },
                     }}
                   >
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <CardContent sx={{ width: "100%" }}>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <Box>
-                          <Typography variant="subtitle2" color={(theme) => theme.palette.text.secondary}>
+                          <Typography
+                            variant="subtitle2"
+                            color={theme.palette.text.secondary}
+                          >
                             Thu nhập (Hoa hồng)
                           </Typography>
-                          <Typography variant="h4" color={(theme) => theme.palette.primary.main} fontWeight={700}>
-                            {totalCommission.toLocaleString()} đ
+                          <Typography
+                            variant="h4"
+                            color={theme.palette.primary.main}
+                            fontWeight={700}
+                          >
+                            {loadingRevenue ? (
+                              <CircularProgress size={28} color="inherit" />
+                            ) : (
+                              totalCommission.toLocaleString()
+                            )}{" "}
+                            đ
                           </Typography>
-                          <Typography variant="body2" color={(theme) => theme.palette.text.secondary}>
+                          <Typography
+                            variant="body2"
+                            color={theme.palette.text.secondary}
+                          >
                             Cập nhật:{" "}
                             {new Date().toLocaleString("vi-VN", {
                               day: "2-digit",
@@ -399,7 +652,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                         </Box>
                         <Avatar
                           sx={{
-                            bgcolor: (theme) => theme.palette.primary.dark,
+                            bgcolor: theme.palette.primary.dark,
                             width: 48,
                             height: 48,
                           }}
@@ -414,13 +667,24 @@ export default function Dashboard({ toggleTheme, mode }) {
 
               {/* Chart */}
               <Box
-                mt={15}
+                mt={10}
                 display="flex"
                 justifyContent="center"
-                sx={{ backgroundColor: (theme) => theme.palette.background.paper }}
+                sx={{
+                  backgroundColor: theme.palette.background.paper,
+                  borderRadius: 3,
+                  boxShadow: theme.shadows[1],
+                  p: 3,
+                  my: 4,
+                }}
               >
                 <Box width="100%" maxWidth={1400}>
-                  <Typography variant="h6" fontWeight={600} mb={2} color={(theme) => theme.palette.text.primary}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    mb={2}
+                    color={theme.palette.text.primary}
+                  >
                     Thu nhập và hoa hồng theo tháng
                   </Typography>
                   <Box
@@ -428,30 +692,60 @@ export default function Dashboard({ toggleTheme, mode }) {
                     display="flex"
                     alignItems="center"
                     gap={2}
-                    sx={{ backgroundColor: (theme) => theme.palette.background.paper }}
+                    sx={{ backgroundColor: theme.palette.background.paper }}
                   >
                     <FormControl size="small">
-                      <InputLabel sx={{ color: (theme) => theme.palette.text.primary }}>Năm</InputLabel>
-                      <Select
-                        value={selectedYear}
-                        label="Năm"
-                        onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        sx={{
-                          minWidth: 100,
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: (theme) => theme.shape.borderRadius,
-                          },
-                        }}
-                      >
-                        {yearOptions.map((y) => (
-                          <MenuItem key={y} value={y} sx={{ color: (theme) => theme.palette.text.primary }}>
-                            {y}
-                          </MenuItem>
-                        ))}
-                      </Select>
+                      <InputLabel sx={{ color: theme.palette.text.primary }}>
+                        Năm
+                      </InputLabel>
+                      {yearOptions.length > 0 ? (
+                        <Select
+                          value={
+                            yearOptions.includes(selectedYear)
+                              ? selectedYear
+                              : yearOptions[0]
+                          }
+                          label="Năm"
+                          onChange={(e) =>
+                            setSelectedYear(Number(e.target.value))
+                          }
+                          sx={{
+                            minWidth: 100,
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: theme.shape.borderRadius,
+                            },
+                          }}
+                        >
+                          {yearOptions.map((y) => (
+                            <MenuItem
+                              key={y}
+                              value={y}
+                              sx={{ color: theme.palette.text.primary }}
+                            >
+                              {y}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      ) : (
+                        <Select
+                          value=""
+                          label="Năm"
+                          disabled
+                          sx={{ minWidth: 100 }}
+                        />
+                      )}
                     </FormControl>
                   </Box>
-                  {filteredData.length > 0 && (
+                  {loadingRevenue ? (
+                    <Box
+                      display="flex"
+                      justifyContent="center"
+                      alignItems="center"
+                      minHeight={300}
+                    >
+                      <CircularProgress size={48} />
+                    </Box>
+                  ) : filteredData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <ComposedChart
                         data={filteredData.map((row) => ({
@@ -460,8 +754,14 @@ export default function Dashboard({ toggleTheme, mode }) {
                         }))}
                         margin={{ left: 80, right: 80, top: 20, bottom: 20 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke={(theme) => theme.palette.divider} />
-                        <XAxis dataKey="month" stroke={(theme) => theme.palette.text.primary} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke={theme.palette.divider}
+                        />
+                        <XAxis
+                          dataKey="month"
+                          stroke={theme.palette.text.primary}
+                        />
                         <YAxis
                           yAxisId="left"
                           label={{
@@ -469,9 +769,13 @@ export default function Dashboard({ toggleTheme, mode }) {
                             angle: -90,
                             position: "outsideLeft",
                             dx: -50,
-                            style: { textAnchor: "middle", fontSize: 12, color: (theme) => theme.palette.text.primary },
+                            style: {
+                              textAnchor: "middle",
+                              fontSize: 12,
+                              color: theme.palette.text.primary,
+                            },
                           }}
-                          stroke={(theme) => theme.palette.text.primary}
+                          stroke={theme.palette.text.primary}
                         />
                         <YAxis
                           yAxisId="right"
@@ -481,31 +785,46 @@ export default function Dashboard({ toggleTheme, mode }) {
                             angle: -90,
                             position: "outsideRight",
                             dx: 50,
-                            style: { textAnchor: "middle", fontSize: 12, color: (theme) => theme.palette.text.primary },
+                            style: {
+                              textAnchor: "middle",
+                              fontSize: 12,
+                              color: theme.palette.text.primary,
+                            },
                           }}
-                          stroke={(theme) => theme.palette.text.primary}
+                          stroke={theme.palette.text.primary}
                         />
                         <Tooltip
-                          contentStyle={{ backgroundColor: (theme) => theme.palette.background.paper, borderRadius: 4 }}
-                          itemStyle={{ color: (theme) => theme.palette.text.primary }}
+                          contentStyle={{
+                            backgroundColor: theme.palette.background.paper,
+                            borderRadius: 4,
+                          }}
+                          itemStyle={{ color: theme.palette.text.primary }}
                         />
                         <Bar
                           yAxisId="left"
                           dataKey="earnings"
-                          fill={(theme) => theme.palette.primary.main}
+                          fill={theme.palette.primary.main || "#1976d2"}
                           name="Booking Earnings"
                         />
                         <Line
                           yAxisId="right"
                           type="monotone"
                           dataKey="commission"
-                          stroke={(theme) => theme.palette.purple.main}
+                          stroke={
+                            theme.palette.purple
+                              ? theme.palette.purple.main
+                              : theme.palette.secondary.main || "#9c27b0"
+                          }
                           strokeWidth={3}
                           dot
                           name="Commission (5%)"
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
+                  ) : (
+                    <Typography color="text.secondary" align="center" py={4}>
+                      Không có dữ liệu cho năm này.
+                    </Typography>
                   )}
                 </Box>
               </Box>
@@ -513,7 +832,9 @@ export default function Dashboard({ toggleTheme, mode }) {
           )}
 
           {selectedMenu === "company" && <CompanyManagement />}
-          {selectedMenu === "revenue" && <RevenueSummary data={earningsByMonth} />}
+          {selectedMenu === "revenue" && (
+            <RevenueSummary data={earningsByMonth} />
+          )}
         </Box>
       </Box>
     </Box>

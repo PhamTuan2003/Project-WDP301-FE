@@ -139,7 +139,6 @@ export default function CruiseList() {
               >
                 <CardMedia
                   component="img"
-                  maxHeight="200"
                   image={cruise.image} // Use the first imageUrl
                   alt={cruise.name}
                   sx={{ objectFit: "cover", maxHeight: 220 }}
