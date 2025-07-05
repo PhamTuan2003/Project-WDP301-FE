@@ -52,7 +52,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     error,
     selectedSchedule,
     selectedMaxPeople,
-    maxPeopleOptions,
     selectedYachtServices,
   } = useSelector((state) => state.booking);
   const { showRoomModal, showBookingModal, selectedRoomForModal } = useSelector(
@@ -64,11 +63,14 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   useEffect(() => {
     if (yachtId) {
       dispatch(fetchSchedulesOnly(yachtId));
-      if (selectedSchedule) {
-        dispatch(fetchRoomsOnly(yachtId, selectedSchedule));
-      }
     } else {
       dispatch(clearSelection());
+    }
+  }, [yachtId, dispatch]);
+
+  useEffect(() => {
+    if (yachtId && selectedSchedule) {
+      dispatch(fetchRoomsOnly(yachtId, selectedSchedule));
     }
   }, [yachtId, selectedSchedule, dispatch]);
 
@@ -182,8 +184,10 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         >
           <InputLabel>Chọn lịch trình</InputLabel>
           <Select
-            value={selectedSchedule}
-            onChange={(e) => dispatch(setSelectedSchedule(e.target.value))}
+            value={selectedSchedule ? String(selectedSchedule) : ""}
+            onChange={(e) =>
+              dispatch(setSelectedSchedule(String(e.target.value)))
+            }
             label="Chọn lịch trình"
             disabled={loading || schedules.length === 0}
             sx={{
@@ -192,17 +196,58 @@ function RoomSelector({ yachtId, yachtData = {} }) {
               boxShadow: (theme) => theme.shadows[1],
               color: (theme) => theme.palette.primary.main,
             }}
+            renderValue={(selected) => {
+              console.log("Selected value:", selected);
+              console.log("Schedules:", schedules);
+              const found = schedules.find(
+                (sch) => String(sch._id) === String(selected)
+              );
+              console.log("Found schedule:", found);
+              if (!selected) return "Chọn lịch trình";
+              if (!found) return "Chọn lịch trình";
+              return (
+                found.displayText ||
+                `${found.days || ""} ngày ${found.nights || ""} đêm (từ ${
+                  found.scheduleId?.startDate
+                    ? new Date(found.scheduleId.startDate).toLocaleDateString(
+                        "vi-VN"
+                      )
+                    : ""
+                } đến ${
+                  found.scheduleId?.endDate
+                    ? new Date(found.scheduleId.endDate).toLocaleDateString(
+                        "vi-VN"
+                      )
+                    : ""
+                })`
+              );
+            }}
           >
             {schedules
-              .slice() // Tạo bản sao để không mutate state gốc
+              .slice()
               .sort(
                 (a, b) =>
                   new Date(a.scheduleId.startDate) -
                   new Date(b.scheduleId.startDate)
               )
               .map((schedule) => (
-                <MenuItem key={schedule._id} value={schedule._id}>
-                  {schedule.displayText || "Không xác định"}
+                <MenuItem key={schedule._id} value={String(schedule._id)}>
+                  {schedule.displayText ||
+                    `${schedule.days || ""} ngày ${
+                      schedule.nights || ""
+                    } đêm (từ ${
+                      schedule.scheduleId?.startDate
+                        ? new Date(
+                            schedule.scheduleId.startDate
+                          ).toLocaleDateString("vi-VN")
+                        : ""
+                    } đến ${
+                      schedule.scheduleId?.endDate
+                        ? new Date(
+                            schedule.scheduleId.endDate
+                          ).toLocaleDateString("vi-VN")
+                        : ""
+                    })`}
                 </MenuItem>
               ))}
           </Select>

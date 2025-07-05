@@ -73,7 +73,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...state,
         loading: false,
         rooms: processedRooms,
-        schedules: schedules,
+        schedules: schedules !== undefined ? schedules : state.schedules,
         maxPeopleOptions,
       };
     }

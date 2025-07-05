@@ -30,12 +30,8 @@ import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
 import ContactSection from "./layout/componentsFooter/ContactSection";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
-
-// Layout & Routing
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "./components/routers/ProtectedRoute";
-// import Footer from "./layout/Footer";
-// import Header from "./layout/Header";
 
 // Company
 import Dashboard from "./components/company/Dashboard";
@@ -51,7 +47,9 @@ import Enterprise from "./components/Enterprise/Enterprise";
 import Admin from "./components/Admin/AdminDashboard";
 
 function AppWrapper() {
-  const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
+  const [mode, setMode] = useState(
+    localStorage.getItem("themeMode") || "light"
+  );
   const dispatch = useDispatch();
   const { showTransactionModal, bookingIdFortransaction } = useSelector(
     (state) => state.ui.modals
@@ -94,7 +92,10 @@ function AppWrapper() {
           <Route path="/register" element={<Register />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/ve-chung-toi" element={<AboutUs />} />
-          <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
+          <Route
+            path="/dieu-khoan-va-dieu-kien"
+            element={<TermsAndConditions />}
+          />
           <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
           <Route path="/huong-dan-su-dung" element={<UserGuide />} />
           <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
@@ -124,7 +125,10 @@ function AppWrapper() {
         </Route>
 
         {/* Admin Route */}
-        <Route path="/admin" element={<Admin toggleTheme={toggleTheme} mode={mode} />} />
+        <Route
+          path="/admin"
+          element={<Admin toggleTheme={toggleTheme} mode={mode} />}
+        />
       </Routes>
 
       {/* {!hideHeaderFooter && <Footer />} */}

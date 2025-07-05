@@ -19,8 +19,7 @@ function DetailBoat() {
   const dispatch = useDispatch();
   const { currentYacht, loading, error } = useSelector((state) => state.yacht);
   const { ratingData } = useSelector((state) => state.reviews);
-  const servicesState = useSelector((state) => state.services) || {};
-  const services = servicesState.data || [];
+  const services = useSelector((state) => state.services?.data) || [];
   const totalReviews = useSelector(
     (state) => state.reviews.ratingData?.total || 0
   );
@@ -40,13 +39,12 @@ function DetailBoat() {
   }, [dispatch, id]);
 
   useEffect(() => {
+    const currentRefs = { ...sectionRefs.current };
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const index = Object.keys(sectionRefs.current).indexOf(
-              entry.target.id
-            );
+            const index = Object.keys(currentRefs).indexOf(entry.target.id);
             if (index !== -1) {
               dispatch(setActiveTab(index));
             }
@@ -56,12 +54,12 @@ function DetailBoat() {
       { rootMargin: "-100px 0px 0px 0px", threshold: 0.1 }
     );
 
-    Object.values(sectionRefs.current).forEach((ref) => {
+    Object.values(currentRefs).forEach((ref) => {
       if (ref) observer.observe(ref);
     });
 
     return () => {
-      Object.values(sectionRefs.current).forEach((ref) => {
+      Object.values(currentRefs).forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
@@ -181,20 +179,29 @@ function DetailBoat() {
                 alt="Divider"
                 className="my-6"
               />
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  {services.slice(0, 6).map((service, idx) => (
-                    <div key={service._id} className="flex items-center gap-3">
+              <div className="space-y-1 grid grid-cols-2 ">
+                {services && services.length > 0 ? (
+                  services.slice(0, 6).map((service, idx) => (
+                    <div
+                      key={service._id || idx}
+                      className="flex items-center gap-1"
+                    >
                       <CircleCheckBig size={20} color="#04efef" />
                       <p
-                        className="text-base"
+                        className="text-base pt-3"
                         style={{ fontSize: "18px", color: "text.primary" }}
                       >
-                        {service.serviceId?.serviceName || "Unnamed Service"}
+                        {service.serviceId?.serviceName ||
+                          service.serviceName ||
+                          "Unnamed Service"}
                       </p>
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <p>Chưa có dịch vụ cho du thuyền này.</p>
+                )}
+              </div>
+              <div className="mt-4 pr-5">
                 <div className="flex items-center gap-3">
                   <svg
                     className="w-6 h-6 text-teal-400"

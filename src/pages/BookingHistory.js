@@ -153,7 +153,7 @@ export default function BookingHistory() {
           });
       }
     });
-  }, [filteredBookings]);
+  }, [filteredBookings, bookingImages]);
 
   useEffect(() => {
     setPage(1); // Reset về trang 1 khi filterStatus thay đổi
