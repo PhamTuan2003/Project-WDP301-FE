@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import './ManageYacht.scss'
-import { AiFillHome } from "react-icons/ai";
-import { NavLink, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button, Col, Row } from 'react-bootstrap';
+import { AiFillHome } from "react-icons/ai";
 import { FaCirclePlus } from "react-icons/fa6";
 import ReactPaginate from 'react-paginate';
+import { NavLink, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { deleteYachtImage, getYachtImage } from '../../services/ApiServices';
 import ManageInforYacht from './ManageInforYacht';
@@ -33,8 +32,8 @@ const ManageYacht = () => {
 
     const getAllImagesYacht = async () => {
         let res = await getYachtImage(idYacht);
-        if (res && res.data.data.length > 0) {
-            setListYachtImage(res.data.data);
+        if (res && res.data.length > 0) {
+            setListYachtImage(res.data);
         } else {
             toast.info('Not Found Image Yacht');
         }

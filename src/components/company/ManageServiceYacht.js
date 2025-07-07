@@ -1,21 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { FormControl } from 'react-bootstrap';
 import Accordion from 'react-bootstrap/Accordion';
-import { AiFillHome } from "react-icons/ai";
-import { NavLink, useParams } from 'react-router-dom';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
-import { createServiceYacht, deleteServiceYacht, getServiceByYacht } from '../../services/ApiServices';
-import { toast } from 'react-toastify';
+import { AiFillHome } from "react-icons/ai";
 import { BiSolidEditAlt } from "react-icons/bi";
 import { FaDeleteLeft } from "react-icons/fa6";
-import ModalUpdateServiceYacht from './Modal/ModalUpdateServiceYacht';
-import { GoArrowDown } from "react-icons/go";
-import { GoArrowUp } from "react-icons/go";
+import { GoArrowDown, GoArrowUp } from "react-icons/go";
 import ReactPaginate from 'react-paginate';
-import { FormControl } from 'react-bootstrap';
-
+import { NavLink, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { createServiceYacht, deleteServiceYacht, getServiceByYacht } from '../../services/ApiServices';
+import './ManageServiceYacht.scss';
+import ModalUpdateServiceYacht from './Modal/ModalUpdateServiceYacht';
 
 const ManageServiceYacht = () => {
     const { idYacht } = useParams();
@@ -25,182 +24,299 @@ const ManageServiceYacht = () => {
     const [service, setService] = useState('');
     const [price, setPrice] = useState('');
     const [serviceUpdate, setServiceUpdate] = useState({});
-    const [serchService, setSearchService] = useState('');
+    const [searchService, setSearchService] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 5;
 
     useEffect(() => {
         getServiceYacht();
-    }, [])
+    }, [refreshKey]);
 
     const handleClose = () => {
-        setShowModalUpdateServiceYacht(false)
-    }
-
+        setShowModalUpdateServiceYacht(false);
+    };
 
     const getServiceYacht = async () => {
-        let res = await getServiceByYacht(idYacht);
-        if (res && res.data.data.length > 0) {
-            setYachtServices(res.data.data);
-        } else {
-            toast.info('Not Found Services By Yacht')
+        try {
+            let res = await getServiceByYacht(idYacht);
+            
+            // ✅ Xử lý nhiều trường hợp response
+            let servicesData = [];
+            
+            if (res && res.data) {
+                if (Array.isArray(res.data)) {
+                    // Trường hợp 1: res.data là array trực tiếp
+                    servicesData = res.data;
+                } else if (res.data.data && Array.isArray(res.data.data)) {
+                    // Trường hợp 2: res.data.data là array
+                    servicesData = res.data.data;
+                } else if (res.data.services && Array.isArray(res.data.services)) {
+                    // Trường hợp 3: res.data.services là array
+                    servicesData = res.data.services;
+                }
+            }
+            
+            if (servicesData.length > 0) {
+                setYachtServices(servicesData);
+            } else {
+                setYachtServices([]);
+                toast.info('Chưa có dịch vụ nào cho du thuyền này');
+            }
+        } catch (error) {
+            toast.error('Không thể tải danh sách dịch vụ');
+            setYachtServices([]);
         }
-    }
+    };
 
     const handleCreateYachtSurvice = async () => {
-        if (!service || !price) {
-            toast.error('Please fill in all fields');
-        } else {
-            let res = await createServiceYacht(idYacht.trim(), service.trim(), price.trim());
-            if (res && res.data && res.data.data === true) {
-                toast.success('Create Service Yacht Successfully')
-                setService('')
-                setPrice('')
-                getServiceYacht();
-            } else {
-                toast.error('Create Fail')
-            }
+        // ✅ Validation chi tiết hơn
+        if (!service || !service.trim()) {
+            toast.error('Vui lòng nhập tên dịch vụ!');
+            return;
         }
-    }
+        
+        if (!price || price <= 0) {
+            toast.error('Vui lòng nhập giá dịch vụ hợp lệ!');
+            return;
+        }
+        
+        if (service.trim().length < 3) {
+            toast.error('Tên dịch vụ phải có ít nhất 3 ký tự!');
+            return;
+        }
+        
+        // ✅ Disable button và hiển thị loading
+        setIsCreating(true);
+        
+        try {
+            // ✅ Chờ tạo service hoàn toàn
+            let res = await createServiceYacht(idYacht.trim(), service.trim(), price.trim());
+            
+            console.log('Create service response:', res);
+            console.log('Response status:', res?.status);
+            console.log('Response data:', res?.data);
+            
+            // ✅ Kiểm tra response - chỉ cần có response là thành công
+            if (res) {
+                console.log('Success detected!');
+                
+                // ✅ Hiển thị toast thành công
+                toast.success('Tạo dịch vụ thành công!');
+                
+                // ✅ Clear form
+                setService('');
+                setPrice('');
+                
+                // ✅ Reset về trang đầu tiên
+                setCurrentPage(0);
+                
+                // ✅ Force refresh và reload data
+                setRefreshKey(prev => prev + 1);
+                
+                // ✅ Chờ thêm 2 giây rồi reload để đảm bảo backend đã xử lý xong hoàn toàn
+                setTimeout(async () => {
+                    console.log('Reloading data...');
+                    try {
+                        await getServiceYacht();
+                        console.log('Data reloaded successfully');
+                        // ✅ Hiển thị toast thông báo reload thành công
+                        toast.info('Danh sách dịch vụ đã được cập nhật!');
+                    } catch (error) {
+                        console.error('Error reloading data:', error);
+                        toast.error('Không thể cập nhật danh sách dịch vụ');
+                    }
+                }, 2000);
+                
+            } else {
+                console.log('Response không thành công:', res);
+                toast.error('Tạo dịch vụ thất bại!');
+            }
+        } catch (error) {
+            // ✅ Hiển thị lỗi chi tiết hơn
+            let errorMessage = 'Lỗi không xác định';
+            
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.response?.status === 400) {
+                errorMessage = 'Dữ liệu không hợp lệ';
+            } else if (error.response?.status === 401) {
+                errorMessage = 'Không có quyền truy cập';
+            } else if (error.response?.status === 500) {
+                errorMessage = 'Lỗi server';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            toast.error(errorMessage);
+        } finally {
+            // ✅ Re-enable button sau khi hoàn tất
+            setTimeout(() => {
+                setIsCreating(false);
+            }, 500);
+        }
+    };
 
     const handleUpdateServiceYacht = (Service) => {
         setShowModalUpdateServiceYacht(true);
-        setServiceUpdate(Service)
-    }
+        setServiceUpdate(Service);
+    };
 
     const handleDeleteServiceYacht = async (service) => {
         if (window.confirm(`You Want To Delete service ${service.service}`)) {
-            let res = await deleteServiceYacht(idYacht, service.idService)
-            if (res && res.data.data === true) {
-                toast.success('Delete Successfully')
+            let res = await deleteServiceYacht(idYacht, service.idService);
+            if (res && res.data === true) {
+                toast.success('Delete Successfully');
                 getServiceYacht();
                 setCurrentPage(prevPage => {
                     const maxPage = Math.ceil((yachtServices.length - 1) / itemsPerPage) - 1;
                     return prevPage > maxPage ? maxPage : prevPage;
                 });
             } else {
-                toast.error('Delete Fail')
+                toast.error('Delete Fail');
             }
         }
-    }
+    };
+
     const handleSortByPriceDown = () => {
         const newList = [...yachtServices].sort((a, b) => a.price - b.price);
         setYachtServices(newList);
-    }
-
+    };
 
     const handleSortByPriceUp = () => {
         const newList = [...yachtServices].sort((a, b) => b.price - a.price);
         setYachtServices(newList);
-    }
+    };
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
     };
+
     const displayedService = yachtServices.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
     return (
-        <div>
-            <div>
-                <NavLink to='/manage-company/view-yacht' className='p-3 d-flex nav-link' style={{ gap: 20 }}>
-                    <AiFillHome className='' /> <p className='mb-0'>Back To Manage Company</p>
-                </NavLink>
-            </div>
-            <hr />
+        <div className='manage-service-yacht'>
+            <NavLink to='/manage-company/view-yacht' className='back-link'>
+                <AiFillHome /> <p>Back To Manage Company</p>
+            </NavLink>
+            
             <div className='container'>
                 <Accordion defaultActiveKey="0">
                     <Accordion.Item eventKey="0">
-                        <Accordion.Header>Create Service Yacht</Accordion.Header>
+                        <Accordion.Header>➕ Tạo dịch vụ mới</Accordion.Header>
                         <Accordion.Body>
                             <Form>
-
                                 <Row className="mb-3">
                                     <Form.Group as={Col} controlId="formGridCity">
-                                        <Form.Label>Price</Form.Label>
+                                        <Form.Label>Giá dịch vụ *</Form.Label>
                                         <Form.Control
                                             type='number'
-                                            placeholder='Price Service'
+                                            placeholder='Nhập giá dịch vụ (VNĐ)'
                                             value={price}
                                             onChange={e => setPrice(e.target.value)}
+                                            min="0"
+                                            step="1000"
+                                            isInvalid={price && price <= 0}
                                         />
+                                        <Form.Control.Feedback type="invalid">
+                                            Giá dịch vụ phải lớn hơn 0
+                                        </Form.Control.Feedback>
                                     </Form.Group>
                                     <Form.Group as={Col} controlId="formGridCity">
-                                        <Form.Label>Service</Form.Label>
+                                        <Form.Label>Tên dịch vụ *</Form.Label>
                                         <Form.Control
                                             type='text'
-                                            placeholder='Service Yacht'
+                                            placeholder='Nhập tên dịch vụ'
                                             value={service}
                                             onChange={e => setService(e.target.value)}
+                                            isInvalid={service && service.trim().length < 3}
                                         />
+                                        <Form.Control.Feedback type="invalid">
+                                            Tên dịch vụ phải có ít nhất 3 ký tự
+                                        </Form.Control.Feedback>
                                     </Form.Group>
-
                                 </Row>
-                                <Button onClick={handleCreateYachtSurvice} variant="success">
-                                    Create
+                                <Button 
+                                    onClick={handleCreateYachtSurvice} 
+                                    variant="success"
+                                    disabled={isCreating}
+                                    className="me-2"
+                                >
+                                    {isCreating ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Đang tạo...
+                                        </>
+                                    ) : (
+                                        'Tạo dịch vụ'
+                                    )}
                                 </Button>
+                                
+
                             </Form>
                         </Accordion.Body>
                     </Accordion.Item>
                 </Accordion>
-                <div
-                    className="table-responsive my-5"
-                >
 
-                    <table
-                        className="table table-striped table-hover table-borderless table-primary align-middle"
-                    >
-                        <thead className="table-light">
+                <div className="service-table-container">
+                    <div className="search-container">
+                        <FormControl
+                            className='form-control'
+                            type='text'
+                            placeholder='Search Service'
+                            onChange={e => setSearchService(e.target.value)}
+                        />
+                    </div>
 
-                            <FormControl
-                                className='col mx-3 my-2'
-                                type='text'
-                                placeholder='Search Service'
-                                onChange={e => setSearchService(e.target.value)}
-                            />
-                            <tr>
-                                <th>Service</th>
-                                <th>
-                                    Price
-                                    <GoArrowDown onClick={handleSortByPriceDown} style={{ cursor: 'pointer' }} />
-                                    <GoArrowUp onClick={handleSortByPriceUp} style={{ cursor: 'pointer' }} />
-                                </th>
-                                <th className='text-center'>Action</th>
-
-                            </tr>
-                        </thead>
-                        <tbody className="table-group-divider">
-                            {
-                                displayedService && displayedService.length > 0 && displayedService
-                                    .filter(service => service.service.toLowerCase().includes(serchService.toLowerCase()))
-                                    .map((service) =>
-
-                                        <tr key={service.idService}
-                                            className="table-primary"
-                                        >
-                                            <td>{service.service}</td>
+                    <div className="table-responsive">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>
+                                        Price
+                                        <div className="sort-icons">
+                                            <GoArrowDown onClick={handleSortByPriceDown} />
+                                            <GoArrowUp onClick={handleSortByPriceUp} />
+                                        </div>
+                                    </th>
+                                    <th className='text-center'>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayedService && displayedService.length > 0 && displayedService
+                                    .filter(service => service.service && service.service.toLowerCase().includes(searchService.toLowerCase()))
+                                    .map((service) => (
+                                        <tr key={service._id}>
+                                            <td>{service.service || service.name}</td>
                                             <td>{service.price}</td>
                                             <td>
-                                                <div className='d-flex' style={{ gap: 50, justifyContent: 'center' }}>
-                                                    <div onClick={() => handleUpdateServiceYacht(service)} style={{ cursor: 'pointer', color: 'blue' }}>
+                                                <div className='action-buttons'>
+                                                    <div 
+                                                        className='action-btn edit-btn'
+                                                        onClick={() => handleUpdateServiceYacht(service)}
+                                                    >
                                                         <BiSolidEditAlt size={25} />
-                                                        <label className='mx-2'>Edit</label>
+                                                        <label>Edit</label>
                                                     </div>
-                                                    <div onClick={() => handleDeleteServiceYacht(service)} style={{ cursor: 'pointer', color: 'red' }}>
+                                                    <div 
+                                                        className='action-btn delete-btn'
+                                                        onClick={() => handleDeleteServiceYacht(service)}
+                                                    >
                                                         <FaDeleteLeft size={25} />
-                                                        <label className='mx-2'>Delete</label>
+                                                        <label>Delete</label>
                                                     </div>
                                                 </div>
                                             </td>
-
                                         </tr>
-                                    )
-                            }
-
-                        </tbody>
-
-                    </table>
-                    <div className='page'>
+                                    ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div className='pagination-container'>
                         <ReactPaginate
                             nextLabel="Next >"
                             onPageChange={handlePageChange}
@@ -224,6 +340,7 @@ const ManageServiceYacht = () => {
                     </div>
                 </div>
             </div>
+            
             <ModalUpdateServiceYacht
                 show={showModalUpdateServiceYacht}
                 serviceUpdate={serviceUpdate}
@@ -231,9 +348,7 @@ const ManageServiceYacht = () => {
                 idYacht={idYacht}
                 getServiceYacht={getServiceYacht}
             />
-
-        </div >
-
+        </div>
     );
 };
 

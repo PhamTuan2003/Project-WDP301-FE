@@ -9,7 +9,11 @@ export const getAllLocation = () => {
 }
 
 export const getYachtByIdCompany = (idCompany) => {
-    return axios.get(`/api/customer/yacht/findByCompany/${idCompany}`)
+    return axios.get(`/api/companies/yacht/${idCompany}`)
+}
+
+export const getYachtByIdYacht = (yachtId) => {
+    return axios.get(`/api/companies/findYachtById/${yachtId}`);
 }
 
 export const getYachtType = () => {
@@ -49,11 +53,13 @@ export const getYachtImage = (idYacht) => {
     return axios.get(`/api/companies/yacht/image/${idYacht}`);
 }
 
-export const createServiceYacht = (idYacht, service, price) => {
-    const data = new FormData();
-    data.append('service', service);
-    data.append('price', price);
-    return axios.post(`/api/companies/addServiceForYacht/${idYacht}`, data)
+export const createServiceYacht = (yachtId, serviceName, price) => {
+    const data = {
+        serviceName: serviceName,
+        price: Number(price), // Chuyển thành number
+        yachtId: yachtId
+    };
+    return axios.post(`/api/companies/yacht/add-service`, data);
 }
 
 export const deleteServiceYacht = (idYacht, idService) => {
@@ -61,14 +67,15 @@ export const deleteServiceYacht = (idYacht, idService) => {
 }
 
 export const getServiceByYacht = (yachtId) => {
-    return axios.get(`api/customer/getServiceByYacht/${yachtId}`)
+    return axios.get(`/api/yachts/${yachtId}/services`);
 }
 
-export const createScheduleYacht = (yachtId, startDate, endDate) => {
-    const data = new FormData();
-    data.append('startDate', startDate);
-    data.append('endDate', endDate);
-    return axios.post(`/api/companies/addSchedule/${yachtId}`, data)
+export const createScheduleYacht = (startDate, endDate, yachtId) => {
+    return axios.post('/api/companies/yacht/add-schedule', {
+        startDate,
+        endDate,
+        yachtId,
+    });
 }
 
 export const deleteScheduleYacht = (yachtId, scheduleId) => {
@@ -76,7 +83,7 @@ export const deleteScheduleYacht = (yachtId, scheduleId) => {
 }
 
 export const getScheduleYacht = (yachtId) => {
-    return axios.get(`/api/companies/getScheduleByYacht/${yachtId}`);
+    return axios.get(`/api/companies/yacht/${yachtId}/schedules`);
 }
 
 export const getAllRoomByYacht = (idYacht) => {
@@ -230,8 +237,8 @@ export const getImageByRoom = (roomId) => {
     return axios.get(`/api/companies/roomImage/getAllImageByIdRoom/${roomId}`)
 }
 
-export const createYacht = (idCompany, name, image, launch, hullBody, description, rule, itinerary, idYachtType, idLocation) => {
-    const data = new FormData()
+export const createYacht = (name, image, launch, hullBody, description, rule, itinerary, yachtTypeId, locationId, IdCompanys) => {
+    const data = new FormData();
     data.append('name', name);
     data.append('image', image);
     data.append('launch', launch);
@@ -239,9 +246,10 @@ export const createYacht = (idCompany, name, image, launch, hullBody, descriptio
     data.append('description', description);
     data.append('rule', rule);
     data.append('itinerary', itinerary);
-    data.append('idYachtType', idYachtType);
-    data.append('idLocation', idLocation);
-    return axios.post(`/api/companies/yacht/insertYacht/${idCompany}`, data);
+    data.append('yachtTypeId', yachtTypeId);
+    data.append('locationId', locationId);
+    data.append('IdCompanys', IdCompanys);
+    return axios.post(`/api/companies/yacht/insertYacht`, data);
 }
 
 export const createRoom = (roomName, area, description, roomType, avatar, idYacht) => {

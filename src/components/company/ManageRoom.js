@@ -5,13 +5,13 @@ import { FaCirclePlus } from "react-icons/fa6";
 import { TbMeterSquare } from "react-icons/tb";
 import ReactPaginate from 'react-paginate';
 import { NavLink, useParams } from 'react-router-dom';
-import ModalManageRoomImage from './Modal/ModalManageRoomImage';
-import ModalUpdateRoom from './Modal/ModalUpdateRoom';
-import { getAllRoomByYacht, getAllRoomTypeCompany } from '../../services/ApiServices';
 import { toast } from 'react-toastify';
-import './ManageYacht.scss';
+import { getAllRoomByYacht, getAllRoomTypeCompany } from '../../services/ApiServices';
+import './ManageRoom.scss';
 import ModalCreateRoom from './Modal/ModalCreateRoom';
+import ModalManageRoomImage from './Modal/ModalManageRoomImage';
 import ModalRoomType from './Modal/ModalRoomType';
+import ModalUpdateRoom from './Modal/ModalUpdateRoom';
 
 
 
@@ -98,102 +98,103 @@ const ManageRoom = () => {
 
 
     return (
-        <div className='container'>
+        <div className='manage-room-container'>
+            <div className='container'>
+                <div >
+                    <NavLink to='/manage-company/view-yacht' className='p-3 d-flex nav-link' style={{ gap: 20 }}>
+                        <AiFillHome className='' /> <p className='mb-0'>Back To Manage Company</p>
+                    </NavLink>
+                </div>
+                <hr />
+                <div className='row'>
+                    <Button className='col-2 btn btn-success' onClick={() => setIsShowModalCreateRoom(true)}><FaCirclePlus style={{ marginRight: 8, marginBottom: 5 }} />Add New Room</Button>
 
-            <div >
-                <NavLink to='/manage-company/view-yacht' className='p-3 d-flex nav-link' style={{ gap: 20 }}>
-                    <AiFillHome className='' /> <p className='mb-0'>Back To Manage Company</p>
-                </NavLink>
-            </div>
-            <hr />
-            <div className='row'>
-                <Button className='col-2 btn btn-success' onClick={() => setIsShowModalCreateRoom(true)}><FaCirclePlus style={{ marginRight: 8, marginBottom: 5 }} />Add New Room</Button>
+                    <Button className='col btn btn-warning mx-2' onClick={() => setIsShowModalRoomType(true)}><FaCirclePlus style={{ marginRight: 8, marginBottom: 5 }} />Manage Room Type</Button>
+                    <div className='col-md-4'></div>
+                    <FormControl
+                        className='col-2 mx-2'
+                        style={{ width: 'fit-content' }}
+                        type='text'
+                        placeholder='Enter Room Name'
+                        onChange={e => setSearchNameRoom(e.target.value)}
+                    />
+                </div>
+                {
+                    displayedRoom && displayedRoom.length > 0 && displayedRoom
+                        .map((room) =>
+                            <div key={room.idRoom} className='d-flex my-5 room p-3 row ' style={{ gap: 50 }}>
+                                <img className='col-md-2' width={170} src={room.avatar} alt='' />
+                                <div className=' col-md-4' >
+                                    <div className='room-name'>
+                                        <p className='fw-bold'>{room.name}</p>
+                                    </div>
+                                    <div>{room.area} <TbMeterSquare size={25} className='pb-1' /></div>
 
-                <Button className='col btn btn-warning mx-2' onClick={() => setIsShowModalRoomType(true)}><FaCirclePlus style={{ marginRight: 8, marginBottom: 5 }} />Manage Room Type</Button>
-                <div className='col-md-4'></div>
-                <FormControl
-                    className='col-2 mx-2'
-                    style={{ width: 'fit-content' }}
-                    type='text'
-                    placeholder='Enter Room Name'
-                    onChange={e => setSearchNameRoom(e.target.value)}
-                />
-            </div>
-            {
-                displayedRoom && displayedRoom.length > 0 && displayedRoom
-                    .map((room) =>
-                        <div key={room.idRoom} className='d-flex my-5 room p-3 row ' style={{ gap: 50 }}>
-                            <img className='col-md-2' width={170} src={room.avatar} alt='' />
-                            <div className=' col-md-4' >
-                                <div className='room-name'>
-                                    <p className='fw-bold'>{room.name}</p>
+                                    <div>{room.roomType.price.toLocaleString()} đ/KHÁCH</div>
                                 </div>
-                                <div>{room.area} <TbMeterSquare size={25} className='pb-1' /></div>
 
-                                <div>{room.roomType.price.toLocaleString()} đ/KHÁCH</div>
-                            </div>
-
-                            <div className='col-md-4'>
-                                <div className='ok'>
-                                    <Button onClick={() => handlManageImageRoom(room.idRoom)} className='btn btn-warning mx-3'>Manage Room Image </Button>
-                                    <Button onClick={() => handleUpdateRoom(room)} className='btn btn-primary'>Update</Button>
+                                <div className='col-md-4'>
+                                    <div className='ok'>
+                                        <Button onClick={() => handlManageImageRoom(room.idRoom)} className='btn btn-warning mx-3'>Manage Room Image </Button>
+                                        <Button onClick={() => handleUpdateRoom(room)} className='btn btn-primary'>Update</Button>
+                                    </div>
                                 </div>
+
                             </div>
+                        )
+                }
 
-                        </div>
-                    )
-            }
-
-            <ModalManageRoomImage
-                show={isShowModalRoomImage}
-                setIsShowModalRoomImage={setIsShowModalRoomImage}
-                idRoom={idRoom}
-            />
-
-
-            <ModalUpdateRoom
-                show={isShowModalUpdateRoom}
-                setIsShowModalUpdateRoom={setIsShowModalUpdateRoom}
-                idRoom={idRoom}
-                dataUpdateRoom={dataUpdateRoom}
-                getAllRoom={getAllRoom}
-            />
-            <ModalCreateRoom
-                show={isShowModalCreateRoom}
-                setIsShowModalCreateRoom={setIsShowModalCreateRoom}
-                idYacht={idYacht}
-                getAllRoom={getAllRoom}
-                fetchRoomType={fetchRoomType}
-                listRoomType={listRoomType}
-            />
-            <ModalRoomType
-                show={isShowModalRoomType}
-                setIsShowModalRoomType={setIsShowModalRoomType}
-                idYacht={idYacht}
-                fetchRoomType={fetchRoomType}
-
-            />
-            <div className='page'>
-                <ReactPaginate
-                    nextLabel="Next >"
-                    onPageChange={handlePageChange}
-                    pageRangeDisplayed={3}
-                    marginPagesDisplayed={2}
-                    pageCount={Math.ceil(filteredRoom.length / itemsPerPage)}
-                    previousLabel="< Prev"
-                    pageClassName="page-item"
-                    pageLinkClassName="page-link"
-                    previousClassName="page-item"
-                    previousLinkClassName="page-link"
-                    nextClassName="page-item"
-                    nextLinkClassName="page-link"
-                    breakLabel="..."
-                    breakClassName="page-item"
-                    breakLinkClassName="page-link"
-                    containerClassName="pagination"
-                    activeClassName="active"
-                    renderOnZeroPageCount={null}
+                <ModalManageRoomImage
+                    show={isShowModalRoomImage}
+                    setIsShowModalRoomImage={setIsShowModalRoomImage}
+                    idRoom={idRoom}
                 />
+
+
+                <ModalUpdateRoom
+                    show={isShowModalUpdateRoom}
+                    setIsShowModalUpdateRoom={setIsShowModalUpdateRoom}
+                    idRoom={idRoom}
+                    dataUpdateRoom={dataUpdateRoom}
+                    getAllRoom={getAllRoom}
+                />
+                <ModalCreateRoom
+                    show={isShowModalCreateRoom}
+                    setIsShowModalCreateRoom={setIsShowModalCreateRoom}
+                    idYacht={idYacht}
+                    getAllRoom={getAllRoom}
+                    fetchRoomType={fetchRoomType}
+                    listRoomType={listRoomType}
+                />
+                <ModalRoomType
+                    show={isShowModalRoomType}
+                    setIsShowModalRoomType={setIsShowModalRoomType}
+                    idYacht={idYacht}
+                    fetchRoomType={fetchRoomType}
+
+                />
+                <div className='page'>
+                    <ReactPaginate
+                        nextLabel="Next >"
+                        onPageChange={handlePageChange}
+                        pageRangeDisplayed={3}
+                        marginPagesDisplayed={2}
+                        pageCount={Math.ceil(filteredRoom.length / itemsPerPage)}
+                        previousLabel="< Prev"
+                        pageClassName="page-item"
+                        pageLinkClassName="page-link"
+                        previousClassName="page-item"
+                        previousLinkClassName="page-link"
+                        nextClassName="page-item"
+                        nextLinkClassName="page-link"
+                        breakLabel="..."
+                        breakClassName="page-item"
+                        breakLinkClassName="page-link"
+                        containerClassName="pagination"
+                        activeClassName="active"
+                        renderOnZeroPageCount={null}
+                    />
+                </div>
             </div>
         </div>
     );

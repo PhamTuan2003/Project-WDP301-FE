@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { useEffect, useState } from 'react';
 import { Button } from 'react-bootstrap';
 import Col from 'react-bootstrap/Col';
@@ -6,7 +5,6 @@ import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
 import { FcPlus } from "react-icons/fc";
-import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { createYacht, getYachtType } from '../../../services/ApiServices';
 
@@ -15,7 +13,9 @@ const ModalCreateYacht = (props) => {
     const [image, setImage] = useState("");
     const [previewImage, setPreviewImage] = useState("");
     const [yachtType, setYachtType] = useState([]);
-    const idCompany = useSelector(state => state.account.account.idCompany)
+    // const idCompany = useSelector(state => state.account.account.idCompany)
+    const idCompany = '682ab2c581f0fd7069e74058'
+    const [loading, setLoading] = useState(false);
 
     const initInforYacht = {
         name: '',
@@ -34,15 +34,14 @@ const ModalCreateYacht = (props) => {
     }, [])
 
     useEffect(() => {
-        if (show && !_.isEmpty(location) && !_.isEmpty(yachtType)) {
+        if (show && location && location.length > 0 && yachtType && yachtType.length > 0) {
             setData({
                 ...initInforYacht,
-                location: location ? location[0].idLocation : '',
-                yachtType: yachtType ? yachtType[0].idYachtType : ''
-
-            })
+                location: location[0]._id,
+                yachtType: yachtType[0]._id
+            });
         }
-    }, [show])
+    }, [show, location, yachtType]);
 
     const handleClose = () => {
         setShow(false)
@@ -72,18 +71,37 @@ const ModalCreateYacht = (props) => {
     }
     const handleCreateYacht = async () => {
         if (!data.name || !image || !data.launch || !data.hullBody || !data.description || !data.rule || !data.itinerary || !data.location || !data.yachtType) {
-            toast.error("Please fill in all fields")
+            toast.error("Vui lòng điền đầy đủ thông tin");
         } else {
-            let res = await createYacht(idCompany, data.name.trim(), image, data.launch, data.hullBody.trim(), data.description.trim(), data.rule.trim(), data.itinerary.trim(), data.location, data.yachtType);
-            if (res && res.data.data === true) {
-                toast.success('Create Successfully');
+            setLoading(true);
+            let res = await createYacht(
+                data.name.trim(),
+                image,
+                data.launch,
+                data.hullBody.trim(),
+                data.description.trim(),
+                data.rule.trim(),
+                data.itinerary.trim(),
+                data.yachtType,
+                data.location,
+                idCompany
+            );
+            console.log('RESPONSE:', res);
+            if (res && typeof res === 'object' && (res._id || res.name)) {
+                toast.success('Tạo thuyền thành công');
                 await props.listYacht();
-                handleClose();
+                setTimeout(() => {
+                    setLoading(false);
+                    setData(initInforYacht);
+                    setImage("");
+                    setPreviewImage("");
+                    handleClose();
+                }, 800);
             } else {
-                toast.error("Create Fail")
+                setLoading(false);
+                toast.error("Tạo thuyền thất bại");
             }
         }
-
     }
 
     const getAllType = async () => {
@@ -100,8 +118,18 @@ const ModalCreateYacht = (props) => {
                 backdrop="static"
                 className='modal-add-new-yacht'
                 autoFocus
-
+                style={{ zIndex: 9999 }}
+                dialogClassName="modal-dialog-centered"
             >
+                {/* Loading overlay */}
+                {loading && (
+                    <div className="modal-loading-overlay">
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <div style={{marginTop: 10}}>Đang tạo thuyền, vui lòng đợi...</div>
+                    </div>
+                )}
                 <Modal.Header closeButton>
                     <Modal.Title>Add New Yacht</Modal.Title>
                 </Modal.Header>
@@ -199,31 +227,49 @@ const ModalCreateYacht = (props) => {
                                 value={data.description}
                             />
                         </Row>
-                        <div className='col-mad-12'>
-                            <label style={{ width: 'fit-content' }} className='form-label label-upload' htmlFor='labelUpload'> <FcPlus /> Upload File IMAGE</label>
-                            <input
-                                type='file'
-                                accept='image/*'
-                                hidden id='labelUpload'
-                                name='image'
-                                onChange={(event) => handelUploadImage(event)}
-                            />
-                        </div>
-                        <div className='col-md-12 img-preview'>
-                            {previewImage ?
-                                <img src={previewImage} />
-                                :
-                                <span>Preview Avartar</span>
-                            }
-                        </div>
+                        <Row className="mb-3">
+                            <Col md={12}>
+                                <Form.Label>Upload Image</Form.Label>
+                                <div className='d-flex align-items-center gap-3'>
+                                    <label className='form-label label-upload' htmlFor='labelUpload'>
+                                        <FcPlus /> Upload Image
+                                    </label>
+                                    <input
+                                        type='file'
+                                        accept='image/*'
+                                        hidden 
+                                        id='labelUpload'
+                                        name='image'
+                                        onChange={(event) => handelUploadImage(event)}
+                                    />
+                                    {previewImage && (
+                                        <span className='text-success'>
+                                            ✓ Image selected
+                                        </span>
+                                    )}
+                                </div>
+                            </Col>
+                        </Row>
+                        
+                        <Row className="mb-3">
+                            <Col md={12}>
+                                <div className='img-preview'>
+                                    {previewImage ? (
+                                        <img src={previewImage} alt="Preview" />
+                                    ) : (
+                                        <span>No image selected</span>
+                                    )}
+                                </div>
+                            </Col>
+                        </Row>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>
-                        Close
+                    <Button variant="outline-secondary" onClick={handleClose} disabled={loading}>
+                        Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleCreateYacht}>
-                        Save
+                    <Button variant="success" onClick={handleCreateYacht} disabled={loading}>
+                        {loading ? "Đang tạo..." : "Tạo thuyền"}
                     </Button>
                 </Modal.Footer>
             </Modal>

@@ -20,8 +20,14 @@ import HomePage from "./pages/HomePage";
 import { getTheme } from "./theme/theme";
 // import Company from "./components/company/Company";
 import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Calender from './components/calender/Calender';
 import Dashboard from './components/company/Dashboard';
 import ManageCompany from './components/company/ManageCompany';
+import ManageRoom from './components/company/ManageRoom';
+import ManageSchedule from './components/company/ManageSchedule';
+import ManageServiceYacht from './components/company/ManageServiceYacht';
+import ManageYacht from './components/company/ManageYacht';
 import ProfileCompany from './components/company/Profile';
 import ViewBooking from './components/company/ViewBooking';
 import ViewYacht from './components/company/ViewYacht';
@@ -73,7 +79,13 @@ function App() {
           <Route path="booking" element={<ViewBooking />} />
           <Route path="view-yacht" element={<ViewYacht />} />
           <Route path="profile" element={<ProfileCompany />} />
+          <Route path='schedule' element={<Calender/>}/>
         </Route>
+
+        <Route path='manage-yacht/:idYacht' element={<ManageYacht />} />
+        <Route path='manage-room/:idYacht' element={<ManageRoom />} />
+        <Route path='manage-services-yacht/:idYacht' element={<ManageServiceYacht />} />
+        <Route path='manage-schedule/:idYacht' element={<ManageSchedule />} />
       </Routes>
       <Footer />
 

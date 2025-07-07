@@ -1,21 +1,22 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Form, FormControl } from 'react-bootstrap';
 import Accordion from "react-bootstrap/Accordion";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import { AiFillHome } from "react-icons/ai";
-import { NavLink, useParams } from 'react-router-dom';
-import { Form, FormControl } from 'react-bootstrap';
-import { createScheduleYacht, deleteScheduleYacht, getScheduleYacht } from "../../services/ApiServices";
-import { toast } from "react-toastify";
-import ModalUpdateScheduleYacht from "./Modal/ModalUpdateScheduleYacht";
 import ReactPaginate from 'react-paginate';
+import { NavLink, useParams } from 'react-router-dom';
+import { toast } from "react-toastify";
+import { createScheduleYacht, deleteScheduleYacht, getScheduleYacht } from "../../services/ApiServices";
+import './ManageSchedule.scss';
+import ModalUpdateScheduleYacht from "./Modal/ModalUpdateScheduleYacht";
 
 
 
 const ManageSchedule = () => {
 
-    const yachtId = useParams(); //get yachtId from URL parameters
+    const { idYacht } = useParams();
     const [getShowModalUpdateScheduleYacht, setShowModalUpdateScheduleYacht] = useState(false);
 
     const [getSchedule, setSchedule] = useState([]);
@@ -27,19 +28,21 @@ const ManageSchedule = () => {
     const [pageCount, setPageCount] = useState(0);
     const itemsPerPage = 5;
 
+    const [loading, setLoading] = useState(false);
+
     useEffect(() => {
         fetchScheduleYacht()
-    }, [yachtId, currentPage])
+    }, [idYacht, currentPage])
 
     const handleClose = () => {
         setShowModalUpdateScheduleYacht(false)
     }
 
     const fetchScheduleYacht = async () => {
-        let res = await getScheduleYacht(yachtId.idYacht)
+        let res = await getScheduleYacht(idYacht)
         //check data empty or not
-        if (res && res.data.data) {
-            const sortedSchedule = res.data.data.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        if (res && res.data) {
+            const sortedSchedule = res.data.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
             const totalPages = Math.ceil(sortedSchedule.length / itemsPerPage);
             setPageCount(totalPages);
             setSchedule(sortedSchedule)
@@ -60,16 +63,15 @@ const ManageSchedule = () => {
             return;
         }
 
-        //check start date is before end date 
         if (new Date(getStartDate).getTime() >= new Date(getEndDate).getTime()) {
             toast.error('Start date must be before End date');
             return;
         }
 
-        //call API and wait results
-        let res = await createScheduleYacht(yachtId.idYacht, getStartDate, getEndDate);
-
-        if (res && res.data.data === true) {
+        setLoading(true);
+        let res = await createScheduleYacht(getStartDate, getEndDate, idYacht);
+        setLoading(false);
+        if (res && res.data && res.data.schedule) {
             toast.success("Created new schedule successfully");
             fetchScheduleYacht();
             setStartDate("");
@@ -77,7 +79,6 @@ const ManageSchedule = () => {
         } else {
             toast.error("Create new schedule failure");
         }
-
     }
 
     const handleUpdateScheduleYacht = async (schedule) => {
@@ -87,14 +88,14 @@ const ManageSchedule = () => {
 
     const handleDeleteScheduleYacht = async (schedule) => {
         if (window.confirm(`Are you sure you want to delete this schedule?`)) {
-            let res = await deleteScheduleYacht(yachtId.idYacht, schedule.idSchedule)
+            let res = await deleteScheduleYacht(idYacht.idYacht, schedule.idSchedule)
 
-            if (res && res.data.data === "00") {
+            if (res && res.data === "00") {
                 toast.success("Deleted schedule successfully");
                 fetchScheduleYacht();
-            } else if (res && res.data && res.data.data === "22") {
+            } else if (res && res.data === "22") {
                 toast.error("The schedule already exists in 1 booking order");
-            } else if (res && res.data && res.data.data === "11") {
+            } else if (res && res.data === "11") {
                 toast.error("Delete schedule failure");
             }
         }
@@ -124,7 +125,7 @@ const ManageSchedule = () => {
     }
 
     return (
-        <div>
+        <div className="manage-schedule-container">
             <div>
                 <NavLink to='/manage-company/view-yacht' className='p-3 d-flex nav-link' style={{ gap: 20 }}>
                     <AiFillHome className='' /> <p className='mb-0'>Back To Manage Company</p>
@@ -144,6 +145,7 @@ const ManageSchedule = () => {
                                             type="datetime-local"
                                             value={getStartDate}
                                             onChange={e => setStartDate(e.target.value)}
+                                            disabled={loading}
                                         />
                                     </Form.Group>
 
@@ -153,16 +155,26 @@ const ManageSchedule = () => {
                                             type="datetime-local"
                                             value={getEndDate}
                                             onChange={e => setEndDate(e.target.value)}
+                                            disabled={loading}
                                         />
                                     </Form.Group>
                                 </Row>
-                                <div className="d-flex" style={{ justifyContent: 'center' }}>
+                                <div className="d-flex flex-column align-items-center" style={{ justifyContent: 'center' }}>
                                     <Button
                                         onClick={handleCreateYachtSchedule}
                                         variant="success"
+                                        disabled={loading}
                                     >
-                                        Create
+                                        {loading ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                Đang tạo...
+                                            </>
+                                        ) : (
+                                            'Create'
+                                        )}
                                     </Button>
+                                    {loading && <div style={{marginTop: 8, color: '#1cb5e0'}}>Đang tạo lịch, vui lòng đợi...</div>}
                                 </div>
                             </Form>
                         </Accordion.Body>
@@ -182,15 +194,15 @@ const ManageSchedule = () => {
 
                             {
                                 slicedSchedule && slicedSchedule.length > 0 && slicedSchedule.map((schedule) =>
-                                    <tr key={schedule.idSchedule} className={isPastDate(schedule.endDate) ? 'table-danger' : ''}>
-                                        <td>{formatDateTime(schedule.startDate)}</td>
-                                        <td>{formatDateTime(schedule.endDate)}</td>
+                                    <tr key={schedule.scheduleId._id} className={isPastDate(schedule.scheduleId.endDate) ? 'table-danger' : ''}>
+                                        <td>{formatDateTime(schedule.scheduleId.startDate)}</td>
+                                        <td>{formatDateTime(schedule.scheduleId.endDate)}</td>
                                         <td className="d-flex" style={{ gap: 50, justifyContent: 'center' }}>
                                             <Button
                                                 variant="primary"
                                                 className="mx-2"
                                                 onClick={() => handleUpdateScheduleYacht(schedule)}
-                                                disabled={isPastDate(schedule.endDate)}
+                                                disabled={isPastDate(schedule.scheduleId.endDate)}
                                             >
                                                 Edit
                                             </Button>
@@ -198,7 +210,7 @@ const ManageSchedule = () => {
                                                 variant="danger"
                                                 className="mx-2"
                                                 onClick={() => handleDeleteScheduleYacht(schedule)}
-                                                disabled={isPastDate(schedule.endDate)}
+                                                disabled={isPastDate(schedule.scheduleId.endDate)}
                                             >
                                                 Delete
                                             </Button>
@@ -215,7 +227,7 @@ const ManageSchedule = () => {
                 show={getShowModalUpdateScheduleYacht}
                 scheduleUpdate={getScheduleUpdate}
                 handleClose={handleClose}
-                yachtId={yachtId}
+                yachtId={idYacht}
                 getScheduleYacht={fetchScheduleYacht}
             />
             <div className='page'>
