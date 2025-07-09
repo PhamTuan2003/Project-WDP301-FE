@@ -39,6 +39,7 @@ import {
   setActivePaymentTab,
 } from "../../../redux/actions";
 import Swal from "sweetalert2";
+import { getScheduleById } from "../../../utils/scheduleHelpers";
 
 if (typeof window !== "undefined") {
   const style = document.createElement("style");
@@ -64,6 +65,20 @@ const TransactionModal = ({ onBack }) => {
     isPolling,
   } = useSelector((state) => state.payment);
   const { confirmationData } = useSelector((state) => state.ui.modals);
+  const schedules = useSelector((state) => state.booking.schedules);
+  const booking = currentBookingDetail && currentBookingDetail.booking;
+  const yachtId = booking?.yacht?._id || booking?.yacht;
+  const schedulesForYacht = yachtId ? schedules[yachtId] || [] : [];
+  const scheduleObj =
+    booking &&
+    booking.schedule &&
+    typeof booking.schedule === "object" &&
+    booking.schedule.displayText
+      ? booking.schedule
+      : getScheduleById(
+          schedulesForYacht,
+          booking?.schedule?._id || booking?.schedule
+        );
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState("bank_transfer");
@@ -328,7 +343,8 @@ const TransactionModal = ({ onBack }) => {
     }
   };
 
-  if (!showTransactionModal) return null;
+  // Nếu booking chưa có (null/undefined), không render modal hoặc render loading
+  if (!booking) return null;
 
   // Error State
   if (bookingError) {
@@ -417,7 +433,6 @@ const TransactionModal = ({ onBack }) => {
     );
   }
 
-  const booking = currentBookingDetail.booking;
   const totalAmount =
     booking.paymentBreakdown?.totalAmount || booking.amount || 0;
   const depositAmountValue = booking.paymentBreakdown?.depositAmount || 0;
@@ -661,6 +676,23 @@ const TransactionModal = ({ onBack }) => {
             </ul>
           </div>
         )}
+        <div className="flex items-center justify-between py-2 border-b border-blue-100">
+          <span className="text-gray-600 flex items-center">
+            <Calendar className="w-4 h-4 mr-2" />
+            Lịch trình
+          </span>
+          <span className="font-semibold text-gray-900">
+            {scheduleObj?.displayText ||
+              (scheduleObj?.scheduleId?.startDate &&
+              scheduleObj?.scheduleId?.endDate
+                ? `${new Date(
+                    scheduleObj.scheduleId.startDate
+                  ).toLocaleDateString("vi-VN")} - ${new Date(
+                    scheduleObj.scheduleId.endDate
+                  ).toLocaleDateString("vi-VN")}`
+                : "-")}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -1511,6 +1543,23 @@ const TransactionModal = ({ onBack }) => {
                       : booking.createdAt
                       ? new Date(booking.createdAt).toLocaleDateString("vi-VN")
                       : "-"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Lịch trình
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {scheduleObj?.displayText ||
+                      (scheduleObj?.scheduleId?.startDate &&
+                      scheduleObj?.scheduleId?.endDate
+                        ? `${new Date(
+                            scheduleObj.scheduleId.startDate
+                          ).toLocaleDateString("vi-VN")} - ${new Date(
+                            scheduleObj.scheduleId.endDate
+                          ).toLocaleDateString("vi-VN")}`
+                        : "-")}
                   </span>
                 </div>
               </div>

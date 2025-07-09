@@ -2,7 +2,7 @@
 const bookingInitialState = {
   bookingId: null,
   rooms: [],
-  schedules: [],
+  schedules: {},
   selectedSchedule: "",
   selectedMaxPeople: "all",
   maxPeopleOptions: [],
@@ -48,12 +48,12 @@ const bookingReducer = (state = bookingInitialState, action) => {
     case "FETCH_ROOMS_REQUEST":
       return { ...state, loading: true, error: null };
     case "FETCH_ROOMS_SUCCESS": {
-      const { rooms, schedules } = action.payload;
+      const { rooms, schedules, yachtId } = action.payload;
       const processedRooms = rooms.map((room) => ({
         ...room,
         id: room.id || room._id,
         quantity: 0,
-        beds:
+        max_people:
           room.max_people ||
           (room.roomTypeId && room.roomTypeId.max_people) ||
           1,
@@ -65,15 +65,19 @@ const bookingReducer = (state = bookingInitialState, action) => {
       const maxPeopleOptions = [
         ...new Set(
           processedRooms
-            .map((r) => r.beds)
+            .map((r) => r.max_people)
             .filter((v) => typeof v === "number" && !isNaN(v) && v > 0)
         ),
       ].sort((a, b) => a - b);
+      let newSchedules = { ...state.schedules };
+      if (yachtId && Array.isArray(schedules)) {
+        newSchedules[yachtId] = schedules;
+      }
       return {
         ...state,
         loading: false,
         rooms: processedRooms,
-        schedules: schedules !== undefined ? schedules : state.schedules,
+        schedules: newSchedules,
         maxPeopleOptions,
       };
     }

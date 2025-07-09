@@ -33,7 +33,6 @@ import BlockIcon from "@mui/icons-material/Block";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import axios from "axios";
 import Pagination from "@mui/material/Pagination";
-import { useNavigate } from "react-router-dom";
 import { openTransactionModal } from "../redux/actions";
 import TransactionModal from "../components/DetailBoat/Booking/TransactionModal";
 import InvoiceModal from "../components/DetailBoat/Booking/InvoiceModal";
@@ -42,9 +41,11 @@ import { fetchInvoiceByBookingId } from "../redux/asyncActions/invoiceAsyncActio
 import {
   customerCancelBooking,
   deleteBookingById,
+  fetchSchedulesOnly,
 } from "../redux/asyncActions/bookingAsyncActions";
 import Swal from "sweetalert2";
 import { ListCollapse, Receipt, Trash } from "lucide-react";
+import { getScheduleById } from "../utils/scheduleHelpers";
 
 const statusMap = {
   consultation_requested: {
@@ -101,6 +102,7 @@ export default function BookingHistory() {
   const bookings = useSelector((state) => state.booking.customerBookings || []);
   const loading = useSelector((state) => state.booking.customerBookingsLoading);
   const error = useSelector((state) => state.booking.customerBookingsError);
+  const schedules = useSelector((state) => state.booking.schedules);
 
   const [filterStatus, setFilterStatus] = useState("all");
   const [openDetail, setOpenDetail] = useState(false);
@@ -120,6 +122,17 @@ export default function BookingHistory() {
   useEffect(() => {
     dispatch(fetchCustomerBookings());
   }, [dispatch]);
+
+  // Fetch schedules cho tất cả yachtId có trong bookings
+  useEffect(() => {
+    // Lấy tất cả yachtId duy nhất từ bookings
+    const yachtIds = Array.from(
+      new Set(bookings.map((b) => b.yacht?._id || b.yacht).filter(Boolean))
+    );
+    yachtIds.forEach((yachtId) => {
+      dispatch(fetchSchedulesOnly(yachtId));
+    });
+  }, [bookings, dispatch]);
 
   const filteredBookings =
     filterStatus === "all"
@@ -278,6 +291,13 @@ export default function BookingHistory() {
                       bookingImages[booking._id] || "/images/yacht-8.jpg";
                     const isRoomsExpanded = expandedRooms[booking._id];
                     const isServicesExpanded = expandedServices[booking._id];
+                    // Lấy object lịch trình từ scheduleId
+                    const yachtKey = booking.yacht?._id || booking.yacht;
+                    const schedulesForYacht = schedules[yachtKey] || [];
+                    const scheduleObj = getScheduleById(
+                      schedulesForYacht,
+                      booking.schedule?._id || booking.scheduleId
+                    );
                     return (
                       <Grid item xs={12} md={6} lg={4} key={booking._id}>
                         <Fade in timeout={500}>
@@ -347,7 +367,18 @@ export default function BookingHistory() {
                                   variant="body2"
                                   color="text.secondary"
                                 >
-                                  Check-in: {formatDate(booking.checkInDate)}
+                                  Lịch trình:{" "}
+                                  {scheduleObj?.displayText ||
+                                    (scheduleObj?.startDate &&
+                                    scheduleObj?.endDate
+                                      ? `${new Date(
+                                          scheduleObj.startDate
+                                        ).toLocaleDateString(
+                                          "vi-VN"
+                                        )} - ${new Date(
+                                          scheduleObj.endDate
+                                        ).toLocaleDateString("vi-VN")}`
+                                      : "-")}
                                 </Typography>
                               </Box>
                             </Stack>
@@ -858,7 +889,32 @@ export default function BookingHistory() {
                       <b>Ngày đặt:</b> {formatDate(selectedBooking.createdAt)}
                     </Typography>
                   </Grid>
-
+                  <Grid item xs={12} sm={6}>
+                    {/* Lấy object lịch trình từ scheduleId cho modal chi tiết */}
+                    {(() => {
+                      const yachtKey =
+                        selectedBooking.yacht?._id || selectedBooking.yacht;
+                      const schedulesForYacht = schedules[yachtKey] || [];
+                      const scheduleObj = getScheduleById(
+                        schedulesForYacht,
+                        selectedBooking.schedule?._id ||
+                          selectedBooking.scheduleId
+                      );
+                      return (
+                        <Typography>
+                          <b>Lịch trình:</b>{" "}
+                          {scheduleObj?.displayText ||
+                            (scheduleObj?.startDate && scheduleObj?.endDate
+                              ? `${new Date(
+                                  scheduleObj.startDate
+                                ).toLocaleDateString("vi-VN")} - ${new Date(
+                                  scheduleObj.endDate
+                                ).toLocaleDateString("vi-VN")}`
+                              : "-")}
+                        </Typography>
+                      );
+                    })()}
+                  </Grid>
                   <Grid item xs={12} sm={6}>
                     <Typography>
                       <b>Yêu cầu thêm:</b>{" "}

@@ -23,7 +23,7 @@ function BoatInfo() {
         </h3>
         <div className="space-y-2">
           <div className="grid grid-cols-2 items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <FaAnchor className="light:text-gray-600" size={22} />
               <p className="font-normal light:text-gray-600 text-base">
                 Hạ thủy
@@ -34,14 +34,14 @@ function BoatInfo() {
             </p>
           </div>
           <div className="grid grid-cols-2 items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <FaBed className="light:text-gray-600" size={22} />
               <p className="font-normal light:text-gray-600 text-base">Cabin</p>
             </div>
             <p className="light:text-gray-900 font-medium text-base">20</p>
           </div>
           <div className="grid grid-cols-2 items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <FaShip className="light:text-gray-600" size={22} />
               <p className="font-normal light:text-gray-600 text-base">
                 Thân vỏ
@@ -52,7 +52,7 @@ function BoatInfo() {
             </p>
           </div>
           <div className="grid grid-cols-2 items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <FaMapMarkerAlt className="light:text-gray-600" size={22} />
               <p className="font-normal light:text-gray-600 text-base">
                 Hành trình
@@ -63,7 +63,7 @@ function BoatInfo() {
             </p>
           </div>
           <div className="grid grid-cols-2 items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <FaBuilding className="light:text-gray-600" size={22} />
               <p className="font-normal light:text-gray-600 text-base">
                 Điều hành

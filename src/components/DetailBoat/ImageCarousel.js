@@ -233,6 +233,7 @@ function ImageCarousel({ yachtId }) {
                 top: 0,
                 left: 0,
                 width: "100%",
+
                 transition: "opacity 0.5s ease-in-out",
                 opacity: index === rightIndex ? 1 : 0,
                 zIndex: index === rightIndex ? 10 : 0,
@@ -259,6 +260,7 @@ function ImageCarousel({ yachtId }) {
               sx={{
                 position: "absolute",
                 zIndex: 20,
+
                 bgcolor: "background.paper",
                 "&:hover": { bgcolor: "action.hover" },
                 boxShadow: (theme) => theme.shadows[1],

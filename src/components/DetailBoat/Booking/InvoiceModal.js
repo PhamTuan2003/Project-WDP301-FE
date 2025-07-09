@@ -207,13 +207,14 @@ const InvoiceModal = () => {
         <Grid container spacing={2} mb={3}>
           <Grid item xs={12} lg={6}>
             <Box
-              bgcolor="#f0f9ff"
-              border={1}
-              borderColor="#67e8f9"
-              borderRadius={2}
+              bgcolor="#fff"
+              border={2}
+              borderColor="#2563eb"
+              borderRadius={3}
               px={3}
               py={2}
-              boxShadow={1}
+              boxShadow={2}
+              sx={{ minHeight: 180 }}
             >
               <Stack
                 direction="row"
@@ -226,22 +227,27 @@ const InvoiceModal = () => {
               >
                 <Building2 className="w-6 h-5" color="#2563eb" />
                 <Typography
-                  fontWeight={700}
-                  color="text.primary"
+                  fontWeight={800}
+                  color="#2563eb"
                   textTransform="uppercase"
-                  fontSize={16}
+                  fontSize={18}
+                  letterSpacing={1}
                 >
-                  Thông tin người bán
+                  THÔNG TIN NGƯỜI BÁN
                 </Typography>
               </Stack>
               <Stack spacing={1}>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Building2 className="w-4 h-4" color="#94a3b8" />
                   <Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color="#2563eb"
+                      fontWeight={700}
+                    >
                       Tên công ty:
                     </Typography>
-                    <Typography fontWeight={600}>
+                    <Typography fontWeight={700} color="#222">
                       CÔNG TY DU THUYỀN LONGWARE
                     </Typography>
                   </Box>
@@ -311,13 +317,14 @@ const InvoiceModal = () => {
           </Grid>
           <Grid item xs={12} lg={6}>
             <Box
-              bgcolor="#f3f4f6"
-              border={1}
-              borderColor="#67e8f9"
-              borderRadius={2}
+              bgcolor="#fff"
+              border={2}
+              borderColor="#22c55e"
+              borderRadius={3}
               px={3}
               py={2}
-              boxShadow={1}
+              boxShadow={2}
+              sx={{ minHeight: 180 }}
             >
               <Stack
                 direction="row"
@@ -329,19 +336,28 @@ const InvoiceModal = () => {
                 borderColor="#f3f4f6"
               >
                 <User className="w-5 h-5" color="#22c55e" />
-                <Typography fontWeight={700} color="text.primary" fontSize={16}>
-                  Thông tin người mua
+                <Typography
+                  fontWeight={800}
+                  color="#22c55e"
+                  fontSize={18}
+                  letterSpacing={1}
+                >
+                  THÔNG TIN NGƯỜI MUA
                 </Typography>
               </Stack>
               <Stack spacing={1}>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <User className="w-4 h-4" color="#94a3b8" />
                   <Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color="#22c55e"
+                      fontWeight={700}
+                    >
                       Họ và tên:
                     </Typography>
-                    <Typography fontWeight={600}>
-                      {invoiceData.customerInfo.fullName}
+                    <Typography fontWeight={700} color="#222">
+                      {invoiceData.customerInfo?.fullName || "-"}
                     </Typography>
                   </Box>
                 </Stack>
@@ -466,7 +482,7 @@ const InvoiceModal = () => {
                       <Typography variant="caption" color="#0e7490">
                         Lịch trình
                       </Typography>
-                      <Typography>
+                      <Typography fontWeight={600}>
                         {invoiceData.yachtInfo.scheduleInfo}
                       </Typography>
                     </Box>

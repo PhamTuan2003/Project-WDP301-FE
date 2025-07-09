@@ -126,7 +126,7 @@ function DetailBoat() {
             >
               {currentYacht.name}
             </h1>
-            <div className="flex items-center gap-2 my-5">
+            <div className="flex items-center gap-2 my-2">
               <span className="bg-yellow-200 text-sm font-medium text-orange-800 rounded-2xl px-3 py-1 flex items-center">
                 <svg
                   className="w-3 h-3 mr-1 fill-yellow-500"

@@ -18,9 +18,9 @@ export const fetchSchedulesFailure = (error) => ({
   type: "FETCH_SCHEDULES_FAILURE",
   payload: error,
 });
-export const fetchRoomsSuccess = (rooms, schedules) => ({
+export const fetchRoomsSuccess = (rooms, schedules, yachtId) => ({
   type: "FETCH_ROOMS_SUCCESS",
-  payload: { rooms, schedules },
+  payload: { rooms, schedules, yachtId },
 });
 export const fetchRoomsFailure = (error) => ({
   type: "FETCH_ROOMS_FAILURE",

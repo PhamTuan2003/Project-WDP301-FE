@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Minus, Plus, X } from "lucide-react";
+import { BedDouble, Building, Minus, Plus, Type, User, X } from "lucide-react";
 import {
   Box,
   Select,
@@ -40,6 +40,7 @@ import ConfirmationModal from "./Booking/ConfirmationModal";
 import TransactionModal from "./Booking/TransactionModal";
 import InvoiceModal from "./Booking/InvoiceModal";
 import RoomServicesModal from "./RoomServicesModal";
+import { getScheduleById } from "../../utils/scheduleHelpers";
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -53,6 +54,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     selectedSchedule,
     selectedMaxPeople,
     selectedYachtServices,
+    maxPeopleOptions,
   } = useSelector((state) => state.booking);
   const { showRoomModal, showBookingModal, selectedRoomForModal } = useSelector(
     (state) => state.ui.modals
@@ -99,7 +101,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   const filteredRooms =
     selectedMaxPeople === "all"
       ? rooms
-      : rooms.filter((room) => room.beds === parseInt(selectedMaxPeople));
+      : rooms.filter((room) => room.max_people === parseInt(selectedMaxPeople));
 
   // Get selected rooms for BookingRoomModal
   const getSelectedRooms = () => {
@@ -176,82 +178,88 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         </Box>
 
         {/* Danh sách chọn lịch trình (hiển thị chi tiết ngày tháng nào) */}
-        <FormControl
-          fullWidth
-          variant="outlined"
-          margin="normal"
-          sx={{ mb: 3 }}
-        >
-          <InputLabel>Chọn lịch trình</InputLabel>
-          <Select
-            value={selectedSchedule ? String(selectedSchedule) : ""}
-            onChange={(e) =>
-              dispatch(setSelectedSchedule(String(e.target.value)))
-            }
-            label="Chọn lịch trình"
-            disabled={loading || schedules.length === 0}
-            sx={{
-              bgcolor: (theme) => theme.palette.background.paper,
-              borderColor: (theme) => theme.palette.divider,
-              boxShadow: (theme) => theme.shadows[1],
-              color: (theme) => theme.palette.primary.main,
-            }}
-            renderValue={(selected) => {
-              console.log("Selected value:", selected);
-              console.log("Schedules:", schedules);
-              const found = schedules.find(
-                (sch) => String(sch._id) === String(selected)
-              );
-              console.log("Found schedule:", found);
-              if (!selected) return "Chọn lịch trình";
-              if (!found) return "Chọn lịch trình";
-              return (
-                found.displayText ||
-                `${found.days || ""} ngày ${found.nights || ""} đêm (từ ${
-                  found.scheduleId?.startDate
-                    ? new Date(found.scheduleId.startDate).toLocaleDateString(
-                        "vi-VN"
-                      )
-                    : ""
-                } đến ${
-                  found.scheduleId?.endDate
-                    ? new Date(found.scheduleId.endDate).toLocaleDateString(
-                        "vi-VN"
-                      )
-                    : ""
-                })`
-              );
-            }}
+        <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+          <FormControl
+            fullWidth
+            variant="outlined"
+            sx={{ minWidth: 220 }}
+            margin="normal"
           >
-            {schedules
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(a.scheduleId.startDate) -
-                  new Date(b.scheduleId.startDate)
-              )
-              .map((schedule) => (
-                <MenuItem key={schedule._id} value={String(schedule._id)}>
-                  {schedule.displayText ||
-                    `${schedule.days || ""} ngày ${
-                      schedule.nights || ""
-                    } đêm (từ ${
-                      schedule.scheduleId?.startDate
-                        ? new Date(
-                            schedule.scheduleId.startDate
-                          ).toLocaleDateString("vi-VN")
-                        : ""
-                    } đến ${
-                      schedule.scheduleId?.endDate
-                        ? new Date(
-                            schedule.scheduleId.endDate
-                          ).toLocaleDateString("vi-VN")
-                        : ""
-                    })`}
+            <InputLabel>Chọn lịch trình</InputLabel>
+            <Select
+              value={selectedSchedule}
+              onChange={(e) => dispatch(setSelectedSchedule(e.target.value))}
+              label="Chọn lịch trình"
+              disabled={
+                loading ||
+                !(schedules[yachtId] && schedules[yachtId].length > 0)
+              }
+              sx={{
+                bgcolor: (theme) => theme.palette.background.paper,
+                borderColor: (theme) => theme.palette.divider,
+                boxShadow: (theme) => theme.shadows[1],
+                color: (theme) => theme.palette.primary.main,
+              }}
+            >
+              {(schedules[yachtId] || [])
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(a.scheduleId.startDate) -
+                    new Date(b.scheduleId.startDate)
+                )
+                .map((schedule) => (
+                  <MenuItem key={schedule._id} value={String(schedule._id)}>
+                    {schedule.displayText ||
+                      `${schedule.days || ""} ngày ${
+                        schedule.nights || ""
+                      } đêm (từ ${
+                        schedule.scheduleId?.startDate
+                          ? new Date(
+                              schedule.scheduleId.startDate
+                            ).toLocaleDateString("vi-VN")
+                          : ""
+                      } đến ${
+                        schedule.scheduleId?.endDate
+                          ? new Date(
+                              schedule.scheduleId.endDate
+                            ).toLocaleDateString("vi-VN")
+                          : ""
+                      })`}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+          {/* Filter số lượng người */}
+          <FormControl
+            fullWidth
+            variant="outlined"
+            sx={{ minWidth: 180 }}
+            margin="normal"
+          >
+            <InputLabel>Chọn số người</InputLabel>
+            <Select
+              value={selectedMaxPeople}
+              onChange={(e) => dispatch(setSelectedMaxPeople(e.target.value))}
+              label="Chọn số người"
+              disabled={loading || maxPeopleOptions.length === 0}
+              sx={{
+                bgcolor: (theme) => theme.palette.background.paper,
+                borderColor: (theme) => theme.palette.divider,
+                boxShadow: (theme) => theme.shadows[1],
+                color: (theme) => theme.palette.primary.main,
+              }}
+            >
+              <MenuItem value="all">Tất cả</MenuItem>
+              {maxPeopleOptions.map((num) => (
+                <MenuItem key={num} value={String(num)}>
+                  {num} người
                 </MenuItem>
               ))}
-          </Select>
-        </FormControl>
+            </Select>
+          </FormControl>
+        </Box>
 
         {loading && (
           <Typography sx={{ color: "text.primary", p: 2 }}>
@@ -338,8 +346,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                           <Box
                             sx={{
                               display: "flex",
-                              gap: 3,
-                              color: "text.secondary",
+                              gap: 1.5,
+                              fontWeight: "medium",
                               fontSize: "0.875rem",
                             }}
                           >
@@ -350,18 +358,45 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 gap: 0.5,
                               }}
                             >
-                              <Box
-                                component="svg"
-                                sx={{
-                                  width: 16,
-                                  height: 16,
-                                  fill: "currentColor",
-                                }}
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M10,2H14A2,2 0 0,1 16,4V6H20A2,2 0 0,1 22,8V19A2,2 0 0,1 20,21H4C2.89,21 2,20.1 2,19V8C2,6.89 2.89,6 4,6H8V4C8,2.89 8.89,2 10,2M14,6V4H10V6H14Z" />
-                              </Box>
-                              {room.area} m{"\u00B2"} {/* diện tích */}
+                              <BedDouble size={16} className="text-teal-600" />
+                              <p className="mb-0 ">{room.area} m²</p>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <User size={16} className="text-teal-600" />
+                              <p className="mb-0">
+                                {room.max_people || 0} người
+                              </p>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              {room.roomTypeId && (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                  }}
+                                >
+                                  <Building
+                                    size={16}
+                                    className="text-teal-600"
+                                  />
+                                  <p className="mb-0">
+                                    {room.roomTypeId.type || "Phòng tiêu chuẩn"}
+                                  </p>
+                                </Box>
+                              )}
                             </Box>
                           </Box>
                         </Box>
@@ -725,6 +760,13 @@ function RoomSelector({ yachtId, yachtData = {} }) {
           dispatch(openBookingModal());
           dispatch(closeConfirmationModal());
         }}
+        // Truyền scheduleObj vào confirmationData khi mở modal
+        scheduleObj={(() => {
+          // Lấy schedules cho yacht hiện tại từ object
+          const yachtKey = yachtData?._id || yachtData;
+          const schedulesForYacht = schedules[yachtKey] || [];
+          return getScheduleById(schedulesForYacht, selectedSchedule);
+        })()}
       />
 
       {/* Modal giao dịch */}

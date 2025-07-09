@@ -73,6 +73,14 @@ const BookingRoomModal = ({ show, yachtData }) => {
   };
 
   const validateAllForms = () => {
+    if (!selectedSchedule) {
+      Swal.fire({
+        icon: "error",
+        title: "Thiếu lịch trình!",
+        text: "Vui lòng chọn lịch trình trước khi đặt phòng.",
+      });
+      return false;
+    }
     const formValidation = validateBookingForm(bookingForm);
     const roomValidation = validateRoomSelection(
       rooms.filter((r) => r.quantity > 0),
@@ -122,7 +130,6 @@ const BookingRoomModal = ({ show, yachtData }) => {
         roomArea: r.roomArea || r.area,
         roomAvatar: r.roomAvatar || r.avatar,
         roomMaxPeople: r.roomMaxPeople || r.max_people,
-        roomBeds: r.roomBeds || r.beds,
         roomImage:
           r.roomImage ||
           (r.images && r.images.length > 0 ? r.images[0] : r.avatar || ""),
@@ -150,7 +157,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
       selectedRooms: mappedRooms,
       totalPrice,
       yachtId: yachtData._id,
-      scheduleId: selectedSchedule?._id || selectedSchedule || null,
+      scheduleId: selectedSchedule || null,
       bookingId: consultation?.data?.bookingId || null,
       selectedServices: mappedServices,
     };
@@ -159,7 +166,12 @@ const BookingRoomModal = ({ show, yachtData }) => {
   const handleSubmit = async (requestType) => {
     if (!validateAllForms()) return;
     const sharedData = prepareSharedBookingData();
-
+    console.log("[Booking Submit] selectedSchedule:", selectedSchedule);
+    console.log(
+      "[Booking Submit] selectedYachtServices:",
+      selectedYachtServices
+    );
+    console.log("[Booking Submit] sharedData:", sharedData);
     let result;
     if (editingBookingId) {
       const { bookingId, ...dataForUpdate } = sharedData;
@@ -239,7 +251,6 @@ const BookingRoomModal = ({ show, yachtData }) => {
             area: room.roomArea || room.area,
             avatar: room.roomAvatar || room.avatar,
             max_people: room.roomMaxPeople || room.max_people,
-            beds: room.roomBeds || room.beds,
             images: room.roomImage ? [room.roomImage] : room.images || [],
           }))
         )
@@ -332,7 +343,7 @@ const BookingRoomModal = ({ show, yachtData }) => {
   };
 
   const maxPeople = selectedRooms.reduce(
-    (sum, r) => sum + (r.max_people || 0),
+    (sum, r) => sum + (r.max_people || 0) * r.quantity,
     0
   );
 

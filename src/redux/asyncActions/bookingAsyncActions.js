@@ -580,7 +580,7 @@ export const fetchSchedulesOnly = (yachtId) => async (dispatch) => {
       const displayText = `${durationText} (từ ${formattedStartDate} đến ${formattedEndDate})`;
       return { ...schedule, durationText, displayText };
     });
-    dispatch(bookingActions.fetchRoomsSuccess([], formattedSchedules));
+    dispatch(bookingActions.fetchRoomsSuccess([], formattedSchedules, yachtId));
   } catch (error) {
     dispatch(bookingActions.fetchRoomsFailure(error.message));
   }

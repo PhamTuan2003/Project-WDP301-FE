@@ -12,7 +12,6 @@ import {
   Home,
   MessageSquare,
   DollarSign,
-  ArrowLeft,
 } from "lucide-react";
 import {
   customerCancelBooking,
@@ -25,6 +24,7 @@ import {
   closeConfirmationModal,
   openTransactionModal,
 } from "../../../redux/actions";
+import { Box } from "@mui/material";
 
 // Animation variants for modal drop-in and backdrop fade
 const backdropVariants = {
@@ -42,7 +42,7 @@ const dropInVariants = {
   exit: { y: "100vh", opacity: 0, scale: 0.8, transition: { duration: 0.2 } },
 };
 
-const ConfirmationModal = ({ onBack }) => {
+const ConfirmationModal = ({ onBack, scheduleObj }) => {
   const dispatch = useDispatch();
   const { showConfirmationModal, confirmationData } = useSelector(
     (state) => state.ui.modals
@@ -171,6 +171,7 @@ const ConfirmationModal = ({ onBack }) => {
                     Vui lòng kiểm tra kỹ thông tin trước khi xác nhận
                   </p>
                 </div>
+
                 <div className="flex items-center justify-end">
                   {" "}
                   <button
@@ -278,6 +279,24 @@ const ConfirmationModal = ({ onBack }) => {
                           month: "long",
                           day: "numeric",
                         }),
+                      },
+                      // Thêm lịch trình vào đây
+                      {
+                        icon: (
+                          <Calendar size={16} className="mr-2 text-cyan-700" />
+                        ),
+                        label: "Lịch trình",
+                        value: scheduleObj
+                          ? scheduleObj.displayText ||
+                            (scheduleObj.scheduleId?.startDate &&
+                            scheduleObj.scheduleId?.endDate
+                              ? `${new Date(
+                                  scheduleObj.scheduleId.startDate
+                                ).toLocaleDateString("vi-VN")} - ${new Date(
+                                  scheduleObj.scheduleId.endDate
+                                ).toLocaleDateString("vi-VN")}`
+                              : "-")
+                          : "-",
                       },
                     ].map((item, idx) => (
                       <motion.div
