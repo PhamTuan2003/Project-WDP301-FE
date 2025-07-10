@@ -136,19 +136,6 @@ const TransactionModal = ({ onBack }) => {
     }
   }, [showTransactionModal, bookingIdFortransaction]);
 
-  useEffect(() => {
-    const savedId = localStorage.getItem("bookingIdForTransaction");
-    if (!showTransactionModal && savedId) {
-      if (savedId !== bookingIdFortransaction) {
-        dispatch({
-          type: "OPEN_TRANSACTION_MODAL",
-          payload: { bookingId: savedId },
-        });
-      }
-    }
-    // eslint-disable-next-line
-  }, []);
-
   // Reset randomQR khi có qrCodeData hoặc đóng modal
   useEffect(() => {
     if (qrCodeData || !showTransactionModal) {
@@ -441,12 +428,6 @@ const TransactionModal = ({ onBack }) => {
       confirmationData?.guestCounter?.adults ??
       1
   );
-  const childrenUnder10 =
-    booking.guestCounter?.childrenUnder10 ??
-    booking.childrenUnder10 ??
-    confirmationData?.childrenUnder10 ??
-    confirmationData?.guestCounter?.childrenUnder10 ??
-    0;
   const childrenAbove10 =
     booking.guestCounter?.childrenAbove10 ??
     booking.childrenAbove10 ??
@@ -635,7 +616,7 @@ const TransactionModal = ({ onBack }) => {
           <div className="py-2">
             <ul className="text-sm text-gray-700 list-disc ml-6">
               {bookedRooms.map((room, idx) => (
-                <li key={room._id || idx}>
+                <li key={room._id || room.roomId?._id || room.id || idx}>
                   {room.roomId?.name || room.name || "Phòng"} x {room.quantity}
                 </li>
               ))}
@@ -665,7 +646,7 @@ const TransactionModal = ({ onBack }) => {
             </span>
             <ul className="text-sm text-gray-700 list-disc ml-6">
               {bookedServices.map((service, idx) => (
-                <li key={service.serviceId || service._id || idx}>
+                <li key={service._id || service.serviceId || service.id || idx}>
                   {service.serviceName || service.name || "Dịch vụ"}
                   {service.serviceQuantity || service.quantity
                     ? ` x ${service.serviceQuantity || service.quantity}`
@@ -675,12 +656,12 @@ const TransactionModal = ({ onBack }) => {
             </ul>
           </div>
         )}
-        <div className="flex items-center justify-between py-2 border-b border-blue-100">
-          <span className="text-gray-600 flex items-center">
+        <div className="flex items-start py-2 border-b border-blue-100">
+          <span className="text-gray-600 flex items-center min-w-[90px]">
             <Calendar className="w-4 h-4 mr-2" />
             Lịch trình
           </span>
-          <span className="font-semibold text-gray-900">
+          <span className="font-semibold text-gray-900 break-words text-right flex-1">
             {scheduleObj?.displayText ||
               (scheduleObj?.scheduleId?.startDate &&
               scheduleObj?.scheduleId?.endDate
@@ -711,12 +692,12 @@ const TransactionModal = ({ onBack }) => {
           },
           { value: "vnpay", label: "VNPay", icon: CreditCard, color: "cyan" },
           { value: "momo", label: "MoMo", icon: Smartphone, color: "red" },
-        ].map((method) => {
+        ].map((method, idx) => {
           const Icon = method.icon;
           const isSelected = selectedPaymentMethod === method.value;
           return (
             <div
-              key={method.value}
+              key={method.value || idx}
               onClick={() => handleSelectPaymentMethod(method.value)}
               className={`relative flex items-center p-2 rounded-xl border-2 cursor-pointer transition-all duration-200 transform hover:scale-102 ${
                 isSelected
@@ -1086,7 +1067,7 @@ const TransactionModal = ({ onBack }) => {
       paymentContent = <div className="text-center">{momoDisplay}</div>;
     } else if (paymentMethod === "bank_transfer" && bankInfo && showBankInfo) {
       return (
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 relative">
+        <div className="bg-gradient-to-br  from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 relative">
           <button
             onClick={() => setShowBankInfo(false)}
             className="absolute top-2 right-2 text-green-600 hover:text-green-800"
@@ -1328,55 +1309,12 @@ const TransactionModal = ({ onBack }) => {
           isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-[1200px] w-full h-[700px] min-h-[500px] flex flex-col">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-[1200px] w-full h-[90vh] min-h-[500px]  flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between py-3 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
-            <div className="flex items-center gap-2">
-              {/* Nút quay lại từng bước */}
-              {currentStep > 1 && (
-                <button
-                  onClick={() => goToStep(currentStep - 1)}
-                  className="flex items-center text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-2xl px-2 py-1 z-10"
-                  style={{ minWidth: 0 }}
-                >
-                  <ArrowLeft size={24} />
-                </button>
-              )}
-              {/* Hiển thị số bước xuất hiện dần */}
-              <div className="flex items-center gap-1">
-                {[1, 2, 3].map((step) => (
-                  <button
-                    key={step}
-                    onClick={() =>
-                      step < currentStep ? goToStep(step) : undefined
-                    }
-                    disabled={step > currentStep}
-                    className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-base transition-all duration-200
-                      ${
-                        currentStep === step
-                          ? "bg-white text-blue-700 shadow"
-                          : step < currentStep
-                          ? "bg-blue-200 text-blue-700"
-                          : "bg-blue-500 text-white opacity-50"
-                      }
-                      ${
-                        step > currentStep
-                          ? "cursor-default"
-                          : "hover:bg-white/20"
-                      }
-                    `}
-                    style={{
-                      visibility: step <= currentStep ? "visible" : "hidden",
-                    }}
-                  >
-                    {step}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="flex items-center rounded-t-2xl  justify-between py-2 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
             <div className="flex-1 text-center">
               <h2 className="text-xl font-bold">Thanh toán booking</h2>
-              <p className="text-blue-100 text-sm mt-1">
+              <p className="text-blue-100 text-sm">
                 Hoàn tất thanh toán để xác nhận đặt chỗ
               </p>
             </div>
@@ -1389,9 +1327,9 @@ const TransactionModal = ({ onBack }) => {
           </div>
 
           {/* Content - Horizontal Layout */}
-          <div className="flex gap-4 p-6 w-full flex-1 h-[50vh] overflow-y-auto">
+          <div className="flex gap-4 p-6 w-full flex-1 overflow-y-auto h-[70vh]">
             {/* Left: Booking Info (4/10) */}
-            <div className="bg-gradient-to-br w-5/12 from-blue-50 to-indigo-50 rounded-2xl p-3 border border-blue-100 ">
+            <div className="bg-gradient-to-br w-5/12 h-[70vh] overflow-y-auto from-blue-50 to-indigo-50 rounded-2xl p-3 border border-blue-100 ">
               <div className="flex items-center justify-between pb-2">
                 <span className="text-base justify-start  font-semibold text-gray-900 flex items-center">
                   <Calendar className="w-5 h-5 mr-1  text-blue-600" />
@@ -1489,12 +1427,19 @@ const TransactionModal = ({ onBack }) => {
                   </span>
                 </div>
                 {displayBookedRooms.length > 0 && (
-                  <div className="py-2">
-                    <ul className="text-sm text-gray-700 list-disc ml-6">
+                  <div className="border-b border-blue-100">
+                    <ul className="space-y-1">
                       {displayBookedRooms.map((room, idx) => (
-                        <li key={room._id || idx}>
-                          {room.roomId?.name || room.name || "Phòng"} x{" "}
-                          {room.quantity}
+                        <li
+                          key={room._id || room.roomId?._id || room.id || idx}
+                          className="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-2 border border-blue-100"
+                        >
+                          <span className="font-semibold text-blue-700">
+                            {room.roomId?.name || room.name || "Phòng"}
+                          </span>
+                          <span className="text-gray-600">
+                            x {room.quantity}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1502,14 +1447,21 @@ const TransactionModal = ({ onBack }) => {
                 )}
                 {/* Dịch vụ */}
                 {bookedServices.length > 0 && (
-                  <div className="py-1 border-b border-blue-100">
+                  <div className="border-b border-blue-100">
                     <span className="text-gray-600 flex items-center">
                       <Info className="w-4 h-4 mr-2" />
                       Dịch vụ đã chọn
                     </span>
                     <ul className="text-sm text-gray-700 list-disc pt-0 ml-3">
                       {bookedServices.map((service, idx) => (
-                        <li key={service.serviceId || service._id || idx}>
+                        <li
+                          key={
+                            service._id ||
+                            service.serviceId ||
+                            service.id ||
+                            idx
+                          }
+                        >
                           {service.serviceName || service.name || "Dịch vụ"}
                           {service.serviceQuantity || service.quantity
                             ? ` x ${
@@ -1538,12 +1490,12 @@ const TransactionModal = ({ onBack }) => {
                       : "-"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center">
+                <div className="flex items-start py-2 border-b border-blue-100">
+                  <span className="text-gray-600 flex items-center min-w-[90px]">
                     <Calendar className="w-4 h-4 mr-2" />
                     Lịch trình
                   </span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-gray-900 break-words text-right flex-1">
                     {scheduleObj?.displayText ||
                       (scheduleObj?.scheduleId?.startDate &&
                       scheduleObj?.scheduleId?.endDate
@@ -1559,7 +1511,7 @@ const TransactionModal = ({ onBack }) => {
             </div>
             {/* Right: Payment Section (6/10) */}
             <div
-              className="w-7/12 md:w-6/12 flex flex-col "
+              className="w-6/12 md:w-6/12 flex flex-col "
               style={{ flexBasis: "60%" }}
             >
               {booking.paymentStatus === "fully_paid" ? (
@@ -1631,13 +1583,13 @@ const TransactionModal = ({ onBack }) => {
                           icon: Smartphone,
                           color: "red",
                         },
-                      ].map((method) => {
+                      ].map((method, idx) => {
                         const Icon = method.icon;
                         const isSelected =
                           selectedPaymentMethod === method.value;
                         return (
                           <div
-                            key={method.value}
+                            key={method.value || idx}
                             onClick={() =>
                               handleSelectPaymentMethod(method.value)
                             }

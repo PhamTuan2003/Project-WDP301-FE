@@ -77,23 +77,31 @@ function AppWrapper() {
     localStorage.getItem("themeMode") || "light"
   );
   const dispatch = useDispatch();
-  const { showTransactionModal, bookingIdFortransaction } = useSelector(
-    (state) => state.ui.modals
+  // Sửa: tách từng selector riêng biệt để tránh warning
+  const showTransactionModal = useSelector(
+    (state) => state.ui.modals.showTransactionModal
+  );
+  const bookingIdFortransaction = useSelector(
+    (state) => state.ui.modals.bookingIdFortransaction
+  );
+  const showConfirmationModal = useSelector(
+    (state) => state.ui.modals.showConfirmationModal
   );
 
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
 
+  // Chỉ chạy 1 lần khi app mount để khôi phục modal nếu cần
   useEffect(() => {
     const bookingId = localStorage.getItem("bookingIdForTransaction");
-    if (
-      bookingId &&
-      (!showTransactionModal || bookingIdFortransaction !== bookingId)
-    ) {
+    if (bookingId) {
       dispatch(openTransactionModal(bookingId));
     }
-  }, [dispatch, showTransactionModal, bookingIdFortransaction]);
+    // eslint-disable-next-line
+  }, []);
+
+  useBodyScrollLock();
 
   const toggleTheme = () => {
     const newMode = mode === "light" ? "dark" : "light";

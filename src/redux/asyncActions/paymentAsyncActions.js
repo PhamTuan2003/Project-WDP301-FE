@@ -22,9 +22,11 @@ export const createDepositPayment =
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực.");
+      const payload = { bookingId, paymentMethod };
+      console.log("[DEBUG] Payload gửi lên /payments/deposit:", payload);
       const response = await axios.post(
         "http://localhost:9999/api/v1/payments/deposit",
-        { bookingId, paymentMethod },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
@@ -104,9 +106,11 @@ export const createFullPayment =
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token xác thực.");
+      const payload = { bookingId, paymentMethod };
+      console.log("[DEBUG] Payload gửi lên /payments/full:", payload);
       const response = await axios.post(
         "http://localhost:9999/api/v1/payments/full",
-        { bookingId, paymentMethod },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
