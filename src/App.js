@@ -51,6 +51,27 @@ import InvoiceModal from "./components/DetailBoat/Booking/InvoiceModal";
 import TransactionModal from "./components/DetailBoat/Booking/TransactionModal";
 import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal";
 
+// Custom hook để lock scroll khi có modal mở
+function useBodyScrollLock() {
+  const showTransactionModal = useSelector(
+    (state) => state.ui.modals.showTransactionModal
+  );
+  const showConfirmationModal = useSelector(
+    (state) => state.ui.modals.showConfirmationModal
+  );
+  // Nếu có thêm modal khác, thêm vào đây
+  useEffect(() => {
+    if (showTransactionModal || showConfirmationModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showTransactionModal, showConfirmationModal]);
+}
+
 function AppWrapper() {
   const [mode, setMode] = useState(
     localStorage.getItem("themeMode") || "light"
