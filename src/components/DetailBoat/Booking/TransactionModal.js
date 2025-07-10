@@ -40,6 +40,7 @@ import {
 } from "../../../redux/actions";
 import Swal from "sweetalert2";
 import { getScheduleById } from "../../../utils/scheduleHelpers";
+import InvoiceModal from "./InvoiceModal";
 
 if (typeof window !== "undefined") {
   const style = document.createElement("style");
@@ -107,14 +108,23 @@ const TransactionModal = ({ onBack }) => {
       (paymentStatus === "fully_paid" || paymentStatus === "deposit_paid") &&
       showTransactionModal
     ) {
+      // Chỉ xóa bookingId khỏi localStorage khi không còn ở trạng thái test simulate
+      localStorage.removeItem("bookingIdForTransaction");
+
+      // Trong development mode với bank_transfer, không tự động đóng modal
       if (
         process.env.NODE_ENV === "development" &&
         qrCodeData?.paymentMethod === "bank_transfer"
       ) {
+        // Chỉ cập nhật booking detail và danh sách booking
+        if (bookingIdFortransaction) {
+          dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
+        }
+        dispatch(fetchCustomerBookings());
         return;
       }
-      // Chỉ xóa bookingId khỏi localStorage khi không còn ở trạng thái test simulate
-      localStorage.removeItem("bookingIdForTransaction");
+
+      // Tự động đóng modal và chuyển sang invoice cho các trường hợp khác
       dispatch(closeTransactionModal());
       dispatch(clearQRCodeData());
       const transactionId = qrCodeData?.transactionId;
@@ -491,10 +501,18 @@ const TransactionModal = ({ onBack }) => {
   const handleSimulatePayment = () => {
     if (qrCodeData?.transactionId) {
       dispatch(simulatePaymentSuccess(qrCodeData.transactionId)).then(() => {
-        // Sau khi mô phỏng thành công, cập nhật lại booking detail
+        // Sau khi mô phỏng thành công, đóng modal transaction và chuyển sang invoice
+        dispatch(closeTransactionModal());
+        dispatch(clearQRCodeData());
+        const transactionId = qrCodeData.transactionId;
+        if (transactionId) {
+          dispatch(fetchInvoiceByTransactionId(transactionId));
+        }
         if (bookingIdFortransaction) {
           dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
         }
+        // Cập nhật danh sách booking
+        dispatch(fetchCustomerBookings());
       });
     }
   };
