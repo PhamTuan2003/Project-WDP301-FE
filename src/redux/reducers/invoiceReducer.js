@@ -26,6 +26,8 @@ const invoiceReducer = (state = invoiceInitialState, action) => {
         loading: false,
         error: action.payload,
       };
+    case "RESET_INVOICE_STATE":
+      return { ...invoiceInitialState };
     default:
       return state;
   }

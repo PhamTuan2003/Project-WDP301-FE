@@ -7,3 +7,4 @@ export const fetchInvoiceFailure = (error) => ({
   type: "FETCH_INVOICE_FAILURE",
   payload: error,
 });
+export const resetInvoiceState = () => ({ type: "RESET_INVOICE_STATE" });

@@ -46,6 +46,11 @@ import Enterprise from "./components/Enterprise/Enterprise";
 // Admin
 import Admin from "./components/Admin/AdminDashboard";
 
+// Modals
+import InvoiceModal from "./components/DetailBoat/Booking/InvoiceModal";
+import TransactionModal from "./components/DetailBoat/Booking/TransactionModal";
+import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal";
+
 function AppWrapper() {
   const [mode, setMode] = useState(
     localStorage.getItem("themeMode") || "light"
@@ -145,6 +150,11 @@ function AppWrapper() {
         pauseOnHover
         theme={mode}
       />
+
+      {/* Global Modals */}
+      <InvoiceModal />
+      <TransactionModal />
+      <ConfirmationModal />
     </ThemeProvider>
   );
 }

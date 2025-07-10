@@ -111,9 +111,12 @@ const uiReducer = (state = uiInitialState, action) => {
         modals: {
           ...state.modals,
           showTransactionModal: false,
+          showConfirmationModal: false,
           confirmationData: null,
+          bookingIdFortransaction: null,
         },
         activePaymentTab: 0,
+        currentBookingId: null,
       };
     case "SET_ACTIVE_PAYMENT_TAB":
       return { ...state, activePaymentTab: action.payload };

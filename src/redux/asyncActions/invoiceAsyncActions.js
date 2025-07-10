@@ -3,8 +3,10 @@ import { setInvoiceData } from "../actions/uiActions";
 import { openInvoiceModal } from "../actions/uiActions";
 
 export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {
+  console.log("Debug - downloadInvoicePDF called with invoiceId:", invoiceId);
   try {
     const token = localStorage.getItem("token");
+    console.log("Debug - Downloading PDF for invoice:", invoiceId);
     const response = await axios.get(
       `http://localhost:9999/api/v1/invoices/${invoiceId}/download`,
       {
@@ -12,6 +14,7 @@ export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {
         responseType: "blob",
       }
     );
+    console.log("Debug - PDF download response received");
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;
@@ -19,15 +22,20 @@ export const downloadInvoicePDF = (invoiceId) => async (dispatch) => {
     let filename = `invoice-${invoiceId}.pdf`;
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
-      if (filenameMatch.length === 2) filename = filenameMatch[1];
+      if (filenameMatch && filenameMatch.length === 2)
+        filename = filenameMatch[1];
     }
     link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+    console.log("Debug - PDF download completed successfully");
   } catch (error) {
-    // Handle error if needed
+    console.error("Debug - downloadInvoicePDF error:", error);
+    console.error("Debug - Error response:", error.response);
+    // Có thể hiển thị thông báo lỗi cho user
+    alert("Không thể tải xuống PDF. Vui lòng thử lại sau.");
   }
 };
 

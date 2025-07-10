@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { BedDouble, Building, Minus, Plus, Type, User, X } from "lucide-react";
+import {
+  BedDouble,
+  Building,
+  Building2,
+  Minus,
+  Plus,
+  Type,
+  User,
+  X,
+} from "lucide-react";
 import {
   Box,
   Select,
@@ -36,9 +45,6 @@ import {
   fetchSchedulesOnly,
   fetchRoomsOnly,
 } from "../../redux/asyncActions/bookingAsyncActions";
-import ConfirmationModal from "./Booking/ConfirmationModal";
-import TransactionModal from "./Booking/TransactionModal";
-import InvoiceModal from "./Booking/InvoiceModal";
 import RoomServicesModal from "./RoomServicesModal";
 import { getScheduleById } from "../../utils/scheduleHelpers";
 
@@ -77,6 +83,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   }, [yachtId, selectedSchedule, dispatch]);
 
   const handleBookNow = () => {
+    // Chỉ reset form booking, không xóa dữ liệu đã chọn
     dispatch(resetBookingForm());
     dispatch(clearAllErrors());
     dispatch(setEditingBookingId(null));
@@ -106,6 +113,16 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   // Get selected rooms for BookingRoomModal
   const getSelectedRooms = () => {
     return rooms.filter((room) => room.quantity > 0);
+  };
+
+  // Tính tổng sức chứa tối đa của các phòng đã chọn
+  const getMaxPeopleForSelectedRooms = () => {
+    const selectedRooms = getSelectedRooms();
+    if (selectedRooms.length === 0) return null;
+
+    return selectedRooms.reduce((total, room) => {
+      return total + room.max_people * room.quantity;
+    }, 0);
   };
 
   // Tính tổng tiền dịch vụ theo du thuyền
@@ -529,7 +546,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                       sx={{
                         border: "1px solid white",
                         width: "fit-content",
-                        p: 1,
+                        p: 2,
                         borderRadius: (theme) => theme.shape.borderRadius / 6,
                         boxShadow: (theme) => theme.shadows[1],
                         bgcolor: "background.paper",
@@ -540,18 +557,30 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         .map((room) => {
                           const roomTotal = room.price * room.quantity;
                           return (
-                            <Box key={room.id} sx={{ mb: 1 }}>
+                            <Box
+                              key={room.id}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
                               <Typography
                                 sx={{
                                   fontWeight: "bold",
                                   fontSize: "1rem",
                                   color: "text.primary",
                                   fontFamily: "Archivo, sans-serif",
+                                  display: "flex",
+                                  gap: 1,
                                 }}
                               >
-                                {room.name} x {room.quantity}:{" "}
-                                {roomTotal.toLocaleString()}đ (
-                                {room.price.toLocaleString()}đ/phòng)
+                                <Building2 size={20} />
+                                <p>
+                                  {room.name} x {room.quantity}:{" "}
+                                  {roomTotal.toLocaleString()}đ (
+                                  {room.price.toLocaleString()}đ/phòng)
+                                </p>
                               </Typography>
                             </Box>
                           );
@@ -568,27 +597,29 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 gap: 1,
                                 fontWeight: "semibold",
                                 justifyContent: "space-between",
-                                fontSize: "1rem",
+                                fontSize: "0.875rem",
                                 color: "text.secondary",
                                 fontFamily: "Archivo, sans-serif",
                               }}
                             >
                               <Box>
-                                Dịch vụ: {sv.serviceName}:{" "}
-                                {sv.price.toLocaleString()}đ x{" "}
-                                {rooms.reduce(
-                                  (acc, room) => acc + room.quantity,
-                                  0
-                                )}{" "}
-                                khách ={" "}
-                                {(
-                                  sv.price *
-                                  rooms.reduce(
+                                <li>
+                                  {sv.serviceName}: {sv.price.toLocaleString()}đ
+                                  x{" "}
+                                  {rooms.reduce(
                                     (acc, room) => acc + room.quantity,
                                     0
-                                  )
-                                ).toLocaleString()}
-                                đ
+                                  )}{" "}
+                                  khách ={" "}
+                                  {(
+                                    sv.price *
+                                    rooms.reduce(
+                                      (acc, room) => acc + room.quantity,
+                                      0
+                                    )
+                                  ).toLocaleString()}
+                                  đ
+                                </li>
                               </Box>
                               <X
                                 size={16}
@@ -751,34 +782,9 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         yachtData={yachtData}
         onBack={null}
         editData={editBookingData}
+        maxPeople={getMaxPeopleForSelectedRooms()}
+        selectedSchedule={selectedSchedule}
       />
-
-      {/* Modal xác nhận */}
-      <ConfirmationModal
-        onBack={(data) => {
-          setEditBookingData(data);
-          dispatch(openBookingModal());
-          dispatch(closeConfirmationModal());
-        }}
-        // Truyền scheduleObj vào confirmationData khi mở modal
-        scheduleObj={(() => {
-          // Lấy schedules cho yacht hiện tại từ object
-          const yachtKey = yachtData?._id || yachtData;
-          const schedulesForYacht = schedules[yachtKey] || [];
-          return getScheduleById(schedulesForYacht, selectedSchedule);
-        })()}
-      />
-
-      {/* Modal giao dịch */}
-      <TransactionModal
-        onBack={() => {
-          dispatch(closeTransactionModal());
-          dispatch(openBookingModal());
-        }}
-      />
-
-      {/* Modal hoá đơn */}
-      <InvoiceModal />
 
       <RoomServicesModal
         show={showServiceModal}

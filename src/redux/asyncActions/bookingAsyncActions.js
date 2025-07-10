@@ -285,48 +285,53 @@ export const createBookingOrConsultationRequest =
     }
   };
 
-export const fetchConsultationRequest = (yachtId) => async (dispatch) => {
-  dispatch({ type: "FETCH_CONSULTATION_REQUEST" });
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Không tìm thấy token xác thực.");
-    }
-    const response = await axios.get(
-      "http://localhost:9999/api/v1/bookings/consultation",
-      {
-        params: { yachtId },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+export const fetchConsultationRequest =
+  (yachtId, checkInDate) => async (dispatch) => {
+    dispatch({ type: "FETCH_CONSULTATION_REQUEST" });
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Không tìm thấy token xác thực.");
       }
-    );
-    if (response.data.success) {
-      dispatch({
-        type: "FETCH_CONSULTATION_SUCCESS",
-        payload: response.data.data,
-      });
-    } else {
-      dispatch({
-        type: "FETCH_CONSULTATION_FAILURE",
-        payload: response.data.message,
-      });
+      const params = { yachtId };
+      if (checkInDate) {
+        params.checkInDate = checkInDate;
+      }
+      const response = await axios.get(
+        "http://localhost:9999/api/v1/bookings/consultation",
+        {
+          params,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.data.success) {
+        dispatch({
+          type: "FETCH_CONSULTATION_SUCCESS",
+          payload: response.data.data,
+        });
+      } else {
+        dispatch({
+          type: "FETCH_CONSULTATION_FAILURE",
+          payload: response.data.message,
+        });
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        dispatch({
+          type: "FETCH_CONSULTATION_FAILURE",
+          payload: null,
+        });
+      } else {
+        dispatch({
+          type: "FETCH_CONSULTATION_FAILURE",
+          payload: error.message,
+        });
+      }
     }
-  } catch (error) {
-    if (error.response && error.response.status === 404) {
-      dispatch({
-        type: "FETCH_CONSULTATION_FAILURE",
-        payload: null,
-      });
-    } else {
-      dispatch({
-        type: "FETCH_CONSULTATION_FAILURE",
-        payload: error.message,
-      });
-    }
-  }
-};
+  };
 
 export const cancelConsultationRequestById =
   (bookingId) => async (dispatch) => {
@@ -498,10 +503,20 @@ export const fetchCustomerBookingDetail = (bookingId) => async (dispatch) => {
     if (response.data.success) {
       let detail = response.data.data;
       let booking = detail.booking || {};
+
+      // Xử lý bookedRooms từ backend
+      detail.bookedRooms = detail.bookedRooms || [];
+
+      // Xử lý bookedServices từ backend hoặc fallback
       detail.bookedServices =
-        detail.bookedServices && detail.bookedServices.length > 0
-          ? detail.bookedServices
+        detail.services && detail.services.length > 0
+          ? detail.services
           : booking.requestServices || booking.selectedServices || [];
+
+      console.log("Debug - Backend response detail:", detail);
+      console.log("Debug - Processed bookedRooms:", detail.bookedRooms);
+      console.log("Debug - Processed bookedServices:", detail.bookedServices);
+
       dispatch(bookingActions.fetchBookingDetailSuccess(detail));
       return { success: true, data: detail };
     } else {
@@ -544,7 +559,7 @@ export const deleteBookingById = (bookingId) => async (dispatch) => {
 
 // Action chỉ lấy schedules
 export const fetchSchedulesOnly = (yachtId) => async (dispatch) => {
-  dispatch(bookingActions.fetchRoomsRequest());
+  dispatch(bookingActions.fetchSchedulesRequest());
   try {
     const schedulesResponse = await axios.get(
       `http://localhost:9999/api/v1/yachts/${yachtId}/schedules`
@@ -580,9 +595,14 @@ export const fetchSchedulesOnly = (yachtId) => async (dispatch) => {
       const displayText = `${durationText} (từ ${formattedStartDate} đến ${formattedEndDate})`;
       return { ...schedule, durationText, displayText };
     });
-    dispatch(bookingActions.fetchRoomsSuccess([], formattedSchedules, yachtId));
+    dispatch(
+      bookingActions.fetchSchedulesSuccess({
+        yachtId,
+        schedules: formattedSchedules,
+      })
+    );
   } catch (error) {
-    dispatch(bookingActions.fetchRoomsFailure(error.message));
+    dispatch(bookingActions.fetchSchedulesFailure(error.message));
   }
 };
 

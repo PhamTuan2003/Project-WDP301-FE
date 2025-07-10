@@ -16,23 +16,23 @@ const GuestCounter = ({ maxPeople }) => {
 
   const [error, setError] = useState("");
 
-  const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
+  const totalGuests = adults + Math.floor(childrenAbove10 / 2);
   const overLimit = maxPeople && totalGuests > maxPeople;
 
   const handleUpdateAdults = (delta) => {
-    if (
-      delta > 0 &&
-      maxPeople &&
-      adults + delta + Math.ceil(childrenAbove10 / 2) > maxPeople
-    ) {
+    const newAdults = adults + delta;
+    const newTotalGuests = newAdults + Math.floor(childrenAbove10 / 2);
+
+    if (delta > 0 && maxPeople && newTotalGuests > maxPeople) {
       setError(
-        `Tổng số khách không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi tính là 1 người lớn.`
+        `Tổng số khách quy đổi (${newTotalGuests}) không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi = 1 người lớn.`
       );
       return;
     }
     setError("");
     dispatch(updateAdults(delta));
   };
+
   const handleUpdateChildrenUnder10 = (delta) => {
     if (delta > 0 && childrenUnder10 + delta > 20) {
       setError("Nếu muốn nhiều hơn cần liên lạc với tư vấn viên.");
@@ -41,20 +41,31 @@ const GuestCounter = ({ maxPeople }) => {
     setError("");
     dispatch({ type: "UPDATE_CHILDREN_UNDER_10", payload: delta });
   };
+
   const handleUpdateChildrenAbove10 = (delta) => {
-    if (
-      delta > 0 &&
-      maxPeople &&
-      adults + Math.ceil((childrenAbove10 + delta) / 2) > maxPeople
-    ) {
+    const newChildrenAbove10 = childrenAbove10 + delta;
+    const newTotalGuests = adults + Math.floor(newChildrenAbove10 / 2);
+
+    if (delta > 0 && maxPeople && newTotalGuests > maxPeople) {
       setError(
-        `Tổng số khách không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi tính là 1 người lớn.`
+        `Tổng số khách quy đổi (${newTotalGuests}) không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi = 1 người lớn.`
       );
       return;
     }
     setError("");
     dispatch({ type: "UPDATE_CHILDREN_ABOVE_10", payload: delta });
   };
+
+  // Kiểm tra xem có thể thêm người lớn không
+  const canAddAdults =
+    !maxPeople || adults + Math.floor(childrenAbove10 / 2) < maxPeople;
+
+  // Kiểm tra xem có thể thêm trẻ em từ 10 tuổi không
+  const canAddChildrenAbove10 =
+    !maxPeople || adults + Math.floor((childrenAbove10 + 1) / 2) <= maxPeople;
+
+  // Kiểm tra xem có thể thêm trẻ em dưới 10 tuổi không
+  const canAddChildrenUnder10 = childrenUnder10 < 20;
 
   return (
     <Box sx={{ position: "relative" }}>
@@ -165,6 +176,7 @@ const GuestCounter = ({ maxPeople }) => {
               </Typography>
               <Button
                 onClick={() => handleUpdateAdults(1)}
+                disabled={!canAddAdults}
                 sx={{
                   minWidth: 32,
                   height: 32,
@@ -173,7 +185,13 @@ const GuestCounter = ({ maxPeople }) => {
                   color: "text.primary",
                   fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
+                  "&:disabled": {
+                    opacity: 0.5,
+                    cursor: "not-allowed",
+                    bgcolor: "grey.100",
+                  },
                 }}
+                title={!canAddAdults ? "Đã đạt giới hạn sức chứa tối đa" : ""}
               >
                 <Plus size={16} />
               </Button>
@@ -228,6 +246,7 @@ const GuestCounter = ({ maxPeople }) => {
               </Typography>
               <Button
                 onClick={() => handleUpdateChildrenUnder10(1)}
+                disabled={!canAddChildrenUnder10}
                 sx={{
                   minWidth: 32,
                   height: 32,
@@ -236,7 +255,17 @@ const GuestCounter = ({ maxPeople }) => {
                   color: "text.primary",
                   fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
+                  "&:disabled": {
+                    opacity: 0.5,
+                    cursor: "not-allowed",
+                    bgcolor: "grey.100",
+                  },
                 }}
+                title={
+                  !canAddChildrenUnder10
+                    ? "Đã đạt giới hạn tối đa (20 trẻ em)"
+                    : ""
+                }
               >
                 <Plus size={16} />
               </Button>
@@ -304,6 +333,7 @@ const GuestCounter = ({ maxPeople }) => {
               </Typography>
               <Button
                 onClick={() => handleUpdateChildrenAbove10(1)}
+                disabled={!canAddChildrenAbove10}
                 sx={{
                   minWidth: 32,
                   height: 32,
@@ -312,7 +342,17 @@ const GuestCounter = ({ maxPeople }) => {
                   color: "text.primary",
                   fontFamily: "Archivo, sans-serif",
                   "&:hover": { bgcolor: "background.default" },
+                  "&:disabled": {
+                    opacity: 0.5,
+                    cursor: "not-allowed",
+                    bgcolor: "grey.100",
+                  },
                 }}
+                title={
+                  !canAddChildrenAbove10
+                    ? "Đã đạt giới hạn sức chứa tối đa"
+                    : ""
+                }
               >
                 <Plus size={16} />
               </Button>
@@ -327,7 +367,7 @@ const GuestCounter = ({ maxPeople }) => {
               fontFamily: "Archivo, sans-serif",
             }}
           >
-            2 trẻ em từ 10 tuổi tính là 1 người lớn
+            2 trẻ em từ 10 tuổi = 1 người lớn
           </Typography>
           {error && (
             <Typography
@@ -352,10 +392,58 @@ const GuestCounter = ({ maxPeople }) => {
                 fontFamily: "Archivo, sans-serif",
               }}
             >
-              Tổng số khách không được vượt quá sức chứa tối đa ({maxPeople})
-              của các phòng đã chọn. 2 trẻ em tính là 1 người lớn.
+              Tổng số khách quy đổi ({totalGuests}) vượt quá sức chứa tối đa (
+              {maxPeople}) của các phòng đã chọn.
             </Typography>
           )}
+          {/* Hiển thị tổng khách quy đổi */}
+          <Box
+            sx={{
+              bgcolor: overLimit ? "error.main" : "primary.main",
+              color: "primary.contrastText",
+              p: 1.5,
+              borderRadius: 1,
+              mt: 1,
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.875rem",
+                fontWeight: "bold",
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
+              Tổng khách quy đổi: {totalGuests} người
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                opacity: 0.9,
+                fontFamily: "Archivo, sans-serif",
+              }}
+            >
+              {maxPeople
+                ? `Sức chứa tối đa: ${maxPeople} người`
+                : "Không giới hạn sức chứa"}
+            </Typography>
+            {maxPeople && (
+              <Typography
+                sx={{
+                  fontSize: "0.7rem",
+                  opacity: 0.8,
+                  fontFamily: "Archivo, sans-serif",
+                  mt: 0.5,
+                }}
+              >
+                {totalGuests > maxPeople
+                  ? `⚠️ Vượt quá ${totalGuests - maxPeople} người`
+                  : totalGuests === maxPeople
+                  ? `⚠️ Đã đạt giới hạn tối đa`
+                  : `✅ Còn ${maxPeople - totalGuests} chỗ trống`}
+              </Typography>
+            )}
+          </Box>
           <Box
             sx={{
               borderTop: (theme) => `1px solid ${theme.palette.divider}`,

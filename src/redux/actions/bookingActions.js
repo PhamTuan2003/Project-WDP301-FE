@@ -68,6 +68,9 @@ export const updateChildren = (increment) => ({
 });
 export const clearSelection = () => ({ type: "CLEAR_SELECTION" });
 export const resetBookingForm = () => ({ type: "RESET_BOOKING_FORM" });
+export const clearCurrentBookingDetail = () => ({
+  type: "CLEAR_CURRENT_BOOKING_DETAIL",
+});
 export const genericBookingRequest = () => ({
   type: "GENERIC_BOOKING_REQUEST",
 });

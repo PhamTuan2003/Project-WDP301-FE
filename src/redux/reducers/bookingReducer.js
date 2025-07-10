@@ -191,11 +191,6 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...state,
         rooms: state.rooms.map((room) => ({ ...room, quantity: 0 })),
         totalPrice: 0,
-        guestCounter: {
-          ...state.guestCounter,
-          childrenUnder10: 0,
-          childrenAbove10: 0,
-        },
       };
     case "RESET_FORMS":
       return {
@@ -211,7 +206,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
         bookingErrors: {},
         guestCounter: {
           adults: 1,
-          children: 1,
+          children: 0,
           childrenUnder10: 0,
           childrenAbove10: 0,
           isOpen: false,
@@ -379,7 +374,7 @@ const bookingReducer = (state = bookingInitialState, action) => {
         bookingErrors: {},
         guestCounter: {
           adults: 1,
-          children: 1,
+          children: 0,
           childrenUnder10: 0,
           childrenAbove10: 0,
           isOpen: false,
@@ -416,6 +411,24 @@ const bookingReducer = (state = bookingInitialState, action) => {
         ...state,
         selectedYachtServices: action.payload,
       };
+    case "FETCH_SCHEDULES_REQUEST":
+      return { ...state, loading: true, error: null };
+    case "FETCH_SCHEDULES_SUCCESS": {
+      const { yachtId, schedules: fetchedSchedules } = action.payload;
+      const newSchedules = { ...state.schedules };
+      if (yachtId && Array.isArray(fetchedSchedules)) {
+        newSchedules[yachtId] = fetchedSchedules;
+      }
+      return {
+        ...state,
+        loading: false,
+        schedules: newSchedules,
+      };
+    }
+    case "FETCH_SCHEDULES_FAILURE":
+      return { ...state, loading: false, error: action.payload };
+    case "CLEAR_CURRENT_BOOKING_DETAIL":
+      return { ...state, currentBookingDetail: null, bookingSubmitting: false };
     default:
       return state;
   }

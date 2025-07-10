@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   X,
@@ -16,6 +16,7 @@ import {
 import {
   customerCancelBooking,
   customerConfirmConsultation,
+  fetchSchedulesOnly,
 } from "../../../redux/asyncActions/bookingAsyncActions";
 import { formatPrice } from "../../../redux/validation";
 import Swal from "sweetalert2";
@@ -24,7 +25,7 @@ import {
   closeConfirmationModal,
   openTransactionModal,
 } from "../../../redux/actions";
-import { Box } from "@mui/material";
+import { getScheduleById } from "../../../utils/scheduleHelpers";
 
 // Animation variants for modal drop-in and backdrop fade
 const backdropVariants = {
@@ -42,13 +43,25 @@ const dropInVariants = {
   exit: { y: "100vh", opacity: 0, scale: 0.8, transition: { duration: 0.2 } },
 };
 
-const ConfirmationModal = ({ onBack, scheduleObj }) => {
+const ConfirmationModal = ({ scheduleObj }) => {
   const dispatch = useDispatch();
   const { showConfirmationModal, confirmationData } = useSelector(
     (state) => state.ui.modals
   );
   const { submitting } = useSelector((state) => state.booking);
+  const schedules = useSelector((state) => state.booking.schedules);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Fetch schedules if not available and yachtId is provided
+  useEffect(() => {
+    if (
+      confirmationData?.yachtId &&
+      (!schedules || Object.keys(schedules).length === 0)
+    ) {
+      dispatch(fetchSchedulesOnly(confirmationData.yachtId));
+    }
+  }, [confirmationData?.yachtId, schedules, dispatch]);
+
   if (!showConfirmationModal || !confirmationData) return null;
   const { bookingId, isDirectBooking } = confirmationData;
 
@@ -66,7 +79,8 @@ const ConfirmationModal = ({ onBack, scheduleObj }) => {
       confirmationData.guestCounter?.childrenAbove10 ??
       0
   );
-  const totalGuests = adults + childrenUnder10 + Math.ceil(childrenAbove10 / 2);
+  const totalGuests =
+    adults + childrenUnder10 + Math.floor(childrenAbove10 / 2);
 
   const handleProceedToPayment = () => {
     if (!bookingId) {
@@ -107,24 +121,52 @@ const ConfirmationModal = ({ onBack, scheduleObj }) => {
     await dispatch(customerCancelBooking(bookingId));
   };
 
-  const handleBack = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (typeof onBack === "function") {
-      onBack();
-    } else {
-      dispatch(closeConfirmationModal());
-    }
-  };
-
   const confirmAction = isDirectBooking
     ? handleProceedToPayment
     : handleConfirmAfterConsultation;
   const confirmText = isDirectBooking
     ? "Tiến hành thanh toán"
     : "Xác nhận & Thanh toán";
+
+  // Lấy thông tin lịch trình
+  let scheduleText = "-";
+
+  // Thử lấy schedule từ prop scheduleObj trước
+  let schedule = scheduleObj;
+
+  // Nếu không có scheduleObj, thử lấy từ confirmationData
+  if (!schedule) {
+    schedule = confirmationData.schedule || confirmationData.scheduleObj;
+  }
+
+  // Nếu vẫn không có, thử lấy từ scheduleId bằng getScheduleById
+  if (!schedule && confirmationData.scheduleId && schedules) {
+    // Lấy schedules cho yachtId cụ thể nếu có
+    const yachtSchedules =
+      confirmationData.yachtId && schedules[confirmationData.yachtId]
+        ? schedules[confirmationData.yachtId]
+        : schedules;
+    schedule = getScheduleById(yachtSchedules, confirmationData.scheduleId);
+  }
+
+  // Xử lý hiển thị schedule
+  if (schedule) {
+    if (schedule.displayText) {
+      scheduleText = schedule.displayText;
+    } else if (schedule.startDate && schedule.endDate) {
+      scheduleText = `${new Date(schedule.startDate).toLocaleDateString(
+        "vi-VN"
+      )} - ${new Date(schedule.endDate).toLocaleDateString("vi-VN")}`;
+    } else if (schedule.scheduleId?.startDate && schedule.scheduleId?.endDate) {
+      scheduleText = `${new Date(
+        schedule.scheduleId.startDate
+      ).toLocaleDateString("vi-VN")} - ${new Date(
+        schedule.scheduleId.endDate
+      ).toLocaleDateString("vi-VN")}`;
+    }
+  } else if (confirmationData.scheduleInfo) {
+    scheduleText = confirmationData.scheduleInfo;
+  }
 
   return (
     <AnimatePresence>
@@ -286,17 +328,7 @@ const ConfirmationModal = ({ onBack, scheduleObj }) => {
                           <Calendar size={16} className="mr-2 text-cyan-700" />
                         ),
                         label: "Lịch trình",
-                        value: scheduleObj
-                          ? scheduleObj.displayText ||
-                            (scheduleObj.scheduleId?.startDate &&
-                            scheduleObj.scheduleId?.endDate
-                              ? `${new Date(
-                                  scheduleObj.scheduleId.startDate
-                                ).toLocaleDateString("vi-VN")} - ${new Date(
-                                  scheduleObj.scheduleId.endDate
-                                ).toLocaleDateString("vi-VN")}`
-                              : "-")
-                          : "-",
+                        value: scheduleText,
                       },
                     ].map((item, idx) => (
                       <motion.div
@@ -356,7 +388,7 @@ const ConfirmationModal = ({ onBack, scheduleObj }) => {
                           <Users size={16} className="mr-2 text-cyan-700" />
                           Dịch vụ đã chọn
                         </label>
-                        <div className="space-y-2">
+                        <div className="space-y-2 max-h-[80px] overflow-y-auto">
                           {confirmationData.selectedServices.map(
                             (service, i) => (
                               <div

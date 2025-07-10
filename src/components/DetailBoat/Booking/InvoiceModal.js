@@ -24,6 +24,13 @@ import {
 } from "lucide-react";
 import { formatPrice } from "../../../redux/validation";
 import { closeInvoiceModal } from "../../../redux/actions/uiActions";
+import { closeTransactionModal } from "../../../redux/actions/uiActions";
+import { resetInvoiceState } from "../../../redux/actions/invoiceActions";
+import {
+  resetBookingForm,
+  clearCurrentBookingDetail,
+} from "../../../redux/actions/bookingActions";
+import { clearQRCodeData } from "../../../redux/actions/paymentActions";
 import { downloadInvoicePDF } from "../../../redux/asyncActions/invoiceAsyncActions";
 import {
   Dialog,
@@ -53,6 +60,11 @@ const InvoiceModal = () => {
 
   const handleCloseModal = () => {
     dispatch(closeInvoiceModal());
+    dispatch(closeTransactionModal());
+    dispatch(resetInvoiceState());
+    dispatch(resetBookingForm());
+    dispatch(clearQRCodeData());
+    dispatch(clearCurrentBookingDetail());
   };
 
   const handleDownloadPDF = () => {
@@ -82,15 +94,22 @@ const InvoiceModal = () => {
           boxShadow: 24,
           background: "#fff",
           position: "relative",
+          zIndex: 9999,
+          maxHeight: fullScreen ? "100vh" : "90vh",
+          overflow: "hidden",
         },
       }}
       BackdropProps={{
         sx: {
           background: "rgba(0,0,0,0.5)",
           backdropFilter: "blur(2px)",
+          zIndex: 9998,
         },
       }}
       aria-labelledby="invoice-dialog-title"
+      sx={{
+        zIndex: 9999,
+      }}
     >
       <DialogTitle
         sx={{
@@ -147,7 +166,23 @@ const InvoiceModal = () => {
           background: "#f9fafb",
           px: { xs: 1, sm: 3 },
           py: { xs: 2, sm: 3 },
-          maxHeight: fullScreen ? "unset" : "70vh",
+          maxHeight: fullScreen ? "calc(100vh - 120px)" : "calc(90vh - 120px)",
+          overflowY: "auto",
+          overflowX: "hidden",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "#f1f1f1",
+            borderRadius: "4px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "#c1c1c1",
+            borderRadius: "4px",
+            "&:hover": {
+              background: "#a8a8a8",
+            },
+          },
         }}
       >
         {/* Thông tin định danh hóa đơn */}
@@ -474,21 +509,34 @@ const InvoiceModal = () => {
                   </Stack>
                 </Grid>
               )}
-              {invoiceData.yachtInfo.scheduleInfo && (
-                <Grid item xs={12} md={4}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Calendar className="w-4 h-4" color="#2dd4bf" />
-                    <Box>
-                      <Typography variant="caption" color="#0e7490">
-                        Lịch trình
-                      </Typography>
-                      <Typography fontWeight={600}>
-                        {invoiceData.yachtInfo.scheduleInfo}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
-              )}
+              <Grid item xs={12} md={4}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Calendar className="w-4 h-4" color="#2dd4bf" />
+                  <Box>
+                    <Typography variant="caption" color="#0e7490">
+                      Lịch trình
+                    </Typography>
+                    <Typography fontWeight={600}>
+                      {(() => {
+                        if (invoiceData.yachtInfo.scheduleInfo)
+                          return invoiceData.yachtInfo.scheduleInfo;
+                        const schedule = invoiceData.bookingId?.schedule;
+                        if (schedule) {
+                          if (schedule.displayText) return schedule.displayText;
+                          if (schedule.startDate && schedule.endDate) {
+                            return `${new Date(
+                              schedule.startDate
+                            ).toLocaleDateString("vi-VN")} - ${new Date(
+                              schedule.endDate
+                            ).toLocaleDateString("vi-VN")}`;
+                          }
+                        }
+                        return "-";
+                      })()}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Grid>
               {invoiceData.yachtInfo.checkInDate && (
                 <Grid item xs={12} md={4}>
                   <Stack direction="row" alignItems="center" spacing={1}>
@@ -549,11 +597,11 @@ const InvoiceModal = () => {
                 <Typography variant="caption" color="text.secondary" ml={4}>
                   Tổng khách quy đổi:{" "}
                   {invoiceData.guestInfo.adults +
-                    Math.ceil(
+                    Math.floor(
                       (invoiceData.guestInfo.childrenAbove10 || 0) / 2
                     )}{" "}
-                  (2 trẻ em từ 10 tuổi tính là 1 người lớn, trẻ em dưới 10 tuổi
-                  không tính)
+                  (2 trẻ em từ 10 tuổi = 1 người lớn, trẻ em dưới 10 tuổi không
+                  tính)
                 </Typography>
               </Box>
             )}

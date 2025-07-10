@@ -37,10 +37,10 @@ import {
   clearQRCodeData,
   closeTransactionModal,
   setActivePaymentTab,
+  openBookingModal,
 } from "../../../redux/actions";
 import Swal from "sweetalert2";
 import { getScheduleById } from "../../../utils/scheduleHelpers";
-import InvoiceModal from "./InvoiceModal";
 
 if (typeof window !== "undefined") {
   const style = document.createElement("style");
@@ -111,20 +111,7 @@ const TransactionModal = ({ onBack }) => {
       // Chỉ xóa bookingId khỏi localStorage khi không còn ở trạng thái test simulate
       localStorage.removeItem("bookingIdForTransaction");
 
-      // Trong development mode với bank_transfer, không tự động đóng modal
-      if (
-        process.env.NODE_ENV === "development" &&
-        qrCodeData?.paymentMethod === "bank_transfer"
-      ) {
-        // Chỉ cập nhật booking detail và danh sách booking
-        if (bookingIdFortransaction) {
-          dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
-        }
-        dispatch(fetchCustomerBookings());
-        return;
-      }
-
-      // Tự động đóng modal và chuyển sang invoice cho các trường hợp khác
+      // Tự động đóng modal và chuyển sang invoice
       dispatch(closeTransactionModal());
       dispatch(clearQRCodeData());
       const transactionId = qrCodeData?.transactionId;
@@ -134,7 +121,7 @@ const TransactionModal = ({ onBack }) => {
       if (bookingIdFortransaction) {
         dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
       }
-      // Thêm dòng này để cập nhật danh sách booking ngay sau khi thanh toán thành công
+      // Cập nhật danh sách booking
       dispatch(fetchCustomerBookings());
     }
   }, [paymentStatus, showTransactionModal]);
@@ -228,6 +215,10 @@ const TransactionModal = ({ onBack }) => {
       }
       // Xóa bookingId khỏi localStorage khi đóng modal
       localStorage.removeItem("bookingIdForTransaction");
+      // Gọi onBack nếu có, nếu không thì không làm gì thêm
+      if (onBack) {
+        onBack();
+      }
     }, 300);
   };
 
@@ -237,18 +228,6 @@ const TransactionModal = ({ onBack }) => {
       setCopiedText(label);
       setTimeout(() => setCopiedText(""), 2000);
     } catch (err) {}
-  };
-
-  const handleBack = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (typeof onBack === "function") {
-      onBack();
-    } else {
-      dispatch(closeTransactionModal());
-    }
   };
 
   // Hàm chuyển bước
@@ -475,9 +454,17 @@ const TransactionModal = ({ onBack }) => {
     confirmationData?.guestCounter?.childrenAbove10 ??
     0;
 
-  const totalGuests = adults + Math.ceil(childrenAbove10 / 2);
+  const totalGuests = adults + Math.floor(childrenAbove10 / 2);
   const bookedRooms = currentBookingDetail.bookedRooms || [];
   const totalRooms = bookedRooms.reduce((sum, r) => sum + (r.quantity || 0), 0);
+
+  // Fallback cho số phòng nếu không có dữ liệu bookedRooms
+  const displayTotalRooms =
+    totalRooms > 0 ? totalRooms : booking.roomCount || 1;
+  const displayBookedRooms =
+    bookedRooms.length > 0
+      ? bookedRooms
+      : [{ name: "Phòng", quantity: displayTotalRooms }];
 
   const bookedServices =
     currentBookingDetail.bookedServices &&
@@ -500,20 +487,14 @@ const TransactionModal = ({ onBack }) => {
 
   const handleSimulatePayment = () => {
     if (qrCodeData?.transactionId) {
-      dispatch(simulatePaymentSuccess(qrCodeData.transactionId)).then(() => {
-        // Sau khi mô phỏng thành công, đóng modal transaction và chuyển sang invoice
-        dispatch(closeTransactionModal());
-        dispatch(clearQRCodeData());
-        const transactionId = qrCodeData.transactionId;
-        if (transactionId) {
-          dispatch(fetchInvoiceByTransactionId(transactionId));
-        }
-        if (bookingIdFortransaction) {
-          dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
-        }
-        // Cập nhật danh sách booking
-        dispatch(fetchCustomerBookings());
-      });
+      dispatch(simulatePaymentSuccess(qrCodeData.transactionId))
+        .then(() => {
+          if (bookingIdFortransaction) {
+            dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
+          }
+        })
+        .catch((error) => {});
+    } else {
     }
   };
 
@@ -1199,10 +1180,7 @@ const TransactionModal = ({ onBack }) => {
                 onClick={async () => {
                   // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
                   if (!qrCodeData?.transactionId) return;
-                  console.log(
-                    "Simulate with transactionId:",
-                    qrCodeData.transactionId
-                  ); // debug
+
                   const token = localStorage.getItem("token");
                   try {
                     await fetch(
@@ -1310,10 +1288,7 @@ const TransactionModal = ({ onBack }) => {
                 onClick={async () => {
                   // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
                   if (!qrCodeData?.transactionId) return;
-                  console.log(
-                    "Simulate with transactionId:",
-                    qrCodeData.transactionId
-                  ); // debug
+
                   const token = localStorage.getItem("token");
                   try {
                     await fetch(
@@ -1504,19 +1479,19 @@ const TransactionModal = ({ onBack }) => {
                     {totalGuests} khách
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between py-2 border-b border-blue-100">
                   <span className="text-gray-600 flex items-center">
                     <Building className="w-4 h-4 mr-2" />
                     Số phòng đặt
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {totalRooms} phòng
+                    {displayTotalRooms} phòng
                   </span>
                 </div>
-                {bookedRooms.length > 0 && (
-                  <div className="py-1 border-b border-blue-100">
-                    <ul className="text-gray-700 pt-0 list-disc ml-3">
-                      {bookedRooms.map((room, idx) => (
+                {displayBookedRooms.length > 0 && (
+                  <div className="py-2">
+                    <ul className="text-sm text-gray-700 list-disc ml-6">
+                      {displayBookedRooms.map((room, idx) => (
                         <li key={room._id || idx}>
                           {room.roomId?.name || room.name || "Phòng"} x{" "}
                           {room.quantity}
