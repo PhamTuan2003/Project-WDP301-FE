@@ -77,7 +77,6 @@ function AppWrapper() {
     localStorage.getItem("themeMode") || "light"
   );
   const dispatch = useDispatch();
-  // Sửa: tách từng selector riêng biệt để tránh warning
   const showTransactionModal = useSelector(
     (state) => state.ui.modals.showTransactionModal
   );
@@ -92,13 +91,11 @@ function AppWrapper() {
     dispatch(initializeAuth());
   }, [dispatch]);
 
-  // Chỉ chạy 1 lần khi app mount để khôi phục modal nếu cần
   useEffect(() => {
     const bookingId = localStorage.getItem("bookingIdForTransaction");
     if (bookingId) {
       dispatch(openTransactionModal(bookingId));
     }
-    // eslint-disable-next-line
   }, []);
 
   useBodyScrollLock();
@@ -115,9 +112,7 @@ function AppWrapper() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* {!hideHeaderFooter && <Header toggleTheme={toggleTheme} mode={mode} />} */}
       <Routes>
-        {/* User & Public Routes */}
         <Route element={<MainLayout toggleTheme={toggleTheme} mode={mode} />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/find-boat" element={<FindBoat />} />

@@ -524,11 +524,18 @@ const InvoiceModal = () => {
                         if (schedule) {
                           if (schedule.displayText) return schedule.displayText;
                           if (schedule.startDate && schedule.endDate) {
-                            return `${new Date(
-                              schedule.startDate
-                            ).toLocaleDateString("vi-VN")} - ${new Date(
-                              schedule.endDate
-                            ).toLocaleDateString("vi-VN")}`;
+                            // Kiểm tra startDate/endDate hợp lệ
+                            const start = schedule.startDate
+                              ? new Date(schedule.startDate)
+                              : null;
+                            const end = schedule.endDate
+                              ? new Date(schedule.endDate)
+                              : null;
+                            if (start && end && !isNaN(start) && !isNaN(end)) {
+                              return `${start.toLocaleDateString(
+                                "vi-VN"
+                              )} - ${end.toLocaleDateString("vi-VN")}`;
+                            }
                           }
                         }
                         return "-";
@@ -537,6 +544,7 @@ const InvoiceModal = () => {
                   </Box>
                 </Stack>
               </Grid>
+
               {invoiceData.yachtInfo.checkInDate && (
                 <Grid item xs={12} md={4}>
                   <Stack direction="row" alignItems="center" spacing={1}>

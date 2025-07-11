@@ -26,25 +26,25 @@ import {
   openTransactionModal,
 } from "../../../redux/actions";
 import { getScheduleById } from "../../../utils/scheduleHelpers";
-
-// Animation variants for modal drop-in and backdrop fade
-const backdropVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.3 } },
-};
-const dropInVariants = {
-  hidden: { y: "-100vh", opacity: 0, scale: 0.8 },
-  visible: {
-    y: "0",
-    opacity: 1,
-    scale: 1,
-    transition: { type: "spring", damping: 20, stiffness: 300 },
-  },
-  exit: { y: "100vh", opacity: 0, scale: 0.8, transition: { duration: 0.2 } },
-};
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  Grid,
+  IconButton,
+  Stack,
+  useTheme,
+  Divider,
+  Paper,
+} from "@mui/material";
 
 const ConfirmationModal = ({ scheduleObj }) => {
   const dispatch = useDispatch();
+  const theme = useTheme();
   const { showConfirmationModal, confirmationData } = useSelector(
     (state) => state.ui.modals
   );
@@ -52,7 +52,6 @@ const ConfirmationModal = ({ scheduleObj }) => {
   const schedules = useSelector((state) => state.booking.schedules);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Fetch schedules if not available and yachtId is provided
   useEffect(() => {
     if (
       confirmationData?.yachtId &&
@@ -65,7 +64,6 @@ const ConfirmationModal = ({ scheduleObj }) => {
   if (!showConfirmationModal || !confirmationData) return null;
   const { bookingId, isDirectBooking } = confirmationData;
 
-  // Tính lại tổng khách thực tế nếu có adults, children
   const adults = Number(
     confirmationData.adults ?? confirmationData.guestCounter?.adults ?? 1
   );
@@ -87,7 +85,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
       Swal.fire({
         icon: "error",
         title: "Thiếu booking ID",
-        confirmButtonColor: "#3085d6",
+        confirmButtonColor: theme.palette.primary.main,
       });
       return;
     }
@@ -128,28 +126,18 @@ const ConfirmationModal = ({ scheduleObj }) => {
     ? "Tiến hành thanh toán"
     : "Xác nhận & Thanh toán";
 
-  // Lấy thông tin lịch trình
   let scheduleText = "-";
-
-  // Thử lấy schedule từ prop scheduleObj trước
   let schedule = scheduleObj;
-
-  // Nếu không có scheduleObj, thử lấy từ confirmationData
   if (!schedule) {
     schedule = confirmationData.schedule || confirmationData.scheduleObj;
   }
-
-  // Nếu vẫn không có, thử lấy từ scheduleId bằng getScheduleById
   if (!schedule && confirmationData.scheduleId && schedules) {
-    // Lấy schedules cho yachtId cụ thể nếu có
     const yachtSchedules =
       confirmationData.yachtId && schedules[confirmationData.yachtId]
         ? schedules[confirmationData.yachtId]
         : schedules;
     schedule = getScheduleById(yachtSchedules, confirmationData.scheduleId);
   }
-
-  // Xử lý hiển thị schedule
   if (schedule) {
     if (schedule.displayText) {
       scheduleText = schedule.displayText;
@@ -169,328 +157,535 @@ const ConfirmationModal = ({ scheduleObj }) => {
   }
 
   return (
-    <AnimatePresence>
-      {showConfirmationModal && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          variants={backdropVariants}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(4px)",
+    <Dialog
+      open={showConfirmationModal}
+      onClose={handleCancelOrReject}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: theme.shape.borderRadius * 2,
+          overflow: "visible",
+        },
+      }}
+    >
+      {showSuccess && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(0,0,0,0.4)",
           }}
         >
-          {showSuccess && (
-            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white rounded-2xl shadow-2xl px-12 py-10 flex flex-col items-center">
-                <Check className="w-16 h-16 text-green-500 mb-4" />
-                <h2 className="text-2xl font-bold text-green-700 mb-2">
-                  Thành công!
-                </h2>
-                <p className="text-green-700 text-lg">
-                  Đặt phòng của bạn đã được xác nhận.
-                </p>
-              </div>
-            </div>
-          )}
-          <motion.div
-            className="bg-white rounded-2xl shadow-2xl mt-14 w-full max-w-4xl max-h-[80vh] overflow-hidden"
-            variants={dropInVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+          <Paper
+            elevation={3}
+            sx={{
+              p: theme.spacing(6),
+              borderRadius: theme.shape.borderRadius * 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r pt-3 from-cyan-600 to-cyan-700 px-10 text-white relative">
-              <div className="flex items-center justify-between">
-                <div className=" items-center justify-center">
-                  <h3 className="text-[22px] font-bold mb-1">
-                    Xác nhận thông tin đặt phòng
-                  </h3>
-                  <p className="text-gray-50 text-sm">
-                    Vui lòng kiểm tra kỹ thông tin trước khi xác nhận
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-end">
-                  {" "}
-                  <button
-                    onClick={handleCancelOrReject}
-                    className="text-white hover:text-blue-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
-                    disabled={submitting}
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-              </div>
-              {/* Decorative circles */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-y-16 translate-x-16"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white bg-opacity-10 rounded-full translate-y-12 -translate-x-12"></div>
-            </div>
-
-            {/* Content */}
-            <div className="px-5 py-3 overflow-y-auto max-h-[calc(80vh-200px)]">
-              <div className="bg-gradient-to-r my-3 from-amber-100 to-orange-50 border-l-4 border-amber-500 rounded-lg p-3">
-                <div className="flex  items-center">
-                  <AlertCircle className="text-amber-600 mr-3" size={20} />
-                  <span className="font-medium text-amber-800">
-                    Thông tin này sẽ được sử dụng để xử lý đặt phòng của bạn
-                  </span>
-                </div>
-              </div>
-              {/* Grid: Personal & Booking Info */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Personal Info */}
-                <div className="space-y-6">
-                  <h4 className="text-lg font-semibold text-gray-800 flex items-center border-b pb-2">
-                    <User className="mr-2 text-cyan-700" size={20} />
-                    Thông tin cá nhân
-                  </h4>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        icon: <User size={16} className="mr-1 text-cyan-700" />,
-                        label: "Họ và tên",
-                        value: confirmationData.fullName,
-                      },
-                      {
-                        icon: <Mail size={16} className="mr-2 text-cyan-700" />,
-                        label: "Email",
-                        value: confirmationData.email,
-                      },
-                      {
-                        icon: (
-                          <Phone size={16} className="mr-2 text-cyan-700" />
-                        ),
-                        label: "Số điện thoại",
-                        value: confirmationData.phoneNumber,
-                      },
-                    ].map((item, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-gray-100 rounded-lg px-4 py-3"
-                      >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center">
-                          {item.icon} {item.label}
-                        </label>
-                        <p className="text-gray-800 mb-0 font-medium">
-                          {item.value}
-                        </p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-                {/* Booking Info */}
-                <div className="space-y-6">
-                  <h4 className="text-lg font-semibold text-gray-800 flex items-center border-b pb-2">
-                    <Calendar className="mr-2 text-cyan-600" size={20} />
-                    Thông tin đặt phòng
-                  </h4>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        icon: (
-                          <Users size={16} className="mr-2 text-cyan-700" />
-                        ),
-                        label: "Số khách",
-                        value: `${totalGuests} khách (${adults} người lớn${
-                          childrenUnder10
-                            ? `, ${childrenUnder10} trẻ em dưới 10 tuổi`
-                            : ""
-                        }${
-                          childrenAbove10
-                            ? `, ${childrenAbove10} trẻ em từ 10 tuổi`
-                            : ""
-                        })`,
-                      },
-                      {
-                        icon: (
-                          <Calendar size={16} className="mr-2 text-cyan-700" />
-                        ),
-                        label: "Ngày check-in",
-                        value: new Date(
-                          confirmationData.checkInDate
-                        ).toLocaleDateString("vi-VN", {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }),
-                      },
-                      // Thêm lịch trình vào đây
-                      {
-                        icon: (
-                          <Calendar size={16} className="mr-2 text-cyan-700" />
-                        ),
-                        label: "Lịch trình",
-                        value: scheduleText,
-                      },
-                    ].map((item, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="bg-gray-100 rounded-lg px-4 py-3"
-                      >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center">
-                          {item.icon} {item.label}
-                        </label>
-                        <p className="text-gray-800 mb-0 font-medium">
-                          {item.value}
-                        </p>
-                      </motion.div>
-                    ))}
-                    {confirmationData.selectedRooms?.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-gray-100 rounded-lg px-4 py-3"
-                      >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-1">
-                          <Home size={16} className="mr-2 text-cyan-700" />
-                          Phòng đã chọn
-                        </label>
-                        <div className="space-y-2">
-                          {confirmationData.selectedRooms.map((room, i) => (
-                            <div
-                              key={i}
-                              className="flex justify-between items-center bg-white rounded-md p-2"
-                            >
-                              <span className="font-medium">
-                                {room.roomName} × {room.roomQuantity}
-                              </span>
-                              <span className="text-cyan-600 font-semibold">
-                                {formatPrice(
-                                  room.roomPrice * room.roomQuantity
-                                )}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                    {/* Dịch vụ đã chọn */}
-                    {confirmationData.selectedServices?.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.35 }}
-                        className="bg-gray-100 rounded-lg px-4 py-3"
-                      >
-                        <label className="text-sm font-medium text-cyan-600 flex items-center mb-1">
-                          <Users size={16} className="mr-2 text-cyan-700" />
-                          Dịch vụ đã chọn
-                        </label>
-                        <div className="space-y-2 max-h-[80px] overflow-y-auto">
-                          {confirmationData.selectedServices.map(
-                            (service, i) => (
-                              <div
-                                key={i}
-                                className="flex flex-col justify-between items-center bg-white rounded-md p-2"
-                              >
-                                <span className="font-medium">
-                                  {service.serviceName}
-                                  {service.serviceQuantity
-                                    ? ` × ${service.serviceQuantity}`
-                                    : ""}
-                                </span>
-                                <span className="text-cyan-600 font-semibold">
-                                  {formatPrice(
-                                    service.servicePrice *
-                                      (service.serviceQuantity || 1)
-                                  )}
-                                </span>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Special Requirements */}
-              {confirmationData.requirements && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="mb-8 bg-cyan-50 rounded-lg px-4 py-3 border border-cyan-200"
-                >
-                  <label className="text-sm font-medium text-cyan-600 flex items-center">
-                    <MessageSquare size={16} className="mr-2 text-cyan-700" />
-                    Yêu cầu đặc biệt
-                  </label>
-                  <p className="text-gray-800 px-4 leading-relaxed mb-0">
-                    <li> {confirmationData.requirements}</li>
-                  </p>
-                </motion.div>
-              )}
-
-              {/* Total Price */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
-                className="bg-gradient-to-r from-cyan-100 to-cyan-50 border border-cyan-200 rounded-xl p-4 mb-8"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <DollarSign
-                      className="text-cyan-600 font-bold mr-2"
-                      size={24}
-                    />
-                    <span className="text-lg font-bold text-gray-800">
-                      Tổng tiền thanh toán:
-                    </span>
-                  </div>
-                  <span className="text-2xl font-bold text-cyan-600">
-                    {formatPrice(confirmationData.totalPrice)}
-                  </span>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="bg-gray-100 px-8 py-4 border-t">
-              <div className="flex gap-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={handleCancelOrReject}
-                  disabled={submitting}
-                  className="flex-1 px-6 py-3 border-2 border-red-300 text-red-700 rounded-xl hover:bg-red-100 transition-transform duration-200 disabled:opacity-50"
-                >
-                  Hủy bỏ
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={confirmAction}
-                  disabled={submitting}
-                  className="relative flex-1 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-xl transition-transform duration-200 disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mx-auto" />
-                  ) : (
-                    confirmText
-                  )}
-                  {/* extra decorative circles */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white bg-opacity-10 rounded-full translate-y-12 -translate-x-12"></div>
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+            <Check
+              size={64}
+              color={theme.palette.success.main}
+              style={{ marginBottom: theme.spacing(2) }}
+            />
+            <Typography
+              variant="h5"
+              fontWeight="bold"
+              color={theme.palette.success.dark}
+              mb={1}
+            >
+              Thành công!
+            </Typography>
+            <Typography color={theme.palette.success.dark}>
+              Đặt phòng của bạn đã được xác nhận.
+            </Typography>
+          </Paper>
+        </Box>
       )}
-    </AnimatePresence>
+      <DialogTitle
+        sx={{
+          background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          color: theme.palette.primary.contrastText,
+          pb: theme.spacing(2),
+        }}
+      >
+        <Grid container alignItems="center" justifyContent="space-between">
+          <Grid item>
+            <Typography variant="h6" fontWeight="bold">
+              Xác nhận thông tin đặt phòng
+            </Typography>
+            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.9)" }}>
+              Vui lòng kiểm tra kỹ thông tin trước khi xác nhận
+            </Typography>
+          </Grid>
+          <Grid item>
+            <IconButton
+              onClick={handleCancelOrReject}
+              sx={{ color: theme.palette.primary.contrastText }}
+              disabled={submitting}
+            >
+              <X size={24} />
+            </IconButton>
+          </Grid>
+        </Grid>
+      </DialogTitle>
+      <DialogContent
+        sx={{
+          px: theme.spacing(4),
+          py: theme.spacing(3),
+          bgcolor: theme.palette.background.default,
+        }}
+      >
+        <Box
+          sx={{
+            background: `linear-gradient(90deg, ${
+              theme.palette.warning.light
+            }, ${theme.palette.warning.lighter || "#fff7ed"})`,
+            borderLeft: `4px solid ${theme.palette.warning.main}`,
+            borderRadius: theme.shape.borderRadius,
+            p: theme.spacing(2),
+            mb: theme.spacing(3),
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <AlertCircle color={theme.palette.warning.main} size={20} />
+            <Typography fontWeight={500} color={theme.palette.warning.dark}>
+              Thông tin này sẽ được sử dụng để xử lý đặt phòng của bạn
+            </Typography>
+          </Stack>
+        </Box>
+        <Grid container spacing={4} mb={4}>
+          {/* Personal Info */}
+          <Grid item xs={12} md={6}>
+            <Box display="flex" alignItems="center" mb={1}>
+              <User
+                size={20}
+                style={{
+                  marginRight: theme.spacing(1),
+                  color: theme.palette.primary.dark,
+                }}
+              />
+              <Typography
+                variant="subtitle1"
+                fontWeight={600}
+                color={theme.palette.text.primary}
+              >
+                Thông tin cá nhân
+              </Typography>
+            </Box>
+            <Stack spacing={2}>
+              {[
+                {
+                  icon: (
+                    <User
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                  ),
+                  label: "Họ và tên",
+                  value: confirmationData.fullName,
+                },
+                {
+                  icon: (
+                    <Mail
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                  ),
+                  label: "Email",
+                  value: confirmationData.email,
+                },
+                {
+                  icon: (
+                    <Phone
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                  ),
+                  label: "Số điện thoại",
+                  value: confirmationData.phoneNumber,
+                },
+              ].map((item, idx) => (
+                <Paper
+                  key={idx}
+                  variant="outlined"
+                  sx={{
+                    p: theme.spacing(2),
+                    borderRadius: theme.shape.borderRadius,
+                  }}
+                >
+                  <Box display="flex" alignItems="center">
+                    {item.icon}
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.primary.dark}
+                      fontWeight={500}
+                    >
+                      {item.label}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    color={theme.palette.text.primary}
+                    fontWeight={500}
+                  >
+                    {item.value}
+                  </Typography>
+                </Paper>
+              ))}
+            </Stack>
+          </Grid>
+          {/* Booking Info */}
+          <Grid item xs={12} md={6}>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Calendar
+                size={20}
+                style={{
+                  marginRight: theme.spacing(1),
+                  color: theme.palette.primary.dark,
+                }}
+              />
+              <Typography
+                variant="subtitle1"
+                fontWeight={600}
+                color={theme.palette.text.primary}
+              >
+                Thông tin đặt phòng
+              </Typography>
+            </Box>
+            <Stack spacing={2}>
+              {[
+                {
+                  icon: (
+                    <Users
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                  ),
+                  label: "Số khách",
+                  value: `${totalGuests} khách (${adults} người lớn${
+                    childrenUnder10
+                      ? `, ${childrenUnder10} trẻ em dưới 10 tuổi`
+                      : ""
+                  }${
+                    childrenAbove10
+                      ? `, ${childrenAbove10} trẻ em từ 10 tuổi`
+                      : ""
+                  })`,
+                },
+                {
+                  icon: (
+                    <Calendar
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                  ),
+                  label: "Ngày check-in",
+                  value: new Date(
+                    confirmationData.checkInDate
+                  ).toLocaleDateString("vi-VN", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                },
+                {
+                  icon: (
+                    <Calendar
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                  ),
+                  label: "Lịch trình",
+                  value: scheduleText,
+                },
+              ].map((item, idx) => (
+                <Paper
+                  key={idx}
+                  variant="outlined"
+                  sx={{
+                    p: theme.spacing(2),
+                    borderRadius: theme.shape.borderRadius,
+                  }}
+                >
+                  <Box display="flex" alignItems="center">
+                    {item.icon}
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.primary.dark}
+                      fontWeight={500}
+                    >
+                      {item.label}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    color={theme.palette.text.primary}
+                    fontWeight={500}
+                  >
+                    {item.value}
+                  </Typography>
+                </Paper>
+              ))}
+              {confirmationData.selectedRooms?.length > 0 && (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: theme.spacing(2),
+                    borderRadius: theme.shape.borderRadius,
+                  }}
+                >
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Home
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.primary.dark}
+                      fontWeight={500}
+                    >
+                      Phòng đã chọn
+                    </Typography>
+                  </Box>
+                  <Stack spacing={1}>
+                    {confirmationData.selectedRooms.map((room, i) => (
+                      <Box
+                        key={i}
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        bgcolor={theme.palette.background.paper}
+                        borderRadius={theme.shape.borderRadius / 2}
+                        p={1}
+                      >
+                        <Typography fontWeight={500}>
+                          {room.roomName} × {room.roomQuantity}
+                        </Typography>
+                        <Typography
+                          color={theme.palette.primary.main}
+                          fontWeight={600}
+                        >
+                          {formatPrice(room.roomPrice * room.roomQuantity)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
+              {confirmationData.selectedServices?.length > 0 && (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: theme.spacing(2),
+                    borderRadius: theme.shape.borderRadius,
+                  }}
+                >
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Users
+                      size={16}
+                      style={{
+                        marginRight: theme.spacing(0.5),
+                        color: theme.palette.primary.dark,
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.primary.dark}
+                      fontWeight={500}
+                    >
+                      Dịch vụ đã chọn
+                    </Typography>
+                  </Box>
+                  <Stack spacing={1} sx={{ maxHeight: 80, overflowY: "auto" }}>
+                    {confirmationData.selectedServices.map((service, i) => (
+                      <Box
+                        key={i}
+                        display="flex"
+                        flexDirection="column"
+                        alignItems="center"
+                        bgcolor={theme.palette.background.paper}
+                        borderRadius={theme.shape.borderRadius / 2}
+                        p={1}
+                      >
+                        <Typography fontWeight={500}>
+                          {service.serviceName}
+                          {service.serviceQuantity
+                            ? ` × ${service.serviceQuantity}`
+                            : ""}
+                        </Typography>
+                        <Typography
+                          color={theme.palette.primary.main}
+                          fontWeight={600}
+                        >
+                          {formatPrice(
+                            service.servicePrice *
+                              (service.serviceQuantity || 1)
+                          )}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
+            </Stack>
+          </Grid>
+        </Grid>
+        {confirmationData.requirements && (
+          <Paper
+            variant="outlined"
+            sx={{
+              mb: theme.spacing(4),
+              bgcolor: theme.palette.primary.light,
+              borderRadius: theme.shape.borderRadius,
+              p: theme.spacing(2),
+              borderColor: theme.palette.primary.main,
+            }}
+          >
+            <Box display="flex" alignItems="center">
+              <MessageSquare
+                size={16}
+                style={{
+                  marginRight: theme.spacing(0.5),
+                  color: theme.palette.primary.dark,
+                }}
+              />
+              <Typography
+                variant="caption"
+                color={theme.palette.primary.dark}
+                fontWeight={500}
+              >
+                Yêu cầu đặc biệt
+              </Typography>
+            </Box>
+            <Box pl={2}>
+              <Typography color={theme.palette.text.primary}>
+                <li>{confirmationData.requirements}</li>
+              </Typography>
+            </Box>
+          </Paper>
+        )}
+        <Paper
+          variant="outlined"
+          sx={{
+            background: `linear-gradient(90deg, ${theme.palette.primary.light}, ${theme.palette.background.paper})`,
+            borderColor: theme.palette.primary.main,
+            borderRadius: theme.shape.borderRadius * 1.5,
+            p: theme.spacing(3),
+            mb: theme.spacing(4),
+          }}
+        >
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Box display="flex" alignItems="center">
+              <DollarSign
+                color={theme.palette.primary.dark}
+                style={{ marginRight: theme.spacing(1) }}
+                size={24}
+              />
+              <Typography fontWeight="bold" color={theme.palette.text.primary}>
+                Tổng tiền thanh toán:
+              </Typography>
+            </Box>
+            <Typography
+              variant="h5"
+              fontWeight="bold"
+              color={theme.palette.primary.main}
+            >
+              {formatPrice(confirmationData.totalPrice)}
+            </Typography>
+          </Box>
+        </Paper>
+      </DialogContent>
+      <DialogActions
+        sx={{
+          bgcolor: theme.palette.background.paper,
+          px: theme.spacing(4),
+          py: theme.spacing(3),
+          borderTop: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Button
+              onClick={handleCancelOrReject}
+              variant="outlined"
+              color="error"
+              fullWidth
+              size="large"
+              disabled={submitting}
+              sx={{ borderRadius: theme.shape.borderRadius, fontWeight: 600 }}
+            >
+              Hủy bỏ
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              onClick={confirmAction}
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
+              disabled={submitting}
+              sx={{
+                borderRadius: theme.shape.borderRadius,
+                fontWeight: 600,
+                position: "relative",
+              }}
+            >
+              {submitting ? (
+                <Box
+                  component="span"
+                  sx={{
+                    display: "inline-block",
+                    width: 24,
+                    height: 24,
+                    border: `2px solid ${theme.palette.primary.contrastText}`,
+                    borderTop: `2px solid transparent`,
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                    mx: "auto",
+                  }}
+                />
+              ) : (
+                confirmText
+              )}
+            </Button>
+          </Grid>
+        </Grid>
+      </DialogActions>
+    </Dialog>
   );
 };
 

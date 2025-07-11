@@ -171,7 +171,8 @@ const RoomServicesModal = ({
                               borderBottom: "1px solid #eee",
                               p: 1,
                               borderRadius: 1,
-                              bgcolor: "#fafafa",
+                              bgcolor: (theme) =>
+                                theme.palette.background.paper,
                             }}
                           >
                             <span>

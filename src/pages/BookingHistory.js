@@ -46,6 +46,7 @@ import {
 import Swal from "sweetalert2";
 import { ListCollapse, Receipt, Trash } from "lucide-react";
 import { getScheduleById } from "../utils/scheduleHelpers";
+import { theme } from "antd";
 
 const statusMap = {
   consultation_requested: {
@@ -239,14 +240,25 @@ export default function BookingHistory() {
         backgroundImage:
           theme.palette.mode === "light"
             ? 'url("https://images.pexels.com/photos/32699741/pexels-photo-32699741.jpeg")'
-            : "none",
+            : 'url("https://images.pexels.com/photos/2147485/pexels-photo-2147485.jpeg")',
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
       })}
     >
-      <Container maxWidth="lg" sx={{ py: 2 }}>
-        <Typography variant="h4" mb={3} fontWeight={700} color="primary.main">
+      <Container maxWidth="lg" className="py-2 bg-white/30 rounded-3xl">
+        <Typography
+          variant="h4"
+          mb={3}
+          fontWeight={700}
+          sx={{
+            color: (theme) => theme.palette.primary.main,
+            bgcolor: (theme) => theme.palette.background.paper,
+            borderRadius: 2,
+            px: 1,
+            width: "fit-content",
+          }}
+        >
           Lịch sử booking của bạn
         </Typography>
         <Stack
@@ -255,7 +267,20 @@ export default function BookingHistory() {
           mb={3}
           alignItems="center"
         >
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl
+            size="small"
+            sx={{
+              borderRadius: 2,
+              minWidth: 200,
+
+              color: (theme) => theme.palette.primary.main,
+              bgcolor: (theme) => theme.palette.background.paper,
+              border: (theme) => `1px solid ${theme.palette.primary.main}`,
+              "& .MuiOutlinedInput-notchedOutline": {
+                border: "none",
+              },
+            }}
+          >
             <InputLabel>Lọc theo trạng thái</InputLabel>
             <Select
               value={filterStatus}
@@ -291,7 +316,7 @@ export default function BookingHistory() {
                       bookingImages[booking._id] || "/images/yacht-8.jpg";
                     const isRoomsExpanded = expandedRooms[booking._id];
                     const isServicesExpanded = expandedServices[booking._id];
-                    // Lấy object lịch trình từ scheduleId
+
                     const yachtKey = booking.yacht?._id || booking.yacht;
                     const schedulesForYacht = schedules[yachtKey] || [];
                     const scheduleObj = getScheduleById(

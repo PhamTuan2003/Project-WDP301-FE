@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { X, ArrowRight, Edit } from "lucide-react";
+import {
+  X,
+  ArrowRight,
+  Edit,
+  Calendar as CalendarIcon,
+  ChevronDown,
+} from "lucide-react";
 import { Box, TextField, Typography, Button } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
@@ -29,6 +35,31 @@ import {
 } from "../../../redux/actions/bookingActions";
 import { closeBookingModal } from "../../../redux/actions";
 import RoomServicesModal from "../RoomServicesModal";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { vi } from "date-fns/locale";
+import { useTheme } from "@mui/material/styles";
+
+// Thêm biến màu lấy từ theme
+const getDatePickerThemeVars = (theme) => `
+  :root {
+    --datepicker-bg: ${theme.palette.background.paper};
+    --datepicker-header-bg: ${theme.palette.primary.light};
+    --datepicker-header-color: ${theme.palette.text.primary};
+    --datepicker-border: ${theme.palette.primary.main};
+    --datepicker-selected-bg: ${theme.palette.primary.main};
+    --datepicker-selected-color: ${theme.palette.text.primary};
+    --datepicker-hover-bg: ${theme.palette.primary.light};
+    --datepicker-hover-color: ${theme.palette.text.primary};
+    --datepicker-today-border: ${theme.palette.secondary.main};
+    --datepicker-label: ${theme.palette.primary.main};
+    --datepicker-error: ${theme.palette.error.main};
+    --datepicker-divider: ${theme.palette.divider};
+ --datepicker-disabled: ${
+   theme.palette.text.disabled || theme.palette.text.secondary
+ };
+  }
+`;
 
 const BookingRoomModal = ({
   show,
@@ -41,6 +72,7 @@ const BookingRoomModal = ({
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const theme = useTheme();
   const {
     bookingForm,
     bookingErrors,
@@ -168,8 +200,8 @@ const BookingRoomModal = ({
     }
     const formValidation = validateBookingForm(bookingForm);
     const roomValidation = validateRoomSelection(
-      selectedRooms, // Sử dụng selectedRooms từ props
-      propSelectedSchedule, // Sử dụng selectedSchedule từ props
+      selectedRooms,
+      propSelectedSchedule,
       bookingForm.guestCount
     );
 
@@ -252,12 +284,6 @@ const BookingRoomModal = ({
   const handleSubmit = async (requestType) => {
     if (!validateAllForms()) return;
     const sharedData = prepareSharedBookingData();
-    console.log("[Booking Submit] selectedSchedule:", propSelectedSchedule);
-    console.log(
-      "[Booking Submit] selectedYachtServices:",
-      selectedYachtServices
-    );
-    console.log("[Booking Submit] sharedData:", sharedData);
     let result;
     if (editingBookingId) {
       const { bookingId, ...dataForUpdate } = sharedData;
@@ -520,54 +546,214 @@ const BookingRoomModal = ({
             >
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {" "}
-                <TextField
-                  fullWidth
-                  label="Ngày nhận phòng"
-                  type="date"
-                  value={
-                    bookingForm.checkInDate &&
-                    bookingForm.checkInDate.includes("/")
-                      ? `${bookingForm.checkInDate.split("/")[2]}-${
-                          bookingForm.checkInDate.split("/")[1]
-                        }-${bookingForm.checkInDate.split("/")[0]}`
-                      : bookingForm.checkInDate || ""
-                  }
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const formattedForDisplay = val
-                      ? new Date(val + "T00:00:00").toLocaleDateString(
-                          "vi-VN",
-                          {
+                <div
+                  style={{
+                    width: "100%",
+                    position: "relative",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ position: "relative", marginBottom: 4 }}>
+                    <Typography
+                      sx={{
+                        color: bookingErrors.checkInDate
+                          ? theme.palette.error.main
+                          : theme.palette.primary.main,
+                        bgcolor: theme.palette.background.paper,
+                        borderRadius: 1,
+                        padding: "0 4px",
+                        fontWeight: 600,
+                        fontFamily: "Archivo, sans-serif",
+                        zIndex: 2,
+                        transition: "color 0.2s",
+                        boxShadow: theme.shadows[1],
+                        position: "absolute",
+                        top: -16,
+                        left: 15,
+                        fontSize: 13,
+                      }}
+                    >
+                      Ngày nhận phòng
+                    </Typography>
+                    <ReactDatePicker
+                      selected={(() => {
+                        if (
+                          bookingForm.checkInDate &&
+                          bookingForm.checkInDate.includes("/")
+                        ) {
+                          const [day, month, year] =
+                            bookingForm.checkInDate.split("/");
+                          return new Date(`${year}-${month}-${day}T00:00:00`);
+                        }
+                        if (bookingForm.checkInDate) {
+                          return new Date(bookingForm.checkInDate);
+                        }
+                        return null;
+                      })()}
+                      onChange={(date) => {
+                        let formatted = "";
+                        if (date instanceof Date && !isNaN(date)) {
+                          formatted = date.toLocaleDateString("vi-VN", {
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
-                          }
-                        )
-                      : "";
-                    handleInputChange("checkInDate", formattedForDisplay);
-                  }}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{
-                    min: new Date().toISOString().split("T")[0],
-                  }}
-                  variant="outlined"
-                  error={!!bookingErrors.checkInDate}
-                  helperText={bookingErrors.checkInDate}
-                  sx={{
-                    "& .MuiInputLabel-root": {
-                      color: "text.secondary",
-                      "&.Mui-focused": { color: "primary.main" },
-                      fontFamily: "Archivo, sans-serif",
-                    },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: (theme) => theme.shape.borderRadius / 2,
-                      "& fieldset": { borderColor: "divider" },
-                      "&:hover fieldset": { borderColor: "primary.main" },
-                      "&.Mui-focused fieldset": { borderColor: "primary.main" },
-                      fontFamily: "Archivo, sans-serif",
-                    },
-                  }}
-                />
+                          });
+                        }
+                        handleInputChange("checkInDate", formatted);
+                      }}
+                      dateFormat="dd/MM/yyyy"
+                      minDate={new Date()}
+                      locale={vi}
+                      placeholderText="Chọn ngày nhận phòng"
+                      dayClassName={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const d = new Date(date);
+                        d.setHours(0, 0, 0, 0);
+                        if (d < today) return "datepicker-day-disabled";
+                        return "datepicker-day-active";
+                      }}
+                      customInput={
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            border: `2px solid ${
+                              bookingErrors.checkInDate
+                                ? theme.palette.error.main
+                                : theme.palette.primary.main
+                            }`,
+                            borderRadius: 24,
+                            padding: "10px 16px",
+                            background: theme.palette.background.paper,
+                            fontFamily: "Archivo, sans-serif",
+                            fontSize: 16,
+                            color: theme.palette.text.primary,
+                            boxShadow: bookingErrors.checkInDate
+                              ? `0 0 0 2px ${theme.palette.error.light}`
+                              : theme.shadows[1],
+                            transition: "border-color 0.2s, box-shadow 0.2s",
+                            cursor: "pointer",
+                            width: "100%",
+                            outline: "none",
+                            position: "relative",
+                          }}
+                          tabIndex={0}
+                        >
+                          <CalendarIcon
+                            size={20}
+                            style={{
+                              marginRight: 10,
+                              color: bookingErrors.checkInDate
+                                ? theme.palette.error.main
+                                : theme.palette.primary.main,
+                            }}
+                          />
+                          <span
+                            style={{
+                              flex: 1,
+                              opacity: bookingForm.checkInDate ? 1 : 0.7,
+                              color: bookingForm.checkInDate
+                                ? theme.palette.text.primary
+                                : theme.palette.text.secondary,
+                            }}
+                          >
+                            {bookingForm.checkInDate || "Chọn ngày nhận phòng"}
+                          </span>
+                          <ChevronDown
+                            size={20}
+                            style={{
+                              marginLeft: 10,
+                              color: theme.palette.primary.main,
+                            }}
+                          />
+                        </Box>
+                      }
+                      popperClassName="custom-datepicker-popper"
+                      calendarClassName="custom-datepicker-calendar"
+                    />
+                  </div>
+                  {bookingErrors.checkInDate && (
+                    <div
+                      style={{
+                        color: theme.palette.error.main,
+                        fontSize: 12,
+                        marginTop: 2,
+                        fontFamily: "Archivo, sans-serif",
+                      }}
+                    >
+                      {bookingErrors.checkInDate}
+                    </div>
+                  )}
+                  <style>{`
+                    ${getDatePickerThemeVars(theme)}
+                    .react-datepicker-wrapper {
+                      width: 100% !important;
+                    }
+                    .react-datepicker__month-container {
+                      width: 100% !important;
+                    }
+                    .custom-datepicker-popper {
+                      z-index: 9999 !important;
+                    }
+                    .custom-datepicker-calendar {
+                      font-family: Archivo, sans-serif;
+                      border-radius: 18px;
+                      box-shadow: 0 8px 32px rgba(104,191,181,0.10);
+                      border: 1.5px solid var(--datepicker-border);
+                      overflow: hidden;
+                      min-width: 320px;
+                      background: var(--datepicker-bg);
+                    }
+                    .custom-datepicker-calendar .react-datepicker__header {
+                      background: var(--datepicker-header-bg);
+                      color: var(--datepicker-header-color);
+                      border-bottom: none;
+                      border-radius: 18px 18px 0 0;
+                    }
+                    .custom-datepicker-calendar .react-datepicker__current-month,
+                    .custom-datepicker-calendar .react-datepicker__day-name {
+                      color: var(--datepicker-header-color);
+                      font-weight: bold;
+                      font-size: 14px;
+                      margin-left: 6px;
+                    }
+                    .custom-datepicker-calendar .react-datepicker__day--selected,
+                    .custom-datepicker-calendar .react-datepicker__day--keyboard-selected {
+                      background: var(--datepicker-selected-bg) !important;
+                      color: var(--datepicker-selected-color) !important;
+                      border-radius: 10px;
+                      margin-left: 10px;
+                    }
+                    .custom-datepicker-calendar .react-datepicker__day:hover {
+                      background: var(--datepicker-hover-bg) !important;
+                      color: var(--datepicker-hover-color) !important;
+                      border-radius: 10px;
+                    }
+                    .custom-datepicker-calendar .react-datepicker__day--today {
+                      border-bottom: 2px solid var(--datepicker-today-border);
+                      margin-left: 6px;
+                    }
+                    .custom-datepicker-calendar .react-datepicker__navigation {
+                      top: 18px;
+                    }
+                    .custom-datepicker-calendar .react-datepicker__navigation-icon::before {
+                      border-color: var(--datepicker-header-color);
+                    }
+                    .datepicker-day-disabled {
+                      color: var(--datepicker-disabled) !important;
+                      background: none !important;
+                      opacity: 0.5;
+                      cursor: not-allowed !important;
+                      pointer-events: none;
+                    }
+                    .datepicker-day-active {
+                      color: ${theme.palette.text.primary} !important;
+                      background: none;
+                      cursor: pointer;
+                    }
+                  `}</style>
+                </div>
                 <GuestCounter maxPeople={maxPeople} />
               </Box>
               {/* Hiển thị chi tiết phòng và dịch vụ */}
@@ -588,7 +774,10 @@ const BookingRoomModal = ({
                     scrollbarGutter: "stable",
                     p: 1,
                     borderRadius: 2,
-                    background: "#fafafa",
+                    bgcolor: (theme) => theme.palette.background.paper,
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                    boxShadow: (theme) => theme.shadows[1],
+                    color: (theme) => theme.palette.text.primary,
                     "&::-webkit-scrollbar": {
                       width: "8px",
                       borderRadius: "4px",
@@ -600,7 +789,7 @@ const BookingRoomModal = ({
                       borderRadius: "4px",
                       minHeight: "20px",
                     },
-                    boxShadow: (theme) => theme.shadows[1],
+
                     borderBottom: (theme) =>
                       `1px solid ${theme.palette.divider}`,
                   }}
@@ -608,7 +797,7 @@ const BookingRoomModal = ({
                   <Typography
                     sx={{ fontWeight: "bold", mx: 1, color: "primary.main" }}
                   >
-                    Phòng đã đã chọn
+                    Phòng đã chọn
                   </Typography>{" "}
                   {(selectedRooms || []).map((room) => (
                     <Box key={room.id} sx={{ mx: 2 }}>
@@ -809,36 +998,6 @@ const BookingRoomModal = ({
                         </Typography>
                       </Box>
                     )}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      borderTop: "1px solid rgba(255,255,255,0.3)",
-                      pt: 1,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: "1rem",
-                        color: "primary.contrastText",
-                        fontWeight: "bold",
-                        fontFamily: "Archivo, sans-serif",
-                      }}
-                    >
-                      Tổng cộng:
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: "1rem",
-                        color: "primary.contrastText",
-                        fontWeight: "bold",
-                        fontFamily: "Archivo, sans-serif",
-                      }}
-                    >
-                      {(totalRoomPrice + totalServicePrice).toLocaleString()} đ
-                    </Typography>
-                  </Box>
                 </Box>
               </Box>
             </Box>

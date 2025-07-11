@@ -399,9 +399,11 @@ const GuestCounter = ({ maxPeople }) => {
           {/* Hiển thị tổng khách quy đổi */}
           <Box
             sx={{
-              bgcolor: overLimit ? "error.main" : "primary.main",
-              color: "primary.contrastText",
-              p: 1.5,
+              border: overLimit
+                ? "1px solid #4f908a"
+                : "1px solid #68bfb5",
+              color: "primary.main",
+              p: 0.5,
               borderRadius: 1,
               mt: 1,
               textAlign: "center",
@@ -439,8 +441,8 @@ const GuestCounter = ({ maxPeople }) => {
                 {totalGuests > maxPeople
                   ? `⚠️ Vượt quá ${totalGuests - maxPeople} người`
                   : totalGuests === maxPeople
-                  ? `⚠️ Đã đạt giới hạn tối đa`
-                  : `✅ Còn ${maxPeople - totalGuests} chỗ trống`}
+                  ? <Typography sx={{ color: "error.main", fontSize: "0.7rem" }}>⚠️ Đã đạt giới hạn tối đa</Typography>
+                  : <Typography sx={{ color: "success.main", fontSize: "0.7rem" }}>✅ Còn {maxPeople - totalGuests} chỗ trống</Typography>}
               </Typography>
             )}
           </Box>

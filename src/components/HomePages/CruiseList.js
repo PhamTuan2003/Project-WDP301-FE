@@ -23,7 +23,6 @@ export default function CruiseList() {
   useEffect(() => {
     const fetchCruises = async () => {
       try {
-        // Step 1: Fetch list of 6 yachts from API without cheapestPrice
         const resBasic = await axios.get(
           "http://localhost:9999/api/v1/yachts",
           {
@@ -34,7 +33,6 @@ export default function CruiseList() {
           ? resBasic.data.data
           : [];
 
-        // Step 2: Fetch full list with cheapestPrice
         const resWithPrice = await axios.get(
           "http://localhost:9999/api/v1/yachts/findboat"
         );
@@ -42,12 +40,10 @@ export default function CruiseList() {
           ? resWithPrice.data.data
           : [];
 
-        // Step 3: Fetch images for each yacht and select the first image
         const combinedYachts = await Promise.all(
           yachtsBasic.map(async (yacht) => {
             const match = yachtsWithPrice.find((y) => y._id === yacht._id);
-            // Fetch image for the yacht
-            let imageUrl = "/images/placeholder.jpg"; // Default fallback image
+            let imageUrl = "/images/placeholder.jpg";
             try {
               const imageRes = await axios.get(
                 `http://localhost:9999/api/v1/yachtImages/yacht/${yacht._id}`
@@ -57,7 +53,7 @@ export default function CruiseList() {
                 Array.isArray(imageRes.data.data) &&
                 imageRes.data.data.length > 0
               ) {
-                imageUrl = imageRes.data.data[0]; // Select the first image from the array
+                imageUrl = imageRes.data.data[0];
               }
             } catch (imageErr) {
               console.error(
@@ -69,7 +65,7 @@ export default function CruiseList() {
             return {
               ...yacht,
               cheapestPrice: match?.cheapestPrice || null,
-              image: imageUrl, // Add the first imageUrl to the yacht object
+              image: imageUrl,
             };
           })
         );
@@ -91,7 +87,6 @@ export default function CruiseList() {
     }, 20);
   };
 
-  // Helper function to format price with commas
   const formatPrice = (price) => {
     if (!price && price !== 0) return "chưa có giá";
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "đ / khách";
@@ -131,6 +126,8 @@ export default function CruiseList() {
               <Card
                 sx={{
                   borderRadius: 2,
+                  pt: 2,
+                  px: 2,
                   height: "100%",
                   boxShadow: (theme) => theme.shadows[1],
                   backgroundColor: (theme) => theme.palette.background.paper,
@@ -139,9 +136,9 @@ export default function CruiseList() {
               >
                 <CardMedia
                   component="img"
-                  image={cruise.image} // Use the first imageUrl
+                  image={cruise.image}
                   alt={cruise.name}
-                  sx={{ objectFit: "cover", maxHeight: 220 }}
+                  sx={{ objectFit: "cover", borderRadius: 2, maxHeight: 200 }}
                 />
                 <CardContent>
                   <Stack
@@ -152,7 +149,7 @@ export default function CruiseList() {
                     mb={2}
                     width="fit-content"
                   >
-                    <LocationOnIcon color="primary" fontSize="small" />
+                    <LocationOnIcon color="primary" sx={{backgroundColor:"#f3f4f6", borderRadius:1}} fontSize="small" />
                     <Typography
                       variant="subtitle2"
                       fontFamily={"Archivo, sans-serif"}
@@ -176,8 +173,8 @@ export default function CruiseList() {
                     {cruise.name}
                   </Typography>
 
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <DirectionsBoatIcon color="action" fontSize="small" />
+                  <Stack direction="row" alignItems="center" mb={2}>
+                    <DirectionsBoatIcon color="action" mx={1} fontSize="small" />
                     <Typography
                       variant="caption"
                       fontFamily={"Archivo, sans-serif"}
@@ -185,36 +182,36 @@ export default function CruiseList() {
                       sx={{ fontWeight: 500 }}
                     >
                       Hạ thuỷ {cruise.launch} - Thân vỏ {cruise.hullBody} -{" "}
-                      {cruise.yachtTypeId?.name || "Không xác định"}
+                      {cruise.rule || "Không xác định"} phòng
                     </Typography>
                   </Stack>
-
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Stack direction="row" alignItems="center" spacing={2}>
                     <Typography
                       variant="h6"
                       fontFamily={"Archivo, sans-serif"}
                       color="text.primary"
                       fontWeight={700}
+                      justifyContent={"start"}
                     >
                       {formatPrice(cruise.price)}
                     </Typography>
                   </Stack>
-                </CardContent>
-                <CardActions sx={{ pt: 0, justifyContent: "center" }}>
                   <Button
                     variant="contained"
                     color="primary"
+                    justifyContent={"end"}
                     sx={{
                       borderRadius: 2,
-                      mb: 2,
-                      mx: 1,
-                      width: "50%",
+                     
+                      width: "fit-content",
                       fontFamily: "Archivo, sans-serif",
                     }}
                   >
                     Đặt ngay
                   </Button>
-                </CardActions>
+                   </Box>
+                </CardContent>
               </Card>
             </Link>
           </Grid>
