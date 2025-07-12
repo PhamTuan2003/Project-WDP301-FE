@@ -20,7 +20,7 @@ import {
 } from "../../../redux/asyncActions/bookingAsyncActions";
 import { formatPrice } from "../../../redux/validation";
 import Swal from "sweetalert2";
-import { motion, AnimatePresence } from "framer-motion";
+
 import {
   closeConfirmationModal,
   openTransactionModal,
@@ -38,7 +38,6 @@ import {
   IconButton,
   Stack,
   useTheme,
-  Divider,
   Paper,
 } from "@mui/material";
 
@@ -162,6 +161,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
       onClose={handleCancelOrReject}
       maxWidth="md"
       fullWidth
+      sx={{ borderRadius: theme.shape.borderRadius * 2 }}
       PaperProps={{
         sx: {
           borderRadius: theme.shape.borderRadius * 2,
@@ -247,17 +247,17 @@ const ConfirmationModal = ({ scheduleObj }) => {
         <Box
           sx={{
             background: `linear-gradient(90deg, ${
-              theme.palette.warning.light
+              theme.palette.warning.dark
             }, ${theme.palette.warning.lighter || "#fff7ed"})`,
-            borderLeft: `4px solid ${theme.palette.warning.main}`,
+            borderLeft: `4px solid ${theme.palette.warning.light}`,
             borderRadius: theme.shape.borderRadius,
             p: theme.spacing(2),
-            mb: theme.spacing(3),
+            my: theme.spacing(2),
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <AlertCircle color={theme.palette.warning.main} size={20} />
-            <Typography fontWeight={500} color={theme.palette.warning.dark}>
+            <AlertCircle color={theme.palette.text.primary} size={20} />
+            <Typography fontWeight={500} color={theme.palette.text.primary}>
               Thông tin này sẽ được sử dụng để xử lý đặt phòng của bạn
             </Typography>
           </Stack>
@@ -328,7 +328,8 @@ const ConfirmationModal = ({ scheduleObj }) => {
                   variant="outlined"
                   sx={{
                     p: theme.spacing(2),
-                    borderRadius: theme.shape.borderRadius,
+                    px: theme.spacing(3),
+                    borderRadius: theme.shape.borderRadius * 0.5,
                   }}
                 >
                   <Box display="flex" alignItems="center">
@@ -431,6 +432,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
                   variant="outlined"
                   sx={{
                     p: theme.spacing(2),
+                    px: theme.spacing(3),
                     borderRadius: theme.shape.borderRadius,
                   }}
                 >
@@ -457,10 +459,11 @@ const ConfirmationModal = ({ scheduleObj }) => {
                   variant="outlined"
                   sx={{
                     p: theme.spacing(2),
+                    px: theme.spacing(3),
                     borderRadius: theme.shape.borderRadius,
                   }}
                 >
-                  <Box display="flex" alignItems="center" mb={1}>
+                  <Box display="flex" alignItems="center">
                     <Home
                       size={16}
                       style={{
@@ -476,7 +479,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
                       Phòng đã chọn
                     </Typography>
                   </Box>
-                  <Stack spacing={1}>
+                  <Stack spacing={1} sx={{ maxHeight: 80, overflowY: "auto" }}>
                     {confirmationData.selectedRooms.map((room, i) => (
                       <Box
                         key={i}
@@ -485,7 +488,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
                         alignItems="center"
                         bgcolor={theme.palette.background.paper}
                         borderRadius={theme.shape.borderRadius / 2}
-                        p={1}
+                        px={2}
                       >
                         <Typography fontWeight={500}>
                           {room.roomName} × {room.roomQuantity}
@@ -506,10 +509,11 @@ const ConfirmationModal = ({ scheduleObj }) => {
                   variant="outlined"
                   sx={{
                     p: theme.spacing(2),
+                    px: theme.spacing(3),
                     borderRadius: theme.shape.borderRadius,
                   }}
                 >
-                  <Box display="flex" alignItems="center" mb={1}>
+                  <Box display="flex" alignItems="center" pb={1}>
                     <Users
                       size={16}
                       style={{
@@ -530,11 +534,11 @@ const ConfirmationModal = ({ scheduleObj }) => {
                       <Box
                         key={i}
                         display="flex"
-                        flexDirection="column"
+                        justifyContent="space-between"
                         alignItems="center"
                         bgcolor={theme.palette.background.paper}
                         borderRadius={theme.shape.borderRadius / 2}
-                        p={1}
+                        px={2}
                       >
                         <Typography fontWeight={500}>
                           {service.serviceName}

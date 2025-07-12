@@ -271,17 +271,12 @@ export const handlePaymentSuccess =
         `http://localhost:9999/api/v1/invoices/by-transaction/${completedTransactionId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("Debug - Invoice API response:", response.data);
       if (response.data.success) {
         const invoiceData = response.data.data;
-        console.log("Debug - Invoice data received:", invoiceData);
 
-        // Đóng TransactionModal trước
         dispatch(paymentActions.clearQRCodeData());
         dispatch(closeTransactionModal());
 
-        // Mở InvoiceModal
-        console.log("Debug - Opening invoice modal with data:", invoiceData);
         dispatch(openInvoiceModal(invoiceData));
         dispatch(fetchInvoiceSuccess(invoiceData));
 
@@ -315,10 +310,6 @@ export const handlePaymentSuccess =
   };
 
 export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
-  console.log(
-    "Debug - simulatePaymentSuccess called with transactionId:",
-    transactionId
-  );
   try {
     const token = localStorage.getItem("token");
     const response = await axios.post(
@@ -326,7 +317,7 @@ export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    console.log("Debug - simulate API response:", response.data);
+
     if (response.data.success) {
       Swal.fire({
         icon: "info",
@@ -335,16 +326,12 @@ export const simulatePaymentSuccess = (transactionId) => async (dispatch) => {
         timer: 2000,
         showConfirmButton: false,
       });
-      console.log(
-        "Debug - Calling handlePaymentSuccess with transactionId:",
-        transactionId
-      );
+
       dispatch(handlePaymentSuccess(transactionId));
     } else {
       throw new Error(response.data.message || "Mô phỏng thất bại từ server.");
     }
   } catch (error) {
-    console.error("Debug - simulatePaymentSuccess error:", error);
     const errorMessage = error.response?.data?.message || error.message;
     Swal.fire({
       icon: "error",

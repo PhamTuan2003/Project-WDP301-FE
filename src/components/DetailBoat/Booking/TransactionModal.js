@@ -18,8 +18,37 @@ import {
   Building,
   Timer,
   Users,
-  ArrowLeft,
+  ChevronLeft,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Grid,
+  Paper,
+  IconButton,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Tabs,
+  Tab,
+  Alert,
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+  Fade,
+  Slide,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
 import {
   createDepositPayment,
   createFullPayment,
@@ -37,10 +66,128 @@ import {
   clearQRCodeData,
   closeTransactionModal,
   setActivePaymentTab,
-  openBookingModal,
 } from "../../../redux/actions";
 import Swal from "sweetalert2";
 import { getScheduleById } from "../../../utils/scheduleHelpers";
+
+// Styled components
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  "& .MuiDialog-paper": {
+    borderRadius: theme.shape.borderRadius * 2,
+    maxWidth: "1200px",
+    width: "100%",
+    height: "90vh",
+    minHeight: "500px",
+    margin: theme.spacing(2),
+    [theme.breakpoints.down("md")]: {
+      width: "95%",
+      height: "95vh",
+    },
+  },
+}));
+
+const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+  color: theme.palette.primary.contrastText,
+  textAlign: "center",
+  padding: theme.spacing(2, 3),
+  "& .MuiTypography-root": {
+    fontWeight: 700,
+  },
+}));
+
+const BookingInfoCard = styled(Card)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.action.hover} 100%)`,
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  height: "70vh",
+  overflowY: "auto",
+  [theme.breakpoints.down("md")]: {
+    height: "auto",
+    maxHeight: "50vh",
+  },
+}));
+
+const PaymentMethodCard = styled(Card)(({ theme, selected, disabled }) => ({
+  cursor: disabled ? "not-allowed" : "pointer",
+  border: `2px solid ${
+    selected ? theme.palette.primary.main : theme.palette.divider
+  }`,
+  backgroundColor: selected
+    ? theme.palette.primary.light + "20"
+    : theme.palette.background.paper,
+  transition: "all 0.2s ease-in-out",
+  opacity: disabled ? 0.5 : 1,
+  "&:hover": {
+    transform: disabled ? "none" : "scale(1.02)",
+    borderColor: disabled ? theme.palette.divider : theme.palette.primary.main,
+    boxShadow: disabled ? theme.shadows[1] : theme.shadows[4],
+  },
+}));
+
+const PaymentTab = styled(Tab)(({ theme, active }) => ({
+  borderRadius: theme.shape.borderRadius * 3,
+  margin: theme.spacing(0.5),
+  backgroundColor: active ? theme.palette.background.paper : "transparent",
+  color: active ? theme.palette.primary.main : theme.palette.text.secondary,
+  border: active ? `1px solid ${theme.palette.primary.main}` : "none",
+  boxShadow: active ? theme.shadows[2] : "none",
+  transform: active ? "scale(1.05)" : "scale(1)",
+  transition: "all 0.2s ease-in-out",
+  "&:hover": {
+    backgroundColor: active
+      ? theme.palette.background.paper
+      : theme.palette.action.hover,
+  },
+}));
+
+const PaymentButton = styled(Button)(({ theme, variant }) => ({
+  borderRadius: theme.shape.borderRadius * 1.5,
+  padding: theme.spacing(1.5, 3),
+  fontWeight: 600,
+  textTransform: "none",
+  transition: "all 0.2s ease-in-out",
+  "&:hover": {
+    transform: "scale(1.02)",
+  },
+  ...(variant === "deposit" && {
+    background: `linear-gradient(135deg, #ff9800 0%, #f57c00 100%)`,
+    "&:hover": {
+      background: `linear-gradient(135deg, #f57c00 0%, #e65100 100%)`,
+    },
+  }),
+  ...(variant === "full" && {
+    background: `linear-gradient(135deg, #4caf50 0%, #388e3c 100%)`,
+    "&:hover": {
+      background: `linear-gradient(135deg, #388e3c 0%, #2e7d32 100%)`,
+    },
+  }),
+}));
+
+const QRContainer = styled(Box)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(3),
+  color: theme.palette.primary.contrastText,
+  textAlign: "center",
+  marginBottom: theme.spacing(2),
+}));
+
+const SuccessContainer = styled(Box)(({ theme }) => ({
+  background: `linear-gradient(135deg, #4caf50 0%, #388e3c 100%)`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(3),
+  color: "white",
+  textAlign: "center",
+  marginBottom: theme.spacing(2),
+}));
+
+const InfoContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius * 1.5,
+  padding: theme.spacing(2),
+  border: `1px solid ${theme.palette.divider}`,
+}));
 
 if (typeof window !== "undefined") {
   const style = document.createElement("style");
@@ -49,7 +196,10 @@ if (typeof window !== "undefined") {
 }
 
 const TransactionModal = ({ onBack }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const dispatch = useDispatch();
+
   const { showTransactionModal, bookingIdFortransaction } = useSelector(
     (state) => state.ui.modals
   );
@@ -83,15 +233,13 @@ const TransactionModal = ({ onBack }) => {
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState("bank_transfer");
-  const [isVisible, setIsVisible] = useState(false);
   const [copiedText, setCopiedText] = useState("");
   const [showBankInfo, setShowBankInfo] = useState(true);
   const [randomQR, setRandomQR] = useState(null);
-  const [currentStep, setCurrentStep] = useState(1);
 
   useEffect(() => {
     if (showTransactionModal) {
-      setIsVisible(true);
+      // setIsVisible(true); // This state is removed, so this line is removed.
       if (bookingIdFortransaction) {
         dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
       }
@@ -193,7 +341,7 @@ const TransactionModal = ({ onBack }) => {
   };
 
   const handleClose = () => {
-    setIsVisible(false);
+    // setIsVisible(false); // This state is removed, so this line is removed.
     setTimeout(() => {
       dispatch(closeTransactionModal());
       dispatch(clearQRCodeData());
@@ -216,21 +364,6 @@ const TransactionModal = ({ onBack }) => {
       setTimeout(() => setCopiedText(""), 2000);
     } catch (err) {}
   };
-
-  // Hàm chuyển bước
-  const goToStep = (step) => {
-    setCurrentStep(step);
-    if (step === 1) {
-      dispatch(clearQRCodeData());
-      setRandomQR(null);
-      setShowBankInfo(true);
-    } else if (step === 2) {
-      dispatch(clearQRCodeData());
-      setRandomQR(null);
-      setShowBankInfo(true);
-    }
-  };
-
   // Hàm kiểm tra transaction pending (giả lập, cần thay bằng API thực tế nếu có)
   const getPendingTransactionIdForBooking = async (bookingId) => {
     try {
@@ -325,16 +458,8 @@ const TransactionModal = ({ onBack }) => {
   // Error State
   if (bookingError) {
     return (
-      <div
-        className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
-          isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
-        }`}
-      >
-        <div
-          className={`transform transition-all duration-300 ${
-            isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}
-        >
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300">
+        <div>
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full border border-red-100">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
@@ -365,16 +490,8 @@ const TransactionModal = ({ onBack }) => {
       currentBookingDetail.booking._id !== bookingIdFortransaction)
   ) {
     return (
-      <div
-        className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
-          isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
-        }`}
-      >
-        <div
-          className={`transform transition-all duration-300 ${
-            isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}
-        >
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300">
+        <div>
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
             <div className="text-center">
               <div className="mx-auto flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -688,51 +805,227 @@ const TransactionModal = ({ onBack }) => {
             value: "bank_transfer",
             label: "Chuyển khoản ngân hàng",
             icon: Banknote,
-            color: "blue",
+            color: "primary",
+            logo: (
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 20,
+                  height: 20,
+                  bgcolor: "#1976D2",
+                  color: "white",
+                  borderRadius: 1,
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  mr: 1,
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                BK
+              </Box>
+            ),
           },
-          { value: "vnpay", label: "VNPay", icon: CreditCard, color: "cyan" },
-          { value: "momo", label: "MoMo", icon: Smartphone, color: "red" },
+          {
+            value: "vnpay",
+            label: "VNPay",
+            icon: CreditCard,
+            color: "info",
+            logo: (
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 20,
+                  height: 20,
+                  bgcolor: "#0055A6",
+                  color: "white",
+                  borderRadius: 1,
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  mr: 1,
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                VN
+              </Box>
+            ),
+          },
+          {
+            value: "momo",
+            label: "MoMo",
+            icon: Smartphone,
+            color: "secondary",
+            logo: (
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 20,
+                  height: 20,
+                  bgcolor: "#D82D8B",
+                  color: "white",
+                  borderRadius: 1,
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  mr: 1,
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                M
+              </Box>
+            ),
+          },
         ].map((method, idx) => {
           const Icon = method.icon;
           const isSelected = selectedPaymentMethod === method.value;
           return (
-            <div
+            <PaymentMethodCard
               key={method.value || idx}
+              selected={isSelected}
+              disabled={paymentLoading || qrCodeData}
               onClick={() => handleSelectPaymentMethod(method.value)}
-              className={`relative flex items-center p-2 rounded-xl border-2 cursor-pointer transition-all duration-200 transform hover:scale-102 ${
-                isSelected
-                  ? `!border-${method.color}-700 bg-${method.color}-50 shadow-lg`
-                  : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
-              } ${
-                paymentLoading || qrCodeData
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
+              sx={{
+                bgcolor: isSelected
+                  ? method.value === "bank_transfer"
+                    ? "#E3F2FD"
+                    : method.value === "vnpay"
+                    ? "#E1F5FE"
+                    : method.value === "momo"
+                    ? "#FCE4EC"
+                    : "white"
+                  : "white",
+                borderColor: isSelected
+                  ? method.value === "bank_transfer"
+                    ? "#1976D2"
+                    : method.value === "vnpay"
+                    ? "#0055A6"
+                    : method.value === "momo"
+                    ? "#D82D8B"
+                    : "grey.300"
+                  : "grey.300",
+                borderWidth: isSelected ? 2 : 1,
+                boxShadow: isSelected ? 3 : 1,
+                "&:hover": {
+                  bgcolor: isSelected
+                    ? method.value === "bank_transfer"
+                      ? "#BBDEFB"
+                      : method.value === "vnpay"
+                      ? "#B3E5FC"
+                      : method.value === "momo"
+                      ? "#F8BBD9"
+                      : "grey.50"
+                    : "grey.50",
+                  borderColor: isSelected
+                    ? method.value === "bank_transfer"
+                      ? "#1565C0"
+                      : method.value === "vnpay"
+                      ? "#004BA0"
+                      : method.value === "momo"
+                      ? "#C2185B"
+                      : "grey.400"
+                    : "grey.400",
+                  transform: isSelected ? "scale(1.02)" : "scale(1.01)",
+                  boxShadow: isSelected ? 4 : 2,
+                },
+                transition: "all 0.2s ease-in-out",
+                position: "relative",
+                overflow: "hidden",
+                "&::before": isSelected
+                  ? {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: isSelected
+                        ? method.value === "bank_transfer"
+                          ? "linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)"
+                          : method.value === "vnpay"
+                          ? "linear-gradient(135deg, #E1F5FE 0%, #B3E5FC 100%)"
+                          : method.value === "momo"
+                          ? "linear-gradient(135deg, #FCE4EC 0%, #F8BBD9 100%)"
+                          : "none"
+                        : "none",
+                      opacity: 0.3,
+                      pointerEvents: "none",
+                    }
+                  : {},
+              }}
             >
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-lg mr-3 ${
-                  isSelected
-                    ? `text-${method.color}-500 bg-${method.color}`
-                    : "bg-gray-100 text-gray-600"
-                }`}
+              <CardContent
+                sx={{
+                  p: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  position: "relative",
+                  zIndex: 1,
+                }}
               >
-                <Icon className="w-5 h-5" />
-              </div>
-              <span
-                className={`font-medium ${
-                  isSelected ? `text-${method.color}-700` : "text-gray-700"
-                }`}
-              >
-                {method.label}
-              </span>
-              {isSelected && (
-                <div
-                  className={`absolute right-4 w-5 h-5 bg-${method.color}-500 rounded-full flex items-center justify-center`}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 45,
+                    height: 45,
+                    borderRadius: 2,
+                    mr: 2,
+                    bgcolor: isSelected
+                      ? `${method.color}.main`
+                      : (theme) => theme.palette.grey[100],
+                    color: isSelected ? "white" : "grey.600",
+                    boxShadow: isSelected ? 2 : 1,
+                    transition: "all 0.2s ease-in-out",
+                  }}
                 >
-                  <CheckCircle className={`w-3 h-3 text-white`} />
-                </div>
-              )}
-            </div>
+                  <Icon size={24} />
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
+                  {method.logo && method.logo}
+                  <Typography
+                    variant="body1"
+                    fontWeight="medium"
+                    color={isSelected ? `${method.color}.main` : "GrayText"}
+                    sx={{ flex: 1 }}
+                  >
+                    {method.label}
+                  </Typography>
+                </Box>
+                {isSelected && (
+                  <Box
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      bgcolor: `${method.color}.main`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: 2,
+                      animation: "pulse 2s infinite",
+                      "@keyframes pulse": {
+                        "0%": {
+                          boxShadow: `0 0 0 0 ${method.color}.main`,
+                        },
+                        "70%": {
+                          boxShadow: `0 0 0 10px rgba(0, 0, 0, 0)`,
+                        },
+                        "100%": {
+                          boxShadow: `0 0 0 0 rgba(0, 0, 0, 0)`,
+                        },
+                      },
+                    }}
+                  >
+                    <CheckCircle size={16} color="white" />
+                  </Box>
+                )}
+              </CardContent>
+            </PaymentMethodCard>
           );
         })}
       </div>
@@ -804,81 +1097,99 @@ const TransactionModal = ({ onBack }) => {
         qrData
       )}`;
       return (
-        <div className="space-y-6">
-          {/* Nút trở lại */}
-          <div className="flex justify-start mb-2">
-            <button
-              onClick={() => {
-                setRandomQR(null);
-              }}
-              className="flex items-center text-blue-600 hover:text-blue-800 font-medium px-3 py-1 rounded-lg border border-blue-100 bg-white shadow-sm transition-all"
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Back Button */}
+          <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 1 }}>
+            <Button
+              onClick={() => setRandomQR(null)}
+              variant="outlined"
+              color="primary"
+              startIcon={<ChevronLeft size={16} />}
+              sx={{ borderRadius: 2 }}
             >
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
               Trở lại
-            </button>
-          </div>
-          <div className="text-center">
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white mb-4">
-              <QrCode className="w-12 h-12 mx-auto mb-3 text-white" />
-              <h3 className="text-lg font-semibold mb-2">
+            </Button>
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <QRContainer>
+              <QrCode size={48} style={{ margin: "0 auto 12px" }} />
+              <Typography variant="h6" fontWeight="semibold" sx={{ mb: 1 }}>
                 Mã QR ngẫu nhiên (Test)
-              </h3>
-              <p className="text-blue-100">
+              </Typography>
+              <Typography variant="body2" sx={{ color: "primary.100" }}>
                 Quét mã để test chức năng thanh toán
-              </p>
-            </div>
-            <div className="bg-white p-4 rounded-xl inline-block shadow border border-blue-100">
+              </Typography>
+            </QRContainer>
+
+            <Paper sx={{ p: 2, display: "inline-block", borderRadius: 3 }}>
               <img
                 src={qrImage}
                 alt="Random QR Code"
-                className="mx-auto"
                 style={{ width: "180px", height: "180px" }}
               />
-            </div>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-blue-100">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 flex items-center">
-                <Banknote className="w-4 h-4 mr-2" />
-                Số tiền thanh toán
-              </span>
-              <span className="font-bold text-lg text-blue-600">
-                {formatPrice(amount)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 flex items-center">
-                <Info className="w-4 h-4 mr-2" />
-                Nội dung chuyển khoản
-              </span>
-              <span className="font-mono text-sm text-gray-900">
-                {bookingCode}
-              </span>
-            </div>
-          </div>
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 text-blue-800 text-center">
+            </Paper>
+          </Box>
+
+          <InfoContainer>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Banknote size={16} style={{ marginRight: 8 }} />
+                  <Typography variant="body2" color="textSecondary">
+                    Số tiền thanh toán
+                  </Typography>
+                </Box>
+                <Typography variant="h6" fontWeight="bold" color="primary">
+                  {formatPrice(amount)}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Info size={16} style={{ marginRight: 8 }} />
+                  <Typography variant="body2" color="textSecondary">
+                    Nội dung chuyển khoản
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="body2"
+                  fontFamily="monospace"
+                  color="textPrimary"
+                >
+                  {bookingCode}
+                </Typography>
+              </Box>
+            </Box>
+          </InfoContainer>
+
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
             Đây là mã QR ngẫu nhiên để test chức năng. Khi quét sẽ hiện số tiền
             và nội dung là mã booking.
-          </div>
-          <button
+          </Alert>
+
+          <Button
             onClick={handleBackToChooseMethod}
-            className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+            variant="outlined"
+            color="primary"
+            fullWidth
+            sx={{ borderRadius: 2 }}
           >
             ← Chọn lại phương thức thanh toán
-          </button>
-        </div>
+          </Button>
+        </Box>
       );
     }
 
@@ -899,82 +1210,112 @@ const TransactionModal = ({ onBack }) => {
         qrSuccessData
       )}`;
       return (
-        <div className="space-y-6">
-          {/* Nút trở lại */}
-          <div className="flex justify-start mb-2">
-            <button
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Back Button */}
+          <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 1 }}>
+            <Button
               onClick={() => {
                 dispatch(clearQRCodeData());
                 setRandomQR(null);
               }}
-              className="flex items-center text-green-700 hover:text-green-900 font-medium px-3 py-1 rounded-lg border border-green-100 bg-white shadow-sm transition-all"
+              variant="outlined"
+              color="success"
+              startIcon={<ChevronLeft size={16} />}
+              sx={{ borderRadius: 2 }}
             >
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
               Trở lại
-            </button>
-          </div>
-          <div className="text-center">
-            <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-6 text-white mb-4">
-              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-white" />
-              <h3 className="text-lg font-semibold mb-2">
+            </Button>
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <SuccessContainer>
+              <CheckCircle size={48} style={{ margin: "0 auto 12px" }} />
+              <Typography variant="h6" fontWeight="semibold" sx={{ mb: 1 }}>
                 Thanh toán thành công!
-              </h3>
-              <p className="text-green-100">
+              </Typography>
+              <Typography variant="body2" sx={{ color: "success.100" }}>
                 Quét mã để xác nhận thanh toán thành công
-              </p>
-            </div>
-            <div className="bg-white p-4 rounded-xl inline-block shadow border border-green-200">
+              </Typography>
+            </SuccessContainer>
+
+            <Paper
+              sx={{
+                p: 2,
+                display: "inline-block",
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "success.200",
+              }}
+            >
               <img
                 src={qrImage}
                 alt="QR Thành công"
-                className="mx-auto"
                 style={{ width: "180px", height: "180px" }}
               />
-            </div>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-green-200">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 flex items-center">
-                <Banknote className="w-4 h-4 mr-2" />
-                Số tiền đã thanh toán
-              </span>
-              <span className="font-bold text-lg text-green-600">
-                {formatPrice(paidAmount)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600 flex items-center">
-                <Info className="w-4 h-4 mr-2" />
-                Mã booking
-              </span>
-              <span className="font-mono text-sm text-gray-900">{code}</span>
-            </div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-green-800 text-center">
+            </Paper>
+          </Box>
+
+          <InfoContainer sx={{ borderColor: "success.200" }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Banknote size={16} style={{ marginRight: 8 }} />
+                  <Typography variant="body2" color="textSecondary">
+                    Số tiền đã thanh toán
+                  </Typography>
+                </Box>
+                <Typography variant="h6" fontWeight="bold" color="success.main">
+                  {formatPrice(paidAmount)}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Info size={16} style={{ marginRight: 8 }} />
+                  <Typography variant="body2" color="textSecondary">
+                    Mã booking
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="body2"
+                  fontFamily="monospace"
+                  color="textPrimary"
+                >
+                  {code}
+                </Typography>
+              </Box>
+            </Box>
+          </InfoContainer>
+
+          <Alert severity="success" sx={{ borderRadius: 3 }}>
             Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ.
-          </div>
+          </Alert>
+
           {process.env.NODE_ENV === "development" &&
             qrCodeData?.transactionId && (
-              <button
+              <Button
                 onClick={handleSimulatePayment}
-                className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                variant="contained"
+                color="warning"
+                fullWidth
+                sx={{ borderRadius: 3, py: 1.5 }}
               >
                 🧪 Mô phỏng chuyển sang invoice
-              </button>
+              </Button>
             )}
-        </div>
+        </Box>
       );
     }
 
@@ -995,30 +1336,47 @@ const TransactionModal = ({ onBack }) => {
 
     if (paymentMethod === "vnpay" && paymentUrl) {
       paymentContent = (
-        <div className="text-center">
-          <button
+        <Box sx={{ textAlign: "center" }}>
+          <Button
             onClick={handleBackToChooseMethod}
-            className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+            variant="outlined"
+            color="primary"
+            sx={{ mb: 2, borderRadius: 2 }}
           >
             ← Chọn lại phương thức thanh toán
-          </button>
-          <div className="bg-cyan-50 border border-cyan-300 rounded-2xl p-3 text-cyan-700 mb-4">
-            <CreditCard className="w-12 h-12 mx-auto " />
-            <h3 className="text-lg font-semibold ">Thanh toán VNPay</h3>
-            <p className="text-cyan-800 text-sm">
-              Bạn sẽ được chuyển đến cổng thanh toán VNPay
-            </p>
-          </div>
-          <a
+          </Button>
+
+          <Alert severity="info" sx={{ mb: 2, borderRadius: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                ml: 7,
+              }}
+            >
+              <CreditCard size={48} style={{ marginBottom: 12 }} />
+              <Typography variant="h6" fontWeight="semibold">
+                Thanh toán VNPay
+              </Typography>
+              <Typography variant="body2">
+                Bạn sẽ được chuyển đến cổng thanh toán VNPay
+              </Typography>
+            </Box>
+          </Alert>
+
+          <Button
             href={paymentUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex  items-center bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+            variant="contained"
+            color="info"
+            endIcon={<ExternalLink size={20} />}
+            sx={{ borderRadius: 3, py: 1.5, px: 3 }}
           >
             Thanh toán ngay
-            <ExternalLink className="w-5 h-5 ml-2" />
-          </a>
-        </div>
+          </Button>
+        </Box>
       );
     } else if (
       paymentMethod === "momo" &&
@@ -1030,737 +1388,1347 @@ const TransactionModal = ({ onBack }) => {
           momoQrUrl
         )}`;
         momoDisplay = (
-          <div>
-            <button
+          <Box>
+            <Button
               onClick={handleBackToChooseMethod}
-              className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+              variant="outlined"
+              color="primary"
+              sx={{ mb: 2, borderRadius: 2 }}
             >
               ← Chọn lại phương thức thanh toán
-            </button>
-            <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl p-3 text-white">
-              <Smartphone className="w-8 h-8 mx-auto" />
-              <h3 className="text-lg font-semibold mb-4">Quét mã MoMo</h3>
-              <div className="bg-white p-4 rounded-xl">
+            </Button>
+
+            <Box
+              sx={{
+                background: "linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)",
+                borderRadius: 3,
+                p: 2,
+                color: "white",
+                textAlign: "center",
+              }}
+            >
+              <Smartphone size={32} style={{ margin: "0 auto 16px" }} />
+              <Typography variant="h6" fontWeight="semibold" sx={{ mb: 2 }}>
+                Quét mã MoMo
+              </Typography>
+              <Paper sx={{ p: 2, display: "inline-block", borderRadius: 3 }}>
                 <img
                   src={qrImage}
                   alt="MoMo QR Code"
-                  className="mx-auto"
                   style={{ width: "180px", height: "180px" }}
                 />
-              </div>
-            </div>
-          </div>
+              </Paper>
+            </Box>
+          </Box>
         );
       } else if (paymentUrl) {
         momoDisplay = (
-          <a
+          <Button
             href={paymentUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center bg-pink-600 hover:bg-pink-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+            variant="contained"
+            sx={{
+              background: "linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)",
+              borderRadius: 3,
+              py: 2,
+              px: 4,
+              fontWeight: "bold",
+            }}
+            endIcon={<ExternalLink size={20} />}
           >
             Thanh toán MoMo
-            <ExternalLink className="w-5 h-5 ml-2" />
-          </a>
+          </Button>
         );
       }
-      paymentContent = <div className="text-center">{momoDisplay}</div>;
+      paymentContent = <Box sx={{ textAlign: "center" }}>{momoDisplay}</Box>;
     } else if (paymentMethod === "bank_transfer" && bankInfo && showBankInfo) {
       return (
-        <div className="bg-gradient-to-br  from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 relative">
-          <button
-            onClick={() => setShowBankInfo(false)}
-            className="absolute top-2 right-2 text-green-600 hover:text-green-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <button
+        <Box
+          sx={{
+            background: "linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)",
+            borderRadius: 3,
+            p: 3,
+            border: "1px solid",
+            borderColor: "success.200",
+            position: "relative",
+          }}
+        >
+          <Button
             onClick={handleBackToChooseMethod}
-            className="mb-4 px-4 py-2 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 font-medium transition"
+            variant="outlined"
+            color="primary"
+            sx={{ mb: 2, borderRadius: 2 }}
           >
             ← Chọn lại phương thức thanh toán
-          </button>
-          <div className="text-center mb-4">
-            <div className="mx-auto flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
-              <Banknote className="w-6 h-6 text-green-600" />
-            </div>
-            <h3 className="font-semibold text-green-800 mb-2">
+          </Button>
+          <IconButton
+            onClick={() => setShowBankInfo(false)}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: "success.main",
+            }}
+          >
+            <X size={20} />
+          </IconButton>
+
+          <Box sx={{ textAlign: "center", mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 48,
+                height: 48,
+                bgcolor: "success.dark",
+                border: "1px solid",
+                borderColor: "success.100",
+                borderRadius: "50%",
+                mb: 0.5,
+                mx: "auto",
+              }}
+            >
+              <Banknote size={24} />
+            </Box>
+            <Typography variant="h6" fontWeight="bold" color="success.dark">
               Chờ xác nhận chuyển khoản
-            </h3>
-            <p className="text-sm text-green-700">
+            </Typography>
+            <Typography variant="caption" color="success.dark">
               Vui lòng chuyển khoản đúng thông tin bên dưới để hệ thống tự động
               xác nhận.
-            </p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-green-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Ngân hàng:</span>
-              <span className="font-semibold text-gray-900">
-                {bankInfo.bankName}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Số tài khoản:</span>
-              <div className="flex items-center">
-                <span className="font-mono text-base text-blue-700 font-bold mr-2">
-                  {bankInfo.accountNumber}
-                </span>
-                <button
-                  onClick={() =>
-                    copyToClipboard(bankInfo.accountNumber, "Số tài khoản")
-                  }
-                  className="text-green-600 hover:text-green-700 text-sm flex items-center"
-                >
-                  <Copy className="w-4 h-4 mr-1" />
-                  {copiedText === "Số tài khoản" ? "Đã copy!" : "Copy"}
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Chủ tài khoản:</span>
-              <span className="font-semibold text-gray-900">
-                {bankInfo.accountName}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                Nội dung chuyển khoản:
-              </span>
-              <button
-                onClick={() =>
-                  copyToClipboard(bankInfo.transferContent, "Nội dung CK")
-                }
-                className="text-green-600 hover:text-green-700 text-sm flex items-center"
+            </Typography>
+          </Box>
+
+          <Paper
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "success.200",
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: "0.5px solid",
+                  borderColor: "gray.100",
+                }}
               >
-                <Copy className="w-4 h-4 mr-1" />
-                {copiedText === "Nội dung CK" ? "Đã copy!" : "Copy"}
-              </button>
-            </div>
-            <p className="font-mono text-base text-orange-600 font-bold mt-1 text-right">
-              {bankInfo.transferContent}
-            </p>
-            {qrCodeData?.expiredAt && (
-              <div className="text-xs text-gray-500 mt-2">
-                Hạn chuyển khoản:{" "}
-                <span className="font-semibold">
-                  {new Date(qrCodeData.expiredAt).toLocaleString("vi-VN")}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200 text-yellow-800 text-center mt-4">
-            <Info className="w-5 h-5 inline mr-2" />
+                <Typography variant="body2" color="textSecondary">
+                  Ngân hàng:
+                </Typography>
+                <Typography
+                  variant="body1"
+                  fontWeight="semibold"
+                  color="textPrimary"
+                >
+                  {bankInfo.bankName}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: "0.5px solid",
+                  borderColor: "gray.100",
+                }}
+              >
+                <Typography variant="body2" color="textSecondary">
+                  Số tài khoản:
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography
+                    variant="h6"
+                    fontFamily="monospace"
+                    color="primary.main"
+                    fontWeight="bold"
+                    sx={{ mr: 1 }}
+                  >
+                    {bankInfo.accountNumber}
+                  </Typography>
+                  <IconButton
+                    onClick={() =>
+                      copyToClipboard(bankInfo.accountNumber, "Số tài khoản")
+                    }
+                    size="small"
+                    color="success"
+                  >
+                    <Copy size={16} />
+                  </IconButton>
+                  {copiedText === "Số tài khoản" && (
+                    <Typography
+                      variant="caption"
+                      color="success.main"
+                      sx={{ ml: 0.5 }}
+                    >
+                      Đã copy!
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: "0.5px solid",
+                  borderColor: "gray.100",
+                }}
+              >
+                <Typography variant="body2" color="textSecondary">
+                  Chủ tài khoản:
+                </Typography>
+                <Typography
+                  variant="body1"
+                  fontWeight="semibold"
+                  color="textPrimary"
+                >
+                  {bankInfo.accountName}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography variant="body2" color="textSecondary">
+                  Nội dung chuyển khoản:
+                </Typography>
+                <IconButton
+                  onClick={() =>
+                    copyToClipboard(bankInfo.transferContent, "Nội dung CK")
+                  }
+                  size="small"
+                  color="success"
+                >
+                  <Copy size={16} />
+                </IconButton>
+                {copiedText === "Nội dung CK" && (
+                  <Typography
+                    variant="caption"
+                    color="success.main"
+                    sx={{ ml: 0.5 }}
+                  >
+                    Đã copy!
+                  </Typography>
+                )}
+              </Box>
+              <Box
+                sx={{
+                  borderBottom: "0.5px solid",
+                  borderColor: "gray.100",
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  fontFamily="monospace"
+                  color="success.main"
+                  fontWeight="bold"
+                  sx={{
+                    textAlign: "right",
+                    mt: 0,
+                  }}
+                >
+                  {bankInfo.transferContent}
+                </Typography>{" "}
+              </Box>
+
+              {qrCodeData?.expiredAt && (
+                <Typography variant="caption" color="textSecondary">
+                  Hạn chuyển khoản:{" "}
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    fontWeight="semibold"
+                  >
+                    {new Date(qrCodeData.expiredAt).toLocaleString("vi-VN")}
+                  </Typography>
+                </Typography>
+              )}
+            </Box>
+          </Paper>
+
+          <Alert severity="warning" sx={{ mt: 2, borderRadius: 3 }}>
             Sau khi chuyển khoản, hệ thống sẽ tự động xác nhận trong vòng vài
             phút.
-          </div>
-          {/* Nút test chuyển trạng thái cho bank_transfer */}
-          {process.env.NODE_ENV === "development" &&
-            qrCodeData?.transactionId &&
-            paymentStatus === "pending" && (
-              <button
-                onClick={async () => {
-                  // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
-                  if (!qrCodeData?.transactionId) return;
+          </Alert>
 
-                  const token = localStorage.getItem("token");
-                  try {
-                    await fetch(
-                      `http://localhost:9999/api/v1/payments/transaction/${qrCodeData.transactionId}/simulate`,
-                      {
-                        method: "POST",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
-                    if (bookingIdFortransaction) {
-                      dispatch(
-                        fetchCustomerBookingDetail(bookingIdFortransaction)
-                      );
-                    }
-                  } catch (err) {}
-                }}
-                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 mt-4"
-              >
-                🧪 Test chuyển trạng thái thành công
-              </button>
-            )}
-          {/* Nút mô phỏng chuyển invoice khi đã đổi trạng thái */}
+          {/* Test buttons for development */}
           {process.env.NODE_ENV === "development" &&
-            qrCodeData?.transactionId &&
-            (paymentStatus === "fully_paid" ||
-              paymentStatus === "deposit_paid") && (
-              <button
-                onClick={handleSimulatePayment}
-                className="mt-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-              >
-                🧪 Mô phỏng chuyển sang invoice
-              </button>
+            qrCodeData?.transactionId && (
+              <>
+                {paymentStatus === "pending" && (
+                  <Button
+                    onClick={async () => {
+                      if (!qrCodeData?.transactionId) return;
+                      const token = localStorage.getItem("token");
+                      try {
+                        await fetch(
+                          `http://localhost:9999/api/v1/payments/transaction/${qrCodeData.transactionId}/simulate`,
+                          {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                          }
+                        );
+                        if (bookingIdFortransaction) {
+                          dispatch(
+                            fetchCustomerBookingDetail(bookingIdFortransaction)
+                          );
+                        }
+                      } catch (err) {}
+                    }}
+                    variant="contained"
+                    color="warning"
+                    fullWidth
+                    sx={{ mt: 2, borderRadius: 3, py: 1.5 }}
+                  >
+                    🧪 Test chuyển trạng thái thành công
+                  </Button>
+                )}
+
+                {(paymentStatus === "fully_paid" ||
+                  paymentStatus === "deposit_paid") && (
+                  <Button
+                    onClick={handleSimulatePayment}
+                    variant="contained"
+                    color="warning"
+                    fullWidth
+                    sx={{ mt: 2, borderRadius: 3, py: 1.5 }}
+                  >
+                    🧪 Mô phỏng chuyển sang invoice
+                  </Button>
+                )}
+              </>
             )}
-        </div>
+        </Box>
       );
     }
 
     return (
-      <div className="space-y-3">
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {paymentContent}
 
         {/* Payment Status */}
-        <div className="flex items-center justify-center">
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
           {isPolling && paymentStatus === "pending" && (
-            <div className="flex items-center bg-orange-50 px-4 py-2 rounded-xl border border-orange-200">
-              <Loader2 className="w-5 h-5 text-orange-500 animate-spin mr-3" />
-              <span className="text-orange-700 font-medium">
-                Đang kiểm tra thanh toán...
-              </span>
-            </div>
+            <Alert severity="warning" sx={{ borderRadius: 3 }}>
+              <CircularProgress size={20} sx={{ mr: 1 }} />
+              Đang kiểm tra thanh toán...
+            </Alert>
           )}
-        </div>
+        </Box>
 
         {/* Payment Info */}
-        <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-600 flex items-center">
-              <Banknote className="w-4 h-4 mr-2" />
-              Số tiền thanh toán
-            </span>
-            <span className="font-bold  rounded-xltext-lg text-blue-600">
-              {formatPrice(amount)}
-            </span>
-          </div>
-          <div className="flex items-center  justify-between">
-            <span className="text-gray-600 flex items-center">
-              <Info className="w-4 h-4 mr-2" />
-              Mã giao dịch
-            </span>
-            <div className="flex items-center">
-              <span className="font-mono text-sm text-gray-900 mr-2">
-                {transactionReference}
-              </span>
-              <button
-                onClick={() => copyToClipboard(transactionReference, "Mã GD")}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <InfoContainer>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Banknote size={16} style={{ marginRight: 8 }} />
+                <Typography variant="body2" color="textSecondary">
+                  Số tiền thanh toán
+                </Typography>
+              </Box>
+              <Typography variant="h6" fontWeight="bold" color="primary">
+                {formatPrice(amount)}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Info size={16} style={{ marginRight: 8 }} />
+                <Typography variant="body2" color="textSecondary">
+                  Mã giao dịch
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography
+                  variant="body2"
+                  fontFamily="monospace"
+                  color="textPrimary"
+                  sx={{ mr: 1 }}
+                >
+                  {transactionReference}
+                </Typography>
+                <IconButton
+                  onClick={() => copyToClipboard(transactionReference, "Mã GD")}
+                  size="small"
+                  color="primary"
+                >
+                  <Copy size={16} />
+                </IconButton>
+              </Box>
+            </Box>
+          </Box>
+        </InfoContainer>
 
         {/* Instructions */}
         {isPolling && paymentMethod !== "bank_transfer" && (
-          <div className="bg-blue-50 rounded-xl px-4 py-2 border border-blue-200">
-            <div className="flex items-start">
-              <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-              <p className="text-sm mb-0 text-blue-800">
-                Vui lòng không đóng cửa sổ này. Trạng thái thanh toán sẽ được
-                cập nhật tự động.
-              </p>
-            </div>
-          </div>
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            Vui lòng không đóng cửa sổ này. Trạng thái thanh toán sẽ được cập
+            nhật tự động.
+          </Alert>
         )}
 
         {/* Test Button */}
         {process.env.NODE_ENV === "development" &&
           transactionId &&
           paymentStatus === "pending" && (
-            <>
-              <button
-                onClick={async () => {
-                  // Gọi trực tiếp API mô phỏng thanh toán, nhưng KHÔNG dispatch handlePaymentSuccess (không đóng modal, không chuyển invoice)
-                  if (!qrCodeData?.transactionId) return;
-
-                  const token = localStorage.getItem("token");
-                  try {
-                    await fetch(
-                      `http://localhost:9999/api/v1/payments/transaction/${qrCodeData.transactionId}/simulate`,
-                      {
-                        method: "POST",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
-                    if (bookingIdFortransaction) {
-                      dispatch(
-                        fetchCustomerBookingDetail(bookingIdFortransaction)
-                      );
+            <Button
+              onClick={async () => {
+                if (!qrCodeData?.transactionId) return;
+                const token = localStorage.getItem("token");
+                try {
+                  await fetch(
+                    `http://localhost:9999/api/v1/payments/transaction/${qrCodeData.transactionId}/simulate`,
+                    {
+                      method: "POST",
+                      headers: { Authorization: `Bearer ${token}` },
                     }
-                  } catch (err) {}
-                }}
-                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 mb-2"
-              >
-                🧪 Test đã thanh toán thành công
-              </button>
-            </>
+                  );
+                  if (bookingIdFortransaction) {
+                    dispatch(
+                      fetchCustomerBookingDetail(bookingIdFortransaction)
+                    );
+                  }
+                } catch (err) {}
+              }}
+              variant="contained"
+              color="warning"
+              fullWidth
+              sx={{ borderRadius: 3, py: 1.5 }}
+            >
+              🧪 Test đã thanh toán thành công
+            </Button>
           )}
-      </div>
+      </Box>
     );
   };
 
   return (
-    <div
-      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${
-        isVisible ? "bg-black/60 backdrop-blur-sm" : "bg-transparent"
-      }`}
+    <StyledDialog
+      open={showTransactionModal}
+      onClose={handleClose}
+      TransitionComponent={Fade}
     >
-      <div
-        className={`transform transition-all duration-300 ${
-          isVisible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-        }`}
-      >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-[1200px] w-full h-[90vh] min-h-[500px]  flex flex-col">
-          {/* Header */}
-          <div className="flex items-center rounded-t-2xl  justify-between py-2 px-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white relative">
-            <div className="flex-1 text-center">
-              <h2 className="text-xl font-bold">Thanh toán booking</h2>
-              <p className="text-blue-100 text-sm">
-                Hoàn tất thanh toán để xác nhận đặt chỗ
-              </p>
-            </div>
-            <button
-              onClick={handleClose}
-              className="text-blue-100 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-2xl"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+      <StyledDialogTitle>
+        <div className="flex items-center">
+          <ChevronLeft className="w-6 h-6 text-white mr-2" />
+          Thanh toán booking
+        </div>
+      </StyledDialogTitle>
+      <DialogContent dividers>
+        <Grid container spacing={3}>
+          {/* Left: Booking Info (4/10) */}
+          <Grid item xs={12} md={6}>
+            <BookingInfoCard>
+              <CardContent>
+                <Box className="flex items-center justify-between pb-2">
+                  <Box className="text-base justify-start font-semibold text-gray-900 flex items-center">
+                    <Calendar className="w-5 h-5 mr-1 text-blue-600" />
+                    <Typography variant="h6" color="textPrimary">
+                      Thông tin booking
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={getPaymentStatusText(booking.paymentStatus)}
+                    size="small"
+                    color={
+                      booking.paymentStatus === "fully_paid"
+                        ? "success"
+                        : booking.paymentStatus === "deposit_paid"
+                        ? "warning"
+                        : booking.paymentStatus === "pending"
+                        ? "info"
+                        : "default"
+                    }
+                    variant="outlined"
+                  />
+                </Box>
 
-          {/* Content - Horizontal Layout */}
-          <div className="flex gap-4 p-6 w-full flex-1 overflow-y-auto h-[70vh]">
-            {/* Left: Booking Info (4/10) */}
-            <div className="bg-gradient-to-br w-5/12 h-[70vh] overflow-y-auto from-blue-50 to-indigo-50 rounded-2xl p-3 border border-blue-100 ">
-              <div className="flex items-center justify-between pb-2">
-                <span className="text-base justify-start  font-semibold text-gray-900 flex items-center">
-                  <Calendar className="w-5 h-5 mr-1  text-blue-600" />
-                  Thông tin booking
-                </span>
-                <span
-                  className={`px-1 rounded-full justify-end bg-white border items-center border-gray-600 text-xs font-medium ${getPaymentStatusColor(
-                    booking.paymentStatus
-                  )}`}
-                >
-                  {getPaymentStatusText(booking.paymentStatus)}
-                </span>
-              </div>
+                <Box sx={{ display: "grid", gap: 1 }}>
+                  <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                    <Box className="text-gray-600 flex items-center">
+                      <Info size={16} style={{ marginRight: 8 }} />
+                      <Typography variant="body2" color="textSecondary">
+                        Mã booking
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      fontWeight="semibold"
+                      color="textPrimary"
+                    >
+                      {booking.bookingCode}
+                    </Typography>
+                  </Box>
 
-              <div className="grid grid-cols-1 gap-2 ">
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center">
-                    <Building className="w-4 h-4 mr-2" />
-                    Mã booking
-                  </span>
-                  <span className="font-semibold text-gray-900">
-                    {booking.bookingCode}
-                  </span>
-                </div>
+                  <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                    <Box className="text-gray-600 flex items-center">
+                      <Banknote className="w-4 h-4 mr-2" />
+                      <Typography variant="body2" color="textSecondary">
+                        Tổng tiền
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" fontWeight="bold" color="primary">
+                      {formatPrice(
+                        booking.paymentBreakdown?.totalAmount ||
+                          booking.amount ||
+                          0
+                      )}
+                    </Typography>
+                  </Box>
 
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center">
-                    <Banknote className="w-4 h-4 mr-2" />
-                    Tổng tiền
-                  </span>
-                  <span className="font-bold text-lg text-blue-600">
-                    {formatPrice(
-                      booking.paymentBreakdown?.totalAmount ||
-                        booking.amount ||
-                        0
-                    )}
-                  </span>
-                </div>
-
-                {booking.paymentBreakdown?.totalPaid > 0 && (
-                  <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                    <span className="text-gray-600 flex items-center">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Đã thanh toán
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      {formatPrice(booking.paymentBreakdown.totalPaid)}
-                    </span>
-                  </div>
-                )}
-
-                {booking.paymentBreakdown?.depositAmount > 0 &&
-                  booking.paymentStatus !== "deposit_paid" &&
-                  booking.paymentStatus !== "fully_paid" && (
-                    <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                      <span className="text-gray-600 flex items-center">
-                        <Percent className="w-4 h-4 mr-2" />
-                        Tiền cọc
-                      </span>
-                      <span className="font-semibold text-orange-600">
-                        {formatPrice(booking.paymentBreakdown.depositAmount)}
-                      </span>
-                    </div>
+                  {booking.paymentBreakdown?.totalPaid > 0 && (
+                    <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                      <Box className="text-gray-600 flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        <Typography variant="body2" color="textSecondary">
+                          Đã thanh toán
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="body1"
+                        fontWeight="semibold"
+                        color="success.main"
+                      >
+                        {formatPrice(booking.paymentBreakdown.totalPaid)}
+                      </Typography>
+                    </Box>
                   )}
 
-                {booking.paymentStatus === "deposit_paid" &&
-                  booking.paymentBreakdown?.remainingAmount > 0 && (
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-gray-600 flex items-center">
-                        <Timer className="w-4 h-4 mr-2" />
-                        Còn lại
-                      </span>
-                      <span className="font-semibold text-red-600">
-                        {formatPrice(booking.paymentBreakdown.remainingAmount)}
-                      </span>
-                    </div>
-                  )}
-
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center">
-                    <Users className="w-4 h-4 mr-2" />
-                    Số khách
-                  </span>
-                  <span className="font-semibold text-gray-900">
-                    {totalGuests} khách
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center">
-                    <Building className="w-4 h-4 mr-2" />
-                    Số phòng đặt
-                  </span>
-                  <span className="font-semibold text-gray-900">
-                    {displayTotalRooms} phòng
-                  </span>
-                </div>
-                {displayBookedRooms.length > 0 && (
-                  <div className="border-b border-blue-100">
-                    <ul className="space-y-1">
-                      {displayBookedRooms.map((room, idx) => (
-                        <li
-                          key={room._id || room.roomId?._id || room.id || idx}
-                          className="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-2 border border-blue-100"
+                  {booking.paymentBreakdown?.depositAmount > 0 &&
+                    booking.paymentStatus !== "deposit_paid" &&
+                    booking.paymentStatus !== "fully_paid" && (
+                      <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                        <Box className="text-gray-600 flex items-center">
+                          <Percent className="w-4 h-4 mr-2" />
+                          <Typography variant="body2" color="textSecondary">
+                            Tiền cọc
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="body1"
+                          fontWeight="semibold"
+                          color="warning.main"
                         >
-                          <span className="font-semibold text-blue-700">
-                            {room.roomId?.name || room.name || "Phòng"}
-                          </span>
-                          <span className="text-gray-600">
-                            x {room.quantity}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {/* Dịch vụ */}
-                {bookedServices.length > 0 && (
-                  <div className="border-b border-blue-100">
-                    <span className="text-gray-600 flex items-center">
-                      <Info className="w-4 h-4 mr-2" />
-                      Dịch vụ đã chọn
-                    </span>
-                    <ul className="text-sm text-gray-700 list-disc pt-0 ml-3">
-                      {bookedServices.map((service, idx) => (
-                        <li
-                          key={
-                            service._id ||
-                            service.serviceId ||
-                            service.id ||
-                            idx
-                          }
-                        >
-                          {service.serviceName || service.name || "Dịch vụ"}
-                          {service.serviceQuantity || service.quantity
-                            ? ` x ${
-                                service.serviceQuantity || service.quantity
-                              }`
-                            : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                          {formatPrice(booking.paymentBreakdown.depositAmount)}
+                        </Typography>
+                      </Box>
+                    )}
 
-                {/* Ngày đặt */}
-                <div className="flex items-center justify-between py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Ngày đặt
-                  </span>
-                  <span className="font-semibold text-gray-900">
-                    {booking.checkInDate
-                      ? new Date(booking.checkInDate).toLocaleDateString(
-                          "vi-VN"
-                        )
-                      : booking.createdAt
-                      ? new Date(booking.createdAt).toLocaleDateString("vi-VN")
-                      : "-"}
-                  </span>
-                </div>
-                <div className="flex items-start py-2 border-b border-blue-100">
-                  <span className="text-gray-600 flex items-center min-w-[90px]">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Lịch trình
-                  </span>
-                  <span className="font-semibold text-gray-900 break-words text-right flex-1">
-                    {scheduleObj?.displayText ||
-                      (scheduleObj?.scheduleId?.startDate &&
-                      scheduleObj?.scheduleId?.endDate
-                        ? `${new Date(
-                            scheduleObj.scheduleId.startDate
-                          ).toLocaleDateString("vi-VN")} - ${new Date(
-                            scheduleObj.scheduleId.endDate
-                          ).toLocaleDateString("vi-VN")}`
-                        : "-")}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {/* Right: Payment Section (6/10) */}
-            <div
-              className="w-6/12 md:w-6/12 flex flex-col "
-              style={{ flexBasis: "60%" }}
-            >
-              {booking.paymentStatus === "fully_paid" ? (
-                <div className="text-center p-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200">
-                  <div className="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                    <CheckCircle className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">
-                    Thanh toán hoàn tất!
-                  </h3>
-                  <p className="text-green-700">
-                    Booking này đã được thanh toán đầy đủ.
-                  </p>
-                  {process.env.NODE_ENV === "development" &&
-                    qrCodeData?.transactionId && (
-                      <button
-                        onClick={handleSimulatePayment}
-                        className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-                      >
-                        🧪 Mô phỏng chuyển sang invoice
-                      </button>
+                  {booking.paymentStatus === "deposit_paid" &&
+                    booking.paymentBreakdown?.remainingAmount > 0 && (
+                      <Box className="flex items-center justify-between py-2">
+                        <Box className="text-gray-600 flex items-center">
+                          <Timer className="w-4 h-4 mr-2" />
+                          <Typography variant="body2" color="textSecondary">
+                            Còn lại
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="body1"
+                          fontWeight="semibold"
+                          color="error.main"
+                        >
+                          {formatPrice(
+                            booking.paymentBreakdown.remainingAmount
+                          )}
+                        </Typography>
+                      </Box>
                     )}
-                </div>
-              ) : booking.paymentStatus === "deposit_paid" ? (
-                <div className="text-center p-8 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200">
-                  <div className="mx-auto flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
-                    <CheckCircle className="w-8 h-8 text-yellow-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-                    Đã đặt cọc thành công!
-                  </h3>
-                  <p className="text-yellow-700">
-                    Bạn đã thanh toán tiền cọc. Vui lòng thanh toán phần còn lại
-                    trước hạn.
-                  </p>
-                  {process.env.NODE_ENV === "development" &&
-                    qrCodeData?.transactionId && (
-                      <button
-                        onClick={handleSimulatePayment}
-                        className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-                      >
-                        🧪 Mô phỏng chuyển sang invoice
-                      </button>
-                    )}
-                </div>
-              ) : !qrCodeData ? (
-                <>
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-900 pb-2">
-                      Chọn phương thức thanh toán
-                    </label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {[
-                        {
-                          value: "bank_transfer",
-                          label: "Chuyển khoản ngân hàng",
-                          icon: Banknote,
-                          color: "blue",
-                        },
-                        {
-                          value: "vnpay",
-                          label: "VNPay",
-                          icon: CreditCard,
-                          color: "cyan",
-                        },
-                        {
-                          value: "momo",
-                          label: "MoMo",
-                          icon: Smartphone,
-                          color: "red",
-                        },
-                      ].map((method, idx) => {
-                        const Icon = method.icon;
-                        const isSelected =
-                          selectedPaymentMethod === method.value;
-                        return (
-                          <div
-                            key={method.value || idx}
-                            onClick={() =>
-                              handleSelectPaymentMethod(method.value)
-                            }
-                            className={`relative flex items-center p-2 rounded-xl border-2 cursor-pointer transition-all duration-200 transform hover:scale-102 ${
-                              isSelected
-                                ? `!border-${method.color}-700 bg-${method.color}-50 shadow-lg`
-                                : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
-                            } ${
-                              paymentLoading || qrCodeData
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }`}
+
+                  <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                    <Box className="text-gray-600 flex items-center">
+                      <Users className="w-4 h-4 mr-2" />
+                      <Typography variant="body2" color="textSecondary">
+                        Số khách
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      fontWeight="semibold"
+                      color="textPrimary"
+                    >
+                      {totalGuests} khách
+                    </Typography>
+                  </Box>
+
+                  <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                    <Box className="text-gray-600 flex items-center">
+                      <Building className="w-4 h-4 mr-2" />
+                      <Typography variant="body2" color="textSecondary">
+                        Số phòng đặt
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      fontWeight="semibold"
+                      color="textPrimary"
+                    >
+                      {displayTotalRooms} phòng
+                    </Typography>
+                  </Box>
+
+                  {displayBookedRooms.length > 0 && (
+                    <Box className="border-b border-blue-100">
+                      <List dense>
+                        {displayBookedRooms.map((room, idx) => (
+                          <ListItem
+                            key={room._id || room.roomId?._id || room.id || idx}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              bgcolor: "primary.50",
+                              borderRadius: 1,
+                              mb: 0.5,
+                              border: "1px solid",
+                              borderColor: "primary.100",
+                            }}
                           >
-                            <div
-                              className={`flex items-center justify-center w-10 h-10 rounded-lg mr-3 ${
-                                isSelected
-                                  ? `text-${method.color}-500 bg-${method.color}`
-                                  : "bg-gray-100 text-gray-600"
-                              }`}
+                            <Typography
+                              variant="body2"
+                              fontWeight="semibold"
+                              color="primary.main"
                             >
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <span
-                              className={`font-medium ${
-                                isSelected
-                                  ? `text-${method.color}-700`
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              {method.label}
-                            </span>
-                            {isSelected && (
-                              <div
-                                className={`absolute right-4 w-5 h-5 bg-${method.color}-500 rounded-full flex items-center justify-center`}
-                              >
-                                <CheckCircle className={`w-3 h-3 text-white`} />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                              {room.roomId?.name || room.name || "Phòng"}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              x {room.quantity}
+                            </Typography>
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
+                  )}
 
-                  {/* payment Tabs */}
-                  <div className="my-2">
-                    <div className="flex bg-gray-100 rounded-3xl p-2">
-                      {booking.paymentStatus !== "deposit_paid" &&
+                  {/* Dịch vụ */}
+                  {bookedServices.length > 0 && (
+                    <Box className="border-b border-blue-100">
+                      <Box className="text-gray-600 flex items-center">
+                        <Info className="w-4 h-4 mr-2" />
+                        <Typography variant="body2" color="textSecondary">
+                          Dịch vụ đã chọn
+                        </Typography>
+                      </Box>
+                      <List dense>
+                        {bookedServices.map((service, idx) => (
+                          <ListItem
+                            key={
+                              service._id ||
+                              service.serviceId ||
+                              service.id ||
+                              idx
+                            }
+                          >
+                            <ListItemText
+                              primary={
+                                <Typography variant="body2" color="textPrimary">
+                                  {service.serviceName ||
+                                    service.name ||
+                                    "Dịch vụ"}
+                                  {service.serviceQuantity || service.quantity
+                                    ? ` x ${
+                                        service.serviceQuantity ||
+                                        service.quantity
+                                      }`
+                                    : ""}
+                                </Typography>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
+                  )}
+
+                  {/* Ngày đặt */}
+                  <Box className="flex items-center justify-between py-2 border-b border-blue-100">
+                    <Box className="text-gray-600 flex items-center">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <Typography variant="body2" color="textSecondary">
+                        Ngày đặt
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      fontWeight="semibold"
+                      color="textPrimary"
+                    >
+                      {booking.checkInDate
+                        ? new Date(booking.checkInDate).toLocaleDateString(
+                            "vi-VN"
+                          )
+                        : booking.createdAt
+                        ? new Date(booking.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )
+                        : "-"}
+                    </Typography>
+                  </Box>
+
+                  <Box className="flex items-start py-2 border-b border-blue-100">
+                    <Box className="text-gray-600 flex items-center min-w-[90px]">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <Typography variant="body2" color="textSecondary">
+                        Lịch trình
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      fontWeight="semibold"
+                      color="textPrimary"
+                      sx={{
+                        flex: 1,
+                        textAlign: "right",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {scheduleObj?.displayText ||
+                        (scheduleObj?.scheduleId?.startDate &&
+                        scheduleObj?.scheduleId?.endDate
+                          ? `${new Date(
+                              scheduleObj.scheduleId.startDate
+                            ).toLocaleDateString("vi-VN")} - ${new Date(
+                              scheduleObj.scheduleId.endDate
+                            ).toLocaleDateString("vi-VN")}`
+                          : "-")}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </BookingInfoCard>
+          </Grid>
+          {/* Right: Payment Section (6/10) */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                {booking.paymentStatus === "fully_paid" ? (
+                  <SuccessContainer>
+                    <div className="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                      <CheckCircle className="w-8 h-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-green-800 mb-2">
+                      Thanh toán hoàn tất!
+                    </h3>
+                    <p className="text-green-700">
+                      Booking này đã được thanh toán đầy đủ.
+                    </p>
+                    {process.env.NODE_ENV === "development" &&
+                      qrCodeData?.transactionId && (
+                        <button
+                          onClick={handleSimulatePayment}
+                          className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                        >
+                          🧪 Mô phỏng chuyển sang invoice
+                        </button>
+                      )}
+                  </SuccessContainer>
+                ) : booking.paymentStatus === "deposit_paid" ? (
+                  <SuccessContainer>
+                    <div className="mx-auto flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                      <CheckCircle className="w-8 h-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-100 mb-2">
+                      Đã đặt cọc thành công!
+                    </h3>
+                    <p className="text-gray-100">
+                      Bạn đã thanh toán tiền cọc. Vui lòng thanh toán phần còn
+                      lại trước hạn.
+                    </p>
+                    {process.env.NODE_ENV === "development" &&
+                      qrCodeData?.transactionId && (
+                        <button
+                          onClick={handleSimulatePayment}
+                          className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
+                        >
+                          🧪 Mô phỏng chuyển sang invoice
+                        </button>
+                      )}
+                  </SuccessContainer>
+                ) : !qrCodeData ? (
+                  <>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="medium"
+                        color="textPrimary"
+                        sx={{ pb: 1 }}
+                      >
+                        Chọn phương thức thanh toán
+                      </Typography>
+                      <Paper
+                        sx={{
+                          p: 2,
+                          bgcolor: (theme) => theme.palette.grey[50],
+                          borderRadius: 3,
+                          border: "1px solid",
+                          borderColor: (theme) => theme.palette.grey[200],
+                          boxShadow: 1,
+                        }}
+                      >
+                        <Box sx={{ display: "grid", gap: 1.5 }}>
+                          {[
+                            {
+                              value: "bank_transfer",
+                              label: "Chuyển khoản ngân hàng",
+                              icon: Banknote,
+                              color: "primary",
+                              logo: (
+                                <Box
+                                  sx={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 20,
+                                    height: 20,
+                                    bgcolor: "#1976D2",
+                                    color: "white",
+                                    borderRadius: 1,
+                                    fontSize: "10px",
+                                    fontWeight: "bold",
+                                    mr: 1,
+                                    fontFamily: "Arial, sans-serif",
+                                  }}
+                                >
+                                  BK
+                                </Box>
+                              ),
+                            },
+                            {
+                              value: "vnpay",
+                              label: "VNPay",
+                              icon: CreditCard,
+                              color: "info",
+                              logo: (
+                                <Box
+                                  sx={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 20,
+                                    height: 20,
+                                    bgcolor: "#0055A6",
+                                    color: "white",
+                                    borderRadius: 1,
+                                    fontSize: "10px",
+                                    fontWeight: "bold",
+                                    mr: 1,
+                                    fontFamily: "Arial, sans-serif",
+                                  }}
+                                >
+                                  VN
+                                </Box>
+                              ),
+                            },
+                            {
+                              value: "momo",
+                              label: "MoMo",
+                              icon: Smartphone,
+                              color: "secondary",
+                              logo: (
+                                <Box
+                                  sx={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 20,
+                                    height: 20,
+                                    bgcolor: "#D82D8B",
+                                    color: "white",
+                                    borderRadius: 1,
+                                    fontSize: "10px",
+                                    fontWeight: "bold",
+                                    mr: 1,
+                                    fontFamily: "Arial, sans-serif",
+                                  }}
+                                >
+                                  M
+                                </Box>
+                              ),
+                            },
+                          ].map((method, idx) => {
+                            const Icon = method.icon;
+                            const isSelected =
+                              selectedPaymentMethod === method.value;
+                            return (
+                              <PaymentMethodCard
+                                key={method.value || idx}
+                                selected={isSelected}
+                                disabled={paymentLoading || qrCodeData}
+                                onClick={() =>
+                                  handleSelectPaymentMethod(method.value)
+                                }
+                                sx={{
+                                  bgcolor: isSelected
+                                    ? method.value === "bank_transfer"
+                                      ? "#E3F2FD"
+                                      : method.value === "vnpay"
+                                      ? "#E1F5FE"
+                                      : method.value === "momo"
+                                      ? "#FCE4EC"
+                                      : "white"
+                                    : "white",
+                                  borderColor: isSelected
+                                    ? method.value === "bank_transfer"
+                                      ? "#1976D2"
+                                      : method.value === "vnpay"
+                                      ? "#0055A6"
+                                      : method.value === "momo"
+                                      ? "#D82D8B"
+                                      : "grey.300"
+                                    : "grey.300",
+                                  borderWidth: isSelected ? 2 : 1,
+                                  boxShadow: isSelected ? 3 : 1,
+                                  "&:hover": {
+                                    bgcolor: isSelected
+                                      ? method.value === "bank_transfer"
+                                        ? "#BBDEFB"
+                                        : method.value === "vnpay"
+                                        ? "#B3E5FC"
+                                        : method.value === "momo"
+                                        ? "#F8BBD9"
+                                        : "grey.50"
+                                      : "grey.50",
+                                    borderColor: isSelected
+                                      ? method.value === "bank_transfer"
+                                        ? "#1565C0"
+                                        : method.value === "vnpay"
+                                        ? "#004BA0"
+                                        : method.value === "momo"
+                                        ? "#C2185B"
+                                        : "grey.400"
+                                      : "grey.400",
+                                    transform: isSelected
+                                      ? "scale(1.02)"
+                                      : "scale(1.01)",
+                                    boxShadow: isSelected ? 4 : 2,
+                                  },
+                                  transition: "all 0.2s ease-in-out",
+                                  position: "relative",
+                                  overflow: "hidden",
+                                  "&::before": isSelected
+                                    ? {
+                                        content: '""',
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        background: isSelected
+                                          ? method.value === "bank_transfer"
+                                            ? "linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)"
+                                            : method.value === "vnpay"
+                                            ? "linear-gradient(135deg, #E1F5FE 0%, #B3E5FC 100%)"
+                                            : method.value === "momo"
+                                            ? "linear-gradient(135deg, #FCE4EC 0%, #F8BBD9 100%)"
+                                            : "none"
+                                          : "none",
+                                        opacity: 0.3,
+                                        pointerEvents: "none",
+                                      }
+                                    : {},
+                                }}
+                              >
+                                <CardContent
+                                  sx={{
+                                    p: 2,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    position: "relative",
+                                    zIndex: 1,
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      width: 48,
+                                      height: 48,
+                                      borderRadius: 2,
+                                      mr: 2,
+                                      bgcolor: isSelected
+                                        ? `${method.color}.main`
+                                        : (theme) => theme.palette.grey[100],
+                                      color: isSelected ? "white" : "grey.600",
+                                      boxShadow: isSelected ? 2 : 1,
+                                      transition: "all 0.2s ease-in-out",
+                                    }}
+                                  >
+                                    <Icon size={24} />
+                                  </Box>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      flex: 1,
+                                    }}
+                                  >
+                                    {method.logo && method.logo}
+                                    <Typography
+                                      variant="body1"
+                                      fontWeight="medium"
+                                      color={
+                                        isSelected
+                                          ? `${method.color}.main`
+                                          : "GrayText"
+                                      }
+                                      sx={{ flex: 1 }}
+                                    >
+                                      {method.label}
+                                    </Typography>
+                                  </Box>
+                                  {isSelected && (
+                                    <Box
+                                      sx={{
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: "50%",
+                                        bgcolor: `${method.color}.main`,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: 2,
+                                        animation: "pulse 2s infinite",
+                                        "@keyframes pulse": {
+                                          "0%": {
+                                            boxShadow: `0 0 0 0 ${method.color}.main`,
+                                          },
+                                          "70%": {
+                                            boxShadow: `0 0 0 10px rgba(0, 0, 0, 0)`,
+                                          },
+                                          "100%": {
+                                            boxShadow: `0 0 0 0 rgba(0, 0, 0, 0)`,
+                                          },
+                                        },
+                                      }}
+                                    >
+                                      <CheckCircle size={16} color="white" />
+                                    </Box>
+                                  )}
+                                </CardContent>
+                              </PaymentMethodCard>
+                            );
+                          })}
+                        </Box>
+                      </Paper>
+                    </Box>
+
+                    {/* Payment Tabs */}
+                    <Box sx={{ my: 2 }}>
+                      <Paper
+                        sx={{
+                          p: 1,
+                          bgcolor: "grey.200",
+                          borderRadius: 6,
+                          boxShadow: 2,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          {booking.paymentStatus !== "deposit_paid" &&
+                            booking.paymentStatus !== "fully_paid" &&
+                            depositAmountValue > 0 && (
+                              <Button
+                                variant={
+                                  activePaymentTab === 0 ? "contained" : "text"
+                                }
+                                onClick={() => handleTabChange(0)}
+                                disabled={paymentLoading || qrCodeData}
+                                sx={{
+                                  flex: 1,
+                                  borderRadius: 6,
+                                  textTransform: "none",
+                                  color:
+                                    activePaymentTab === 0
+                                      ? "white"
+                                      : "text.secondary",
+                                  bgcolor:
+                                    activePaymentTab === 0
+                                      ? "warning.main"
+                                      : "grey.100",
+                                  border:
+                                    activePaymentTab === 0
+                                      ? "2px solid"
+                                      : "2px solid transparent",
+                                  borderColor:
+                                    activePaymentTab === 0
+                                      ? "warning.dark"
+                                      : "transparent",
+                                  boxShadow: activePaymentTab === 0 ? 3 : 1,
+                                  "&:hover": {
+                                    bgcolor:
+                                      activePaymentTab === 0
+                                        ? "warning.dark"
+                                        : "grey.300",
+                                    transform:
+                                      activePaymentTab === 0
+                                        ? "scale(1.02)"
+                                        : "scale(1.01)",
+                                  },
+                                  transition: "all 0.2s ease-in-out",
+                                  position: "relative",
+                                  overflow: "hidden",
+                                  "&::before":
+                                    activePaymentTab === 0
+                                      ? {
+                                          content: '""',
+                                          position: "absolute",
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          background:
+                                            "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                                          pointerEvents: "none",
+                                        }
+                                      : {},
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      fontSize: "13px",
+                                    }}
+                                  >
+                                    <Percent
+                                      size={16}
+                                      style={{ marginRight: 4 }}
+                                    />
+                                    Thanh toán cọc (20%)
+                                  </Box>
+                                  <Typography
+                                    variant="caption"
+                                    color={
+                                      activePaymentTab === 0
+                                        ? "white"
+                                        : "textSecondary"
+                                    }
+                                  >
+                                    {formatPrice(depositAmountValue)}
+                                  </Typography>
+                                </Box>
+                              </Button>
+                            )}
+
+                          {booking.paymentStatus !== "fully_paid" &&
+                            amountForFullTab > 0 && (
+                              <Button
+                                variant={
+                                  activePaymentTab === 1 ? "contained" : "text"
+                                }
+                                onClick={() => handleTabChange(1)}
+                                disabled={paymentLoading || qrCodeData}
+                                sx={{
+                                  flex: 1,
+                                  borderRadius: 6,
+                                  textTransform: "none",
+                                  color:
+                                    activePaymentTab === 1
+                                      ? "white"
+                                      : "text.secondary",
+                                  bgcolor:
+                                    activePaymentTab === 1
+                                      ? "success.main"
+                                      : "grey.100",
+                                  border:
+                                    activePaymentTab === 1
+                                      ? "2px solid"
+                                      : "2px solid transparent",
+                                  borderColor:
+                                    activePaymentTab === 1
+                                      ? "success.dark"
+                                      : "transparent",
+                                  boxShadow: activePaymentTab === 1 ? 3 : 1,
+                                  "&:hover": {
+                                    bgcolor:
+                                      activePaymentTab === 1
+                                        ? "success.dark"
+                                        : "grey.300",
+                                    transform:
+                                      activePaymentTab === 1
+                                        ? "scale(1.02)"
+                                        : "scale(1.01)",
+                                  },
+                                  transition: "all 0.2s ease-in-out",
+                                  position: "relative",
+                                  overflow: "hidden",
+                                  "&::before":
+                                    activePaymentTab === 1
+                                      ? {
+                                          content: '""',
+                                          position: "absolute",
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          background:
+                                            "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                                          pointerEvents: "none",
+                                        }
+                                      : {},
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      fontSize: "13px",
+                                    }}
+                                  >
+                                    <CheckCircle
+                                      size={16}
+                                      style={{ marginRight: 4 }}
+                                    />
+                                    {booking.paymentStatus === "deposit_paid"
+                                      ? "Thanh toán còn lại"
+                                      : "Thanh toán toàn bộ"}
+                                  </Box>
+                                  <Typography
+                                    variant="caption"
+                                    color={
+                                      activePaymentTab === 1
+                                        ? "white"
+                                        : "textSecondary"
+                                    }
+                                  >
+                                    {formatPrice(amountForFullTab)}
+                                  </Typography>
+                                </Box>
+                              </Button>
+                            )}
+                        </Box>
+                      </Paper>
+                    </Box>
+
+                    {/* Payment Buttons */}
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                    >
+                      {activePaymentTab === 0 &&
+                        booking.paymentStatus !== "deposit_paid" &&
                         booking.paymentStatus !== "fully_paid" &&
                         depositAmountValue > 0 && (
-                          <button
-                            className={`flex-1 px-2 rounded-3xl text-sm font-medium transition-all duration-200 ${
-                              activePaymentTab === 0
-                                ? "bg-white text-orange-600 border border-orange-600 shadow-md transform scale-105"
-                                : "text-gray-600 hover:text-gray-800"
-                            } ${
-                              paymentLoading || qrCodeData
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }`}
-                            onClick={() => handleTabChange(0)}
-                            disabled={paymentLoading || qrCodeData}
+                          <PaymentButton
+                            variant="deposit"
+                            onClick={handleDepositPayment}
+                            disabled={paymentLoading}
+                            fullWidth
+                            sx={{ py: 2 }}
                           >
-                            <div className="flex items-center text-[13px] justify-center">
-                              <Percent className="w-4 h-4 mr-1" />
-                              Thanh toán cọc (20%)
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {formatPrice(depositAmountValue)}
-                            </div>
-                          </button>
+                            {paymentLoading ? (
+                              <CircularProgress size={24} color="inherit" />
+                            ) : (
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                {getPaymentMethodIcon(selectedPaymentMethod)}
+                                <Typography sx={{ ml: 1 }}>
+                                  Thanh toán cọc (20%) -{" "}
+                                  {formatPrice(amountForDepositTab)}
+                                </Typography>
+                                <ArrowRight
+                                  size={20}
+                                  style={{ marginLeft: 8 }}
+                                />
+                              </Box>
+                            )}
+                          </PaymentButton>
                         )}
 
-                      {booking.paymentStatus !== "fully_paid" &&
+                      {activePaymentTab === 1 &&
+                        booking.paymentStatus !== "fully_paid" &&
                         amountForFullTab > 0 && (
-                          <button
-                            className={`flex-1 px-2 rounded-3xl font-medium transition-all duration-200 ${
-                              activePaymentTab === 1
-                                ? "bg-white text-green-600 border border-green-600 shadow-md transform scale-105"
-                                : "text-gray-600 hover:text-gray-800"
-                            } ${
-                              paymentLoading || qrCodeData
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }`}
-                            onClick={() => handleTabChange(1)}
-                            disabled={paymentLoading || qrCodeData}
+                          <PaymentButton
+                            variant="full"
+                            onClick={handleFullOrRemainingPayment}
+                            disabled={paymentLoading}
+                            fullWidth
+                            sx={{ py: 2 }}
                           >
-                            <div className="flex items-center text-[13px] justify-center">
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              {booking.paymentStatus === "deposit_paid"
-                                ? "Thanh toán còn lại"
-                                : "Thanh toán toàn bộ"}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {formatPrice(amountForFullTab)}
-                            </div>
-                          </button>
+                            {paymentLoading ? (
+                              <CircularProgress size={24} color="inherit" />
+                            ) : (
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                {getPaymentMethodIcon(selectedPaymentMethod)}
+                                <Typography sx={{ ml: 1 }}>
+                                  {booking.paymentStatus === "deposit_paid"
+                                    ? `Thanh toán còn lại - ${formatPrice(
+                                        amountForFullTab
+                                      )}`
+                                    : `Thanh toán toàn bộ - ${formatPrice(
+                                        amountForFullTab
+                                      )}`}
+                                </Typography>
+                                <ArrowRight
+                                  size={20}
+                                  style={{ marginLeft: 8 }}
+                                />
+                              </Box>
+                            )}
+                          </PaymentButton>
                         )}
-                    </div>
-                  </div>
-
-                  {/* Payment Buttons */}
-                  <div className="space-y-3">
-                    {activePaymentTab === 0 &&
-                      booking.paymentStatus !== "deposit_paid" &&
-                      booking.paymentStatus !== "fully_paid" &&
-                      depositAmountValue > 0 && (
-                        <button
-                          onClick={handleDepositPayment}
-                          disabled={paymentLoading}
-                          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center"
-                        >
-                          {paymentLoading ? (
-                            <>
-                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                              Đang xử lý...
-                            </>
-                          ) : (
-                            <>
-                              {getPaymentMethodIcon(selectedPaymentMethod)}
-                              <span className="ml-2">
-                                Thanh toán cọc (20%) -{" "}
-                                {formatPrice(amountForDepositTab)}
-                              </span>
-                              <ArrowRight className="w-5 h-5 ml-2" />
-                            </>
-                          )}
-                        </button>
-                      )}
-
-                    {activePaymentTab === 1 &&
-                      booking.paymentStatus !== "fully_paid" &&
-                      amountForFullTab > 0 && (
-                        <button
-                          onClick={handleFullOrRemainingPayment}
-                          disabled={paymentLoading}
-                          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center"
-                        >
-                          {paymentLoading ? (
-                            <>
-                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                              Đang xử lý...
-                            </>
-                          ) : (
-                            <>
-                              {getPaymentMethodIcon(selectedPaymentMethod)}
-                              <span className="ml-2">
-                                {booking.paymentStatus === "deposit_paid"
-                                  ? `Thanh toán còn lại - ${formatPrice(
-                                      amountForFullTab
-                                    )}`
-                                  : `Thanh toán toàn bộ - ${formatPrice(
-                                      amountForFullTab
-                                    )}`}
-                              </span>
-                              <ArrowRight className="w-5 h-5 ml-2" />
-                            </>
-                          )}
-                        </button>
-                      )}
-                  </div>
-                </>
-              ) : (
-                renderQRSection()
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                    </Box>
+                  </>
+                ) : (
+                  renderQRSection()
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </DialogContent>
+      {/* <DialogActions>
+        <Button
+          onClick={handleClose}
+          variant="contained"
+          color="primary"
+          fullWidth
+          sx={{ borderRadius: 2 }}
+        >
+          Đóng
+        </Button>
+      </DialogActions> */}
+    </StyledDialog>
   );
 };
 

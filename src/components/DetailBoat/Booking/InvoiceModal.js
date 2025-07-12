@@ -53,6 +53,18 @@ const InvoiceModal = () => {
   const { showInvoiceModal, invoiceData } = useSelector(
     (state) => state.ui.modals
   );
+  // Debug log for invoiceData and schedule
+  console.log("[DEBUG] invoiceData:", invoiceData);
+  if (invoiceData) {
+    console.log(
+      "[DEBUG] invoiceData.yachtInfo.scheduleInfo:",
+      invoiceData.yachtInfo?.scheduleInfo
+    );
+    console.log(
+      "[DEBUG] invoiceData.bookingId.schedule:",
+      invoiceData.bookingId?.schedule
+    );
+  }
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -74,11 +86,67 @@ const InvoiceModal = () => {
   // Lấy số liệu tài chính từ invoiceData.financials (backend trả về)
   const subtotal = invoiceData.financials?.subtotal ?? 0;
   const discount = invoiceData.financials?.totalDiscount ?? 0;
-  const tax = invoiceData.financials?.totalTax ?? 0;
-  const total = invoiceData.financials?.total ?? 0;
+  const amountBeforeTax = subtotal - discount;
+  const tax = amountBeforeTax * 0.05; // VAT 5%
+  const total = amountBeforeTax + tax;
   const paidAmount = invoiceData.financials?.paidAmount ?? 0;
-  const remainingAmount =
-    invoiceData.financials?.remainingAmount ?? total - paidAmount;
+  const remainingAmount = total - paidAmount;
+
+  // Helper to get schedule text (match TransactionModal logic)
+  const getScheduleText = () => {
+    // Try to get from bookingId.schedule.scheduleId (YachtSchedule)
+    const schedule = invoiceData.bookingId?.schedule;
+    if (schedule && schedule.scheduleId) {
+      const s = schedule.scheduleId;
+      if (s.startDate && s.endDate) {
+        const start = new Date(s.startDate);
+        const end = new Date(s.endDate);
+        if (!isNaN(start) && !isNaN(end)) {
+          const msPerDay = 24 * 60 * 60 * 1000;
+          const days = Math.round((end - start) / msPerDay) + 1;
+          const nights = days - 1;
+          return `${days} ngày ${nights} đêm (từ ${start.toLocaleDateString(
+            "vi-VN"
+          )} đến ${end.toLocaleDateString("vi-VN")})`;
+        }
+      }
+      if (s.displayText) return s.displayText;
+    }
+    // Fallback to schedule.startDate/endDate (nếu không phải YachtSchedule)
+    if (schedule && schedule.startDate && schedule.endDate) {
+      const start = new Date(schedule.startDate);
+      const end = new Date(schedule.endDate);
+      if (!isNaN(start) && !isNaN(end)) {
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const days = Math.round((end - start) / msPerDay) + 1;
+        const nights = days - 1;
+        return `${days} ngày ${nights} đêm (từ ${start.toLocaleDateString(
+          "vi-VN"
+        )} đến ${end.toLocaleDateString("vi-VN")})`;
+      }
+    }
+    // Fallback to displayText
+    if (schedule && schedule.displayText) return schedule.displayText;
+    // Fallback to yachtInfo.scheduleInfo if available
+    if (
+      invoiceData.yachtInfo?.scheduleInfo &&
+      invoiceData.yachtInfo.scheduleInfo !== "undefined - undefined"
+    ) {
+      return invoiceData.yachtInfo.scheduleInfo;
+    }
+    return "-";
+  };
+
+  // Helper to get customer address
+  const getCustomerAddress = () => {
+    if (invoiceData.bookingId?.customer?.address) {
+      return invoiceData.bookingId.customer.address;
+    }
+    if (invoiceData.customerInfo?.address) {
+      return invoiceData.customerInfo.address;
+    }
+    return "-";
+  };
 
   return (
     <Dialog
@@ -90,9 +158,9 @@ const InvoiceModal = () => {
       scroll="paper"
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          boxShadow: 24,
-          background: "#fff",
+          borderRadius: theme.shape.borderRadius * 0.3,
+          boxShadow: theme.shadows[2],
+          background: theme.palette.background.paper,
           position: "relative",
           zIndex: 9999,
           maxHeight: fullScreen ? "100vh" : "90vh",
@@ -113,8 +181,8 @@ const InvoiceModal = () => {
     >
       <DialogTitle
         sx={{
-          background: "linear-gradient(90deg, #2563eb 0%, #1e40af 100%)",
-          color: "#fff",
+          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          color: theme.palette.primary.contrastText,
           py: 2,
           px: 3,
           display: "flex",
@@ -128,22 +196,28 @@ const InvoiceModal = () => {
             sx={{
               background: "rgba(255,255,255,0.15)",
               p: 1,
-              borderRadius: 2,
+              borderRadius: theme.shape.borderRadius,
               display: "flex",
               alignItems: "center",
             }}
           >
-            <Receipt className="w-6 h-6" color="#fff" />
+            <Receipt
+              className="w-6 h-6"
+              color={theme.palette.primary.contrastText}
+            />
           </Box>
           <Box>
             <Typography
               variant="h6"
               fontWeight={600}
-              fontFamily="Archivo, sans-serif"
+              fontFamily={theme.typography.fontFamily}
             >
               Hóa đơn thanh toán
             </Typography>
-            <Typography variant="subtitle2" fontFamily="Archivo, sans-serif">
+            <Typography
+              variant="subtitle2"
+              fontFamily={theme.typography.fontFamily}
+            >
               Hóa đơn điện tử
             </Typography>
           </Box>
@@ -151,7 +225,7 @@ const InvoiceModal = () => {
         <IconButton
           onClick={handleCloseModal}
           sx={{
-            color: "#fff",
+            color: theme.palette.primary.contrastText,
             ml: 2,
             "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
           }}
@@ -163,7 +237,7 @@ const InvoiceModal = () => {
       <DialogContent
         dividers
         sx={{
-          background: "#f9fafb",
+          background: theme.palette.background.default,
           px: { xs: 1, sm: 3 },
           py: { xs: 2, sm: 3 },
           maxHeight: fullScreen ? "calc(100vh - 120px)" : "calc(90vh - 120px)",
@@ -190,32 +264,52 @@ const InvoiceModal = () => {
           mb={3}
           p={2}
           sx={{
-            bgcolor: "#fffbe6",
-            borderLeft: "8px solid #f59e42",
-            borderRadius: 2,
-            boxShadow: 1,
+            bgcolor: theme.palette.background.paper,
+            borderLeft: `8px solid ${theme.palette.primary.main}`,
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: theme.shadows[1],
           }}
         >
           <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Hash className="w-4 h-4" color="#6b7280" />
+                <Hash
+                  className="w-4 h-4"
+                  color={theme.palette.text.secondary}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Ký hiệu hóa đơn
                   </Typography>
-                  <Typography fontWeight={600}>AB/20E</Typography>
+                  <Typography
+                    fontWeight={600}
+                    color={theme.palette.text.primary}
+                  >
+                    AB/20E
+                  </Typography>
                 </Box>
               </Stack>
             </Grid>
             <Grid item xs={12} md={4}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <FileText className="w-4 h-4" color="#6b7280" />
+                <FileText
+                  className="w-4 h-4"
+                  color={theme.palette.text.secondary}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Số hóa đơn
                   </Typography>
-                  <Typography fontWeight={600} color="primary.main">
+                  <Typography
+                    fontWeight={600}
+                    color={theme.palette.primary.main}
+                  >
                     {invoiceData.invoiceNumber}
                   </Typography>
                 </Box>
@@ -223,12 +317,21 @@ const InvoiceModal = () => {
             </Grid>
             <Grid item xs={12} md={4}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Calendar className="w-4 h-4" color="#6b7280" />
+                <Calendar
+                  className="w-4 h-4"
+                  color={theme.palette.text.secondary}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Ngày phát hành
                   </Typography>
-                  <Typography fontWeight={600}>
+                  <Typography
+                    fontWeight={600}
+                    color={theme.palette.text.primary}
+                  >
                     {new Date(invoiceData.issueDate).toLocaleDateString(
                       "vi-VN"
                     )}
@@ -240,15 +343,15 @@ const InvoiceModal = () => {
         </Box>
         {/* Thông tin người bán & người mua */}
         <Grid container spacing={2} mb={3}>
-          <Grid item xs={12} lg={6}>
+          <Grid item xs={12} lg={7}>
             <Box
-              bgcolor="#fff"
+              bgcolor={theme.palette.background.paper}
               border={2}
-              borderColor="#2563eb"
-              borderRadius={3}
+              borderColor={theme.palette.primary.main}
+              borderRadius={theme.shape.borderRadius * 0.3}
               px={3}
               py={2}
-              boxShadow={2}
+              boxShadow={theme.shadows[1]}
               sx={{ minHeight: 180 }}
             >
               <Stack
@@ -258,51 +361,72 @@ const InvoiceModal = () => {
                 mb={2}
                 pb={1}
                 borderBottom={1}
-                borderColor="#f3f4f6"
+                borderColor={theme.palette.divider}
               >
-                <Building2 className="w-6 h-5" color="#2563eb" />
+                <Building2
+                  className="w-6 h-5"
+                  color={theme.palette.primary.main}
+                />
                 <Typography
                   fontWeight={800}
-                  color="#2563eb"
+                  color={theme.palette.primary.main}
                   textTransform="uppercase"
                   fontSize={18}
                   letterSpacing={1}
                 >
-                  THÔNG TIN NGƯỜI BÁN
+                  THÔNG TIN NGƯỜI CHO THUÊ
                 </Typography>
               </Stack>
               <Stack spacing={1}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Building2 className="w-4 h-4" color="#94a3b8" />
+                  <Building2
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
                   <Box>
                     <Typography
                       variant="caption"
-                      color="#2563eb"
+                      color={theme.palette.primary.main}
                       fontWeight={700}
                     >
                       Tên công ty:
                     </Typography>
-                    <Typography fontWeight={700} color="#222">
+                    <Typography
+                      fontWeight={700}
+                      color={theme.palette.text.primary}
+                    >
                       CÔNG TY DU THUYỀN LONGWARE
                     </Typography>
                   </Box>
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <MapPin className="w-4 h-4" color="#94a3b8" />
+                  <MapPin
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
                   <Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.text.secondary}
+                    >
                       Địa chỉ:
                     </Typography>
-                    <Typography>
+                    <Typography color={theme.palette.text.primary}>
                       {" "}
                       Khu công nghệ cao, Hòa lạc, Thạch Thất, Hà Nội
                     </Typography>
                   </Box>
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Hash className="w-4 h-4" color="#94a3b8" />
+                  <Hash
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
                   <Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.text.secondary}
+                    >
                       Mã số thuế:
                     </Typography>
                     <Typography fontWeight={600} color="error.main">
@@ -311,25 +435,42 @@ const InvoiceModal = () => {
                   </Box>
                 </Stack>
                 <Grid container spacing={1}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={5}>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Phone className="w-4 h-4" color="#94a3b8" />
+                      <Phone
+                        className="w-4 h-4"
+                        color={theme.palette.text.secondary}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
                           Điện thoại:
                         </Typography>
-                        <Typography>0123-456-789</Typography>
+                        <Typography color={theme.palette.text.primary}>
+                          0123-456-789
+                        </Typography>
                       </Box>
                     </Stack>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={7}>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Mail className="w-4 h-4" color="#94a3b8" />
+                      <Mail
+                        className="w-4 h-4"
+                        color={theme.palette.text.secondary}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
                           Email:
                         </Typography>
-                        <Typography sx={{ wordBreak: "break-all" }}>
+                        <Typography
+                          sx={{ wordBreak: "break-all" }}
+                          color={theme.palette.text.primary}
+                        >
                           longwareBooking@yacht.com
                         </Typography>
                       </Box>
@@ -337,12 +478,18 @@ const InvoiceModal = () => {
                   </Grid>
                 </Grid>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Globe className="w-4 h-4" color="#94a3b8" />
+                  <Globe
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
                   <Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.text.secondary}
+                    >
                       Website:
                     </Typography>
-                    <Typography color="primary.main">
+                    <Typography color={theme.palette.primary.main}>
                       www.longware.com
                     </Typography>
                   </Box>
@@ -350,15 +497,15 @@ const InvoiceModal = () => {
               </Stack>
             </Box>
           </Grid>
-          <Grid item xs={12} lg={6}>
+          <Grid item xs={12} lg={5}>
             <Box
-              bgcolor="#fff"
+              bgcolor={theme.palette.background.paper}
               border={2}
-              borderColor="#22c55e"
-              borderRadius={3}
+              borderColor={theme.palette.purple?.main || "#22c55e"}
+              borderRadius={theme.shape.borderRadius * 0.3}
               px={3}
               py={2}
-              boxShadow={2}
+              boxShadow={theme.shadows[1]}
               sx={{ minHeight: 180 }}
             >
               <Stack
@@ -368,69 +515,78 @@ const InvoiceModal = () => {
                 mb={2}
                 pb={1}
                 borderBottom={1}
-                borderColor="#f3f4f6"
+                borderColor={theme.palette.divider}
               >
-                <User className="w-5 h-5" color="#22c55e" />
+                <User
+                  className="w-5 h-5"
+                  color={theme.palette.purple?.main || "#22c55e"}
+                />
                 <Typography
                   fontWeight={800}
-                  color="#22c55e"
+                  color={theme.palette.purple?.main || "#22c55e"}
                   fontSize={18}
                   letterSpacing={1}
                 >
-                  THÔNG TIN NGƯỜI MUA
+                  THÔNG TIN NGƯỜI THUÊ
                 </Typography>
               </Stack>
               <Stack spacing={1}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <User className="w-4 h-4" color="#94a3b8" />
+                  <User
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
                   <Box>
                     <Typography
                       variant="caption"
-                      color="#22c55e"
+                      color={theme.palette.purple?.main || "#22c55e"}
                       fontWeight={700}
                     >
                       Họ và tên:
                     </Typography>
-                    <Typography fontWeight={700} color="#222">
+                    <Typography
+                      fontWeight={700}
+                      color={theme.palette.text.primary}
+                    >
                       {invoiceData.customerInfo?.fullName || "-"}
                     </Typography>
                   </Box>
                 </Stack>
-                {invoiceData.customerInfo.address && (
+                {getCustomerAddress() && (
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <MapPin className="w-4 h-4" color="#94a3b8" />
+                    <MapPin
+                      className="w-4 h-4"
+                      color={theme.palette.text.secondary}
+                    />
                     <Box>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.text.secondary}
+                      >
                         Địa chỉ:
                       </Typography>
-                      <Typography>
-                        {invoiceData.customerInfo.address}
+                      <Typography color={theme.palette.text.primary}>
+                        {getCustomerAddress()}
                       </Typography>
                     </Box>
                   </Stack>
                 )}
-                {invoiceData.customerInfo.taxCode && (
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Hash className="w-4 h-4" color="#94a3b8" />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">
-                        Mã số thuế:
-                      </Typography>
-                      <Typography fontWeight={600} color="error.main">
-                        {invoiceData.customerInfo.taxCode}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                )}
+
                 <Grid container spacing={1}>
                   <Grid item xs={12} sm={6}>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Phone className="w-4 h-4" color="#94a3b8" />
+                      <Phone
+                        className="w-4 h-4"
+                        color={theme.palette.text.secondary}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
                           Số điện thoại:
                         </Typography>
-                        <Typography>
+                        <Typography color={theme.palette.text.primary}>
                           {invoiceData.customerInfo.phoneNumber}
                         </Typography>
                       </Box>
@@ -438,12 +594,21 @@ const InvoiceModal = () => {
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Mail className="w-4 h-4" color="#94a3b8" />
+                      <Mail
+                        className="w-4 h-4"
+                        color={theme.palette.text.secondary}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
                           Email:
                         </Typography>
-                        <Typography sx={{ wordBreak: "break-all" }}>
+                        <Typography
+                          sx={{ wordBreak: "break-all" }}
+                          color={theme.palette.text.primary}
+                        >
                           {invoiceData.customerInfo.email}
                         </Typography>
                       </Box>
@@ -460,10 +625,10 @@ const InvoiceModal = () => {
             mb={3}
             p={2}
             sx={{
-              bgcolor: "linear-gradient(90deg, #f0fdfa 0%, #ecfeff 100%)",
-              border: "1px solid #5eead4",
-              borderRadius: 2,
-              boxShadow: 1,
+              bgcolor: theme.palette.background.paper,
+              border: `1px solid ${theme.palette.primary.main}`,
+              borderRadius: theme.shape.borderRadius * 0.2,
+              boxShadow: theme.shadows[1],
             }}
           >
             <Stack
@@ -473,87 +638,79 @@ const InvoiceModal = () => {
               mb={1}
               pb={1}
               borderBottom={1}
-              borderColor="#e5e7eb"
+              borderColor={theme.palette.divider}
             >
-              <Ship className="w-6 h-5" color="#14b8a6" />
-              <Typography fontWeight={700} color="#0e7490" fontSize={16}>
+              <Ship className="w-6 h-5" color={theme.palette.primary.main} />
+              <Typography
+                fontWeight={700}
+                color={theme.palette.primary.main}
+                fontSize={16}
+              >
                 Thông tin dịch vụ
               </Typography>
             </Stack>
             <Grid container spacing={2}>
               {invoiceData.yachtInfo.name && (
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={6}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Ship className="w-4 h-4" color="#2dd4bf" />
+                    <Ship
+                      className="w-4 h-4"
+                      color={theme.palette.primary.main}
+                    />
                     <Box>
-                      <Typography variant="caption" color="#0e7490">
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.primary.main}
+                      >
                         Du thuyền
                       </Typography>
-                      <Typography fontWeight={600}>
+                      <Typography
+                        fontWeight={600}
+                        color={theme.palette.text.primary}
+                      >
                         {invoiceData.yachtInfo.name}
                       </Typography>
                     </Box>
                   </Stack>
                 </Grid>
               )}
-              {invoiceData.yachtInfo.location && (
+              {invoiceData.yachtInfo.locationId && (
                 <Grid item xs={12} md={4}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <MapPin className="w-4 h-4" color="#2dd4bf" />
+                    <MapPin
+                      className="w-4 h-4"
+                      color={theme.palette.primary.main}
+                    />
                     <Box>
-                      <Typography variant="caption" color="#0e7490">
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.primary.main}
+                      >
                         Địa điểm
                       </Typography>
-                      <Typography>{invoiceData.yachtInfo.location}</Typography>
+                      <Typography color={theme.palette.text.primary}>
+                        {invoiceData.yachtInfo.locationId.name}
+                      </Typography>
                     </Box>
                   </Stack>
                 </Grid>
               )}
-              <Grid item xs={12} md={4}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Calendar className="w-4 h-4" color="#2dd4bf" />
-                  <Box>
-                    <Typography variant="caption" color="#0e7490">
-                      Lịch trình
-                    </Typography>
-                    <Typography fontWeight={600}>
-                      {(() => {
-                        if (invoiceData.yachtInfo.scheduleInfo)
-                          return invoiceData.yachtInfo.scheduleInfo;
-                        const schedule = invoiceData.bookingId?.schedule;
-                        if (schedule) {
-                          if (schedule.displayText) return schedule.displayText;
-                          if (schedule.startDate && schedule.endDate) {
-                            // Kiểm tra startDate/endDate hợp lệ
-                            const start = schedule.startDate
-                              ? new Date(schedule.startDate)
-                              : null;
-                            const end = schedule.endDate
-                              ? new Date(schedule.endDate)
-                              : null;
-                            if (start && end && !isNaN(start) && !isNaN(end)) {
-                              return `${start.toLocaleDateString(
-                                "vi-VN"
-                              )} - ${end.toLocaleDateString("vi-VN")}`;
-                            }
-                          }
-                        }
-                        return "-";
-                      })()}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
 
               {invoiceData.yachtInfo.checkInDate && (
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={6}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Calendar className="w-4 h-4" color="#2dd4bf" />
+                    <Calendar
+                      className="w-4 h-4"
+                      color={theme.palette.primary.main}
+                    />
                     <Box>
-                      <Typography variant="caption" color="#0e7490">
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.primary.main}
+                      >
                         Ngày nhận phòng
                       </Typography>
-                      <Typography>
+                      <Typography color={theme.palette.text.primary}>
                         {new Date(
                           invoiceData.yachtInfo.checkInDate
                         ).toLocaleDateString("vi-VN")}
@@ -565,12 +722,18 @@ const InvoiceModal = () => {
               {invoiceData.yachtInfo.checkOutDate && (
                 <Grid item xs={12} md={4}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Calendar className="w-4 h-4" color="#2dd4bf" />
+                    <Calendar
+                      className="w-4 h-4"
+                      color={theme.palette.primary.main}
+                    />
                     <Box>
-                      <Typography variant="caption" color="#0e7490">
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.primary.main}
+                      >
                         Ngày trả phòng
                       </Typography>
-                      <Typography>
+                      <Typography color={theme.palette.text.primary}>
                         {new Date(
                           invoiceData.yachtInfo.checkOutDate
                         ).toLocaleDateString("vi-VN")}
@@ -584,15 +747,21 @@ const InvoiceModal = () => {
             {invoiceData.guestInfo && (
               <Box mt={2}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <User className="w-4 h-4" color="#2dd4bf" />
+                  <User
+                    className="w-4 h-4"
+                    color={theme.palette.primary.main}
+                  />
                   <Typography
                     variant="caption"
-                    color="#0e7490"
+                    color={theme.palette.primary.main}
                     fontWeight={600}
                   >
                     Số khách:
                   </Typography>
-                  <Typography fontWeight={700} color="#134e4a">
+                  <Typography
+                    fontWeight={700}
+                    color={theme.palette.text.primary}
+                  >
                     {invoiceData.guestInfo.adults || 0} người lớn
                     {typeof invoiceData.guestInfo.childrenUnder10 === "number"
                       ? `, ${invoiceData.guestInfo.childrenUnder10} trẻ em dưới 10 tuổi`
@@ -602,7 +771,11 @@ const InvoiceModal = () => {
                       : ""}
                   </Typography>
                 </Stack>
-                <Typography variant="caption" color="text.secondary" ml={4}>
+                <Typography
+                  variant="caption"
+                  color={theme.palette.text.secondary}
+                  ml={4}
+                >
                   Tổng khách quy đổi:{" "}
                   {invoiceData.guestInfo.adults +
                     Math.floor(
@@ -613,45 +786,70 @@ const InvoiceModal = () => {
                 </Typography>
               </Box>
             )}
+            <Grid item xs={12} md={6}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Calendar
+                  className="w-4 h-4"
+                  color={theme.palette.primary.main}
+                />
+                <Box>
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.primary.main}
+                  >
+                    Lịch trình
+                  </Typography>
+                  <Typography
+                    fontWeight={600}
+                    color={theme.palette.text.primary}
+                  >
+                    {getScheduleText()}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Grid>
           </Box>
         )}
         {/* Bảng chi tiết dịch vụ */}
         <Box mb={3}>
           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-            <Receipt className="w-5 h-5" color="#64748b" />
-            <Typography fontWeight={700} color="text.primary" fontSize={18}>
+            <Receipt className="w-5 h-5" color={theme.palette.text.secondary} />
+            <Typography
+              fontWeight={700}
+              color={theme.palette.text.primary}
+              fontSize={18}
+            >
               Chi tiết phòng và dịch vụ{" "}
             </Typography>
           </Stack>
           <Box
             sx={{
               overflowX: "auto",
-              borderRadius: 2,
-              border: "1px solid #60a5fa",
-              boxShadow: 1,
+              borderRadius: theme.shape.borderRadius * 0.2,
+              border: `1px solid ${theme.palette.primary.main}`,
+              boxShadow: theme.shadows[1],
             }}
           >
             <table
               style={{
                 width: "100%",
-                background: "#fff",
+                background: theme.palette.background.paper,
                 borderCollapse: "collapse",
               }}
             >
               <thead>
                 <tr
                   style={{
-                    background:
-                      "linear-gradient(90deg, #eff6ff 0%, #dbeafe 100%)",
+                    background: `linear-gradient(90deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}25 100%)`,
                   }}
                 >
                   <th
                     style={{
-                      borderBottom: "1px solid #93c5fd",
+                      borderBottom: `1px solid ${theme.palette.primary.main}`,
                       padding: 12,
                       textAlign: "left",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: theme.palette.primary.main,
                       fontSize: 14,
                     }}
                   >
@@ -659,11 +857,11 @@ const InvoiceModal = () => {
                   </th>
                   <th
                     style={{
-                      borderBottom: "1px solid #93c5fd",
+                      borderBottom: `1px solid ${theme.palette.primary.main}`,
                       padding: 12,
                       textAlign: "left",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: theme.palette.primary.main,
                       fontSize: 14,
                     }}
                   >
@@ -671,11 +869,11 @@ const InvoiceModal = () => {
                   </th>
                   <th
                     style={{
-                      borderBottom: "1px solid #93c5fd",
+                      borderBottom: `1px solid ${theme.palette.primary.main}`,
                       padding: 12,
                       textAlign: "center",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: theme.palette.primary.main,
                       fontSize: 14,
                     }}
                   >
@@ -683,11 +881,11 @@ const InvoiceModal = () => {
                   </th>
                   <th
                     style={{
-                      borderBottom: "1px solid #93c5fd",
+                      borderBottom: `1px solid ${theme.palette.primary.main}`,
                       padding: 12,
                       textAlign: "center",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: theme.palette.primary.main,
                       fontSize: 14,
                     }}
                   >
@@ -695,11 +893,11 @@ const InvoiceModal = () => {
                   </th>
                   <th
                     style={{
-                      borderBottom: "1px solid #93c5fd",
+                      borderBottom: `1px solid ${theme.palette.primary.main}`,
                       padding: 12,
                       textAlign: "right",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: theme.palette.primary.main,
                       fontSize: 14,
                     }}
                   >
@@ -707,11 +905,11 @@ const InvoiceModal = () => {
                   </th>
                   <th
                     style={{
-                      borderBottom: "1px solid #93c5fd",
+                      borderBottom: `1px solid ${theme.palette.primary.main}`,
                       padding: 12,
                       textAlign: "right",
                       fontWeight: 600,
-                      color: "#2563eb",
+                      color: theme.palette.primary.main,
                       fontSize: 14,
                     }}
                   >
@@ -724,26 +922,35 @@ const InvoiceModal = () => {
                   <tr
                     key={index}
                     style={{
-                      borderBottom: "1px solid #e0e7ef",
-                      background: index % 2 === 0 ? "#fff" : "#f8fafc",
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                      background:
+                        index % 2 === 0
+                          ? theme.palette.background.paper
+                          : theme.palette.background.default,
                     }}
                   >
                     <td
                       style={{
                         padding: 12,
                         textAlign: "center",
-                        color: "#64748b",
+                        color: theme.palette.text.secondary,
                         fontWeight: 500,
                       }}
                     >
                       {index + 1}
                     </td>
                     <td style={{ padding: 12 }}>
-                      <Typography fontWeight={600} color="text.primary">
+                      <Typography
+                        fontWeight={600}
+                        color={theme.palette.text.primary}
+                      >
                         {item.name}
                       </Typography>
                       {item.description && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
                           {item.description}
                         </Typography>
                       )}
@@ -752,7 +959,7 @@ const InvoiceModal = () => {
                       style={{
                         padding: 12,
                         textAlign: "center",
-                        color: "#64748b",
+                        color: theme.palette.text.secondary,
                       }}
                     >
                       {item.name && item.name.toLowerCase().includes("phòng")
@@ -764,6 +971,7 @@ const InvoiceModal = () => {
                         padding: 12,
                         textAlign: "center",
                         fontWeight: 600,
+                        color: theme.palette.text.primary,
                       }}
                     >
                       {item.quantity}
@@ -773,6 +981,7 @@ const InvoiceModal = () => {
                         padding: 12,
                         textAlign: "right",
                         fontWeight: 600,
+                        color: theme.palette.text.primary,
                       }}
                     >
                       {formatPrice(item.unitPrice)}
@@ -782,7 +991,7 @@ const InvoiceModal = () => {
                         padding: 12,
                         textAlign: "right",
                         fontWeight: 700,
-                        color: "#2563eb",
+                        color: theme.palette.primary.main,
                       }}
                     >
                       {formatPrice(item.totalPrice)}
@@ -798,12 +1007,12 @@ const InvoiceModal = () => {
           <Box
             width="100%"
             maxWidth={400}
-            boxShadow={3}
+            boxShadow={theme.shadows[2]}
             border={1}
-            borderColor="#fca5a5"
-            borderRadius={2}
+            borderColor={theme.palette.primary.main}
+            borderRadius={theme.shape.borderRadius * 0.2}
             p={2}
-            bgcolor="linear-gradient(90deg, #fef2f2 0%, #eff6ff 100%)"
+            bgcolor={theme.palette.background.paper}
           >
             <Stack spacing={1}>
               <Stack
@@ -812,12 +1021,15 @@ const InvoiceModal = () => {
                 alignItems="center"
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Calculator className="w-4 h-4" color="#64748b" />
-                  <Typography color="text.secondary">
+                  <Calculator
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
+                  <Typography color={theme.palette.text.secondary}>
                     Tổng tiền phòng và dịch vụ
                   </Typography>
                 </Stack>
-                <Typography fontWeight={600}>
+                <Typography fontWeight={600} color={theme.palette.text.primary}>
                   {formatPrice(subtotal)}
                 </Typography>
               </Stack>
@@ -828,7 +1040,7 @@ const InvoiceModal = () => {
                   alignItems="center"
                 >
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Percent className="w-4 h-4" color="#ef4444" />
+                    <Percent className="w-4 h-4" color="error.main" />
                     <Typography color="error.main">
                       Chiết khấu thương mại
                     </Typography>
@@ -844,13 +1056,16 @@ const InvoiceModal = () => {
                 alignItems="center"
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <DollarSign className="w-4 h-4" color="#64748b" />
-                  <Typography color="text.secondary">
+                  <DollarSign
+                    className="w-4 h-4"
+                    color={theme.palette.text.secondary}
+                  />
+                  <Typography color={theme.palette.text.secondary}>
                     Tiền chưa có thuế VAT
                   </Typography>
                 </Stack>
-                <Typography fontWeight={600}>
-                  {formatPrice(subtotal - discount)}
+                <Typography fontWeight={600} color={theme.palette.text.primary}>
+                  {formatPrice(amountBeforeTax)}
                 </Typography>
               </Stack>
               <Stack
@@ -859,10 +1074,15 @@ const InvoiceModal = () => {
                 alignItems="center"
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Percent className="w-4 h-4" color="#f59e42" />
-                  <Typography color="text.secondary">Thuế VAT (5%)</Typography>
+                  <Percent
+                    className="w-4 h-4"
+                    color={theme.palette.primary.main}
+                  />
+                  <Typography color={theme.palette.text.secondary}>
+                    Thuế VAT (5%)
+                  </Typography>
                 </Stack>
-                <Typography fontWeight={600} color="#f59e42">
+                <Typography fontWeight={600} color={theme.palette.primary.main}>
                   {formatPrice(tax)}
                 </Typography>
               </Stack>
@@ -873,23 +1093,30 @@ const InvoiceModal = () => {
                 alignItems="center"
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Receipt className="w-5 h-5" color="#2563eb" />
+                  <Receipt
+                    className="w-5 h-5"
+                    color={theme.palette.primary.main}
+                  />
                   <Typography
                     fontWeight={700}
-                    color="text.primary"
+                    color={theme.palette.text.primary}
                     fontSize={16}
                   >
                     TỔNG TIỀN THANH TOÁN
                   </Typography>
                 </Stack>
-                <Typography fontWeight={700} color="#2563eb" fontSize={20}>
+                <Typography
+                  fontWeight={700}
+                  color={theme.palette.primary.main}
+                  fontSize={20}
+                >
                   {formatPrice(total)}
                 </Typography>
               </Stack>
               <Box
-                bgcolor="#f0fdf4"
+                bgcolor={`${theme.palette.primary.main}15`}
                 border={1}
-                borderColor="#bbf7d0"
+                borderColor={theme.palette.primary.main}
                 borderRadius={1}
                 p={1.5}
               >
@@ -899,21 +1126,29 @@ const InvoiceModal = () => {
                   alignItems="center"
                 >
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <CheckCircle className="w-4 h-4" color="#22c55e" />
-                    <Typography color="#22c55e" fontWeight={600}>
+                    <CheckCircle
+                      className="w-4 h-4"
+                      color={theme.palette.primary.main}
+                    />
+                    <Typography
+                      color={theme.palette.primary.main}
+                      fontWeight={600}
+                    >
                       Đã thanh toán
                     </Typography>
                   </Stack>
-                  <Typography fontWeight={700} color="#22c55e">
+                  <Typography
+                    fontWeight={700}
+                    color={theme.palette.primary.main}
+                  >
                     {formatPrice(paidAmount)}
                   </Typography>
                 </Stack>
               </Box>
               {remainingAmount > 0 && (
                 <Box
-                  bgcolor="#fff7ed"
                   border={1}
-                  borderColor="#fdba74"
+                  borderColor={theme.palette.warning.dark}
                   borderRadius={1}
                   p={1.5}
                 >
@@ -923,12 +1158,21 @@ const InvoiceModal = () => {
                     alignItems="center"
                   >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <AlertCircle className="w-4 h-4" color="#f59e42" />
-                      <Typography color="#f59e42" fontWeight={600}>
+                      <AlertCircle
+                        className="w-4 h-4"
+                        color={theme.palette.warning.dark}
+                      />
+                      <Typography
+                        color={theme.palette.warning.dark}
+                        fontWeight={600}
+                      >
                         Còn lại
                       </Typography>
                     </Stack>
-                    <Typography fontWeight={700} color="#f59e42">
+                    <Typography
+                      fontWeight={700}
+                      color={theme.palette.warning.dark}
+                    >
                       {formatPrice(remainingAmount)}
                     </Typography>
                   </Stack>
@@ -940,13 +1184,13 @@ const InvoiceModal = () => {
         {/* Thông tin giao dịch */}
         <Box
           mb={3}
-          bgcolor="#f0fdf4"
+          bgcolor={`${theme.palette.primary.main}15`}
           border={1}
-          borderColor="#bbf7d0"
-          borderRadius={2}
+          borderColor={theme.palette.primary.main}
+          borderRadius={theme.shape.borderRadius * 0.3}
           px={3}
           py={2}
-          boxShadow={1}
+          boxShadow={theme.shadows[1]}
         >
           <Stack
             direction="row"
@@ -955,22 +1199,38 @@ const InvoiceModal = () => {
             mb={1}
             pb={1}
             borderBottom={1}
-            borderColor="#e5e7eb"
+            borderColor={theme.palette.divider}
           >
-            <CreditCard className="w-5 h-5" color="#a21caf" />
-            <Typography fontWeight={700} color="text.primary" fontSize={18}>
+            <CreditCard
+              className="w-5 h-5"
+              color={theme.palette.purple?.main || "#a21caf"}
+            />
+            <Typography
+              fontWeight={700}
+              color={theme.palette.text.primary}
+              fontSize={18}
+            >
               Thông tin thanh toán
             </Typography>
           </Stack>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Receipt className="w-4 h-4" color="#94a3b8" />
+                <Receipt
+                  className="w-4 h-4"
+                  color={theme.palette.text.secondary}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Loại giao dịch
                   </Typography>
-                  <Typography fontWeight={600}>
+                  <Typography
+                    fontWeight={600}
+                    color={theme.palette.text.primary}
+                  >
                     {invoiceData.transactionId?.transaction_type === "deposit"
                       ? "Thanh toán cọc"
                       : "Thanh toán đầy đủ"}
@@ -980,12 +1240,22 @@ const InvoiceModal = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Hash className="w-4 h-4" color="#94a3b8" />
+                <Hash
+                  className="w-4 h-4"
+                  color={theme.palette.text.secondary}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Mã giao dịch
                   </Typography>
-                  <Typography fontFamily="monospace" fontSize={14}>
+                  <Typography
+                    fontFamily="monospace"
+                    fontSize={14}
+                    color={theme.palette.text.primary}
+                  >
                     {invoiceData.transactionId?.transaction_reference}
                   </Typography>
                 </Box>
@@ -993,12 +1263,21 @@ const InvoiceModal = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <CheckCircle className="w-4 h-4" color="#22c55e" />
+                <CheckCircle
+                  className="w-4 h-4"
+                  color={theme.palette.primary.main}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Trạng thái
                   </Typography>
-                  <Typography fontWeight={600} color="#22c55e">
+                  <Typography
+                    fontWeight={600}
+                    color={theme.palette.success.main}
+                  >
                     Thành công
                   </Typography>
                 </Box>
@@ -1006,12 +1285,18 @@ const InvoiceModal = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Clock className="w-4 h-4" color="#94a3b8" />
+                <Clock
+                  className="w-4 h-4"
+                  color={theme.palette.text.secondary}
+                />
                 <Box>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                  >
                     Thời gian thanh toán
                   </Typography>
-                  <Typography fontSize={14}>
+                  <Typography fontSize={14} color={theme.palette.text.primary}>
                     {invoiceData.transactionId?.completedAt
                       ? new Date(
                           invoiceData.transactionId.completedAt
@@ -1027,59 +1312,75 @@ const InvoiceModal = () => {
         {invoiceData.notes && (
           <Box
             mb={3}
-            bgcolor="#fffbe6"
+            bgcolor="warning.light"
             border={1}
-            borderColor="#fde68a"
-            borderRadius={2}
+            borderColor="warning.main"
+            borderRadius={theme.shape.borderRadius}
             p={3}
-            boxShadow={1}
+            boxShadow={theme.shadows[1]}
           >
             <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-              <FileText className="w-5 h-5" color="#f59e42" />
-              <Typography fontWeight={700} color="#f59e42">
+              <FileText className="w-5 h-5" color="warning.main" />
+              <Typography fontWeight={700} color="warning.main">
                 Ghi chú
               </Typography>
             </Stack>
-            <Typography color="#f59e42">{invoiceData.notes}</Typography>
+            <Typography color="warning.main">{invoiceData.notes}</Typography>
           </Box>
         )}
         {/* Chữ ký điện tử */}
-        <Grid container spacing={4} pt={2} borderColor="#e5e7eb">
+        <Grid container spacing={4} pt={2} borderColor={theme.palette.divider}>
           <Grid item xs={12} md={6} textAlign="center">
-            <Typography fontWeight={700} color="text.primary" mb={0.5}>
-              NGƯỜI MUA
+            <Typography
+              fontWeight={700}
+              color={theme.palette.text.primary}
+              mb={0.5}
+            >
+              NGƯỜI THUÊ
             </Typography>
-            <Typography variant="caption" color="text.secondary" mb={2}>
+            <Typography
+              variant="caption"
+              color={theme.palette.text.secondary}
+              mb={2}
+            >
               (Ký, ghi rõ họ tên)
             </Typography>
             <Box
               height={48}
               borderBottom={1}
-              borderColor="#e5e7eb"
+              borderColor={theme.palette.divider}
               width="30%"
               mx="auto"
               mb={1}
             ></Box>
-            <Typography fontWeight={600}>
+            <Typography fontWeight={600} color={theme.palette.text.primary}>
               {invoiceData.customerInfo.fullName}
             </Typography>
           </Grid>
           <Grid item xs={12} md={6} textAlign="center">
-            <Typography fontWeight={700} color="text.primary" mb={0.5}>
-              NGƯỜI BÁN
+            <Typography
+              fontWeight={700}
+              color={theme.palette.text.primary}
+              mb={0.5}
+            >
+              NGƯỜI CHO THUÊ
             </Typography>
-            <Typography variant="caption" color="text.secondary" mb={2}>
+            <Typography
+              variant="caption"
+              color={theme.palette.text.secondary}
+              mb={2}
+            >
               (Ký, đóng dấu, ghi rõ họ tên)
             </Typography>
             <Box
               height={48}
               borderBottom={1}
-              borderColor="#e5e7eb"
+              borderColor={theme.palette.divider}
               width="30%"
               mx="auto"
               mb={1}
             ></Box>
-            <Typography fontWeight={600}>
+            <Typography fontWeight={600} color={theme.palette.text.primary}>
               Công ty TNHH Du thuyền Longware
             </Typography>
           </Grid>
@@ -1090,14 +1391,18 @@ const InvoiceModal = () => {
           pt={3}
           mt={3}
           borderTop={1}
-          borderColor="#e5e7eb"
+          borderColor={theme.palette.divider.main}
         >
           <Box
-            bgcolor="linear-gradient(90deg, #c026d3 0%, #db2777 100%)"
-            color="pink"
-            boxShadow={2}
-            borderRadius={2}
+            bgcolor={`linear-gradient(90deg, ${
+              theme.palette.purple?.main || "#c026d3"
+            } 0%, ${theme.palette.purple?.dark || "#db2777"} 100%)`}
+            color={theme.palette.purple?.contrastText || "#fff"}
+            boxShadow={theme.shadows[2]}
+            borderRadius={theme.shape.borderRadius * 0.3}
             p={2}
+            border={1}
+            borderColor={theme.palette.primary.main}
           >
             <Stack
               direction="row"
@@ -1106,12 +1411,19 @@ const InvoiceModal = () => {
               spacing={1}
               mb={1}
             >
-              <CheckCircle className="w-6 h-6" color="pink" />
-              <Typography fontWeight={700} color="pink" fontSize={20}>
+              <CheckCircle
+                className="w-6 h-6"
+                color={theme.palette.purple?.contrastText || "#fff"}
+              />
+              <Typography
+                fontWeight={700}
+                color={theme.palette.purple?.contrastText || "#fff"}
+                fontSize={20}
+              >
                 Cảm ơn quý khách!
               </Typography>
             </Stack>
-            <Typography color="pink">
+            <Typography color={theme.palette.purple?.contrastText || "#fff"}>
               Chúng tôi hy vọng được phục vụ quý khách trong những chuyến đi
               tiếp theo.
             </Typography>
@@ -1120,12 +1432,12 @@ const InvoiceModal = () => {
       </DialogContent>
       <DialogActions
         sx={{
-          bgcolor: "#f3f4f6",
+          bgcolor: theme.palette.background.default,
           px: 3,
           py: 2,
-          borderBottomLeftRadius: 12,
-          borderBottomRightRadius: 12,
-          borderTop: "1px solid #e5e7eb",
+          borderBottomLeftRadius: theme.shape.borderRadius,
+          borderBottomRightRadius: theme.shape.borderRadius,
+          borderTop: `1px solid ${theme.palette.divider}`,
           position: "sticky",
           bottom: 0,
           zIndex: 1,
@@ -1140,8 +1452,8 @@ const InvoiceModal = () => {
             fontWeight: 600,
             px: 3,
             py: 1.5,
-            borderRadius: 2,
-            boxShadow: 2,
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: theme.shadows[2],
             textTransform: "none",
           }}
         >
