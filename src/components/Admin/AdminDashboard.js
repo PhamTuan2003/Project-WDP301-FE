@@ -75,7 +75,7 @@ export default function Dashboard({ toggleTheme, mode }) {
 
   useEffect(() => {
     setLoadingCompany(true);
-    fetch("http://localhost:9999/api/v1/companies/count")
+    fetch("http://localhost:9999/api/v1/account-companies/count")
       .then((res) => res.json())
       .then((data) => setCompanyCount(data.count))
       .finally(() => setLoadingCompany(false));
@@ -83,7 +83,7 @@ export default function Dashboard({ toggleTheme, mode }) {
 
   useEffect(() => {
     setLoadingStats(true);
-    fetch("http://localhost:9999/admin/stats")
+    fetch("http://localhost:9999/api/v1/admin/stats")
       .then((res) => res.json())
       .then((data) => setStats(data))
       .finally(() => setLoadingStats(false));
@@ -91,7 +91,7 @@ export default function Dashboard({ toggleTheme, mode }) {
 
   useEffect(() => {
     setLoadingRevenue(true);
-    fetch("http://localhost:9999/api/v1/companies/revenue/monthly")
+    fetch("http://localhost:9999/api/v1/account-companies/revenue/monthly")
       .then((res) => res.json())
       .then((data) => {
         setEarningsByMonth(data);
@@ -456,7 +456,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                 <Grid item xs={12} sm={6} md={4} lg={3}>
                   <Card
                     sx={{
-                      borderRadius: theme.shape.borderRadius,
+                      borderRadius: theme.shape.borderRadius * 0.4,
                       boxShadow: theme.shadows[2],
                       p: 1,
                       transition: "transform 0.2s, box-shadow 0.2s",
@@ -527,7 +527,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                 <Grid item xs={12} sm={6} md={4} lg={3}>
                   <Card
                     sx={{
-                      borderRadius: theme.shape.borderRadius,
+                      borderRadius: theme.shape.borderRadius * 0.4,
                       boxShadow: theme.shadows[2],
                       p: 1,
                       transition: "transform 0.2s, box-shadow 0.2s",
@@ -596,7 +596,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                 <Grid item xs={12} sm={6} md={4} lg={3}>
                   <Card
                     sx={{
-                      borderRadius: theme.shape.borderRadius,
+                      borderRadius: theme.shape.borderRadius * 0.4,
                       boxShadow: theme.shadows[2],
                       p: 1,
                       transition: "transform 0.2s, box-shadow 0.2s",
@@ -768,7 +768,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                             value: "Earnings (đ)",
                             angle: -90,
                             position: "outsideLeft",
-                            dx: -50,
+                            dx: -76,
                             style: {
                               textAnchor: "middle",
                               fontSize: 12,
@@ -784,7 +784,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                             value: "Commission (đ)",
                             angle: -90,
                             position: "outsideRight",
-                            dx: 50,
+                            dx: 60,
                             style: {
                               textAnchor: "middle",
                               fontSize: 12,
