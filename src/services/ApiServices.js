@@ -13,7 +13,7 @@ export const getYachtByIdCompany = (idCompany) => {
 }
 
 export const getYachtByIdYacht = (yachtId) => {
-    return axios.get(`/api/companies/findYachtById/${yachtId}`);
+    return axios.get(`/api/companies/yacht/findboat/${yachtId}`);
 }
 
 export const getYachtType = () => {
@@ -42,7 +42,7 @@ export const getBookingOrder = (idCompany) => {
 }
 
 export const getProfileCompany = (idCompany) => {
-    return axios.get(`/api/companies/profiles/${idCompany}`);
+    return axios.get(`/api/company/info/${idCompany}`);
 }
 
 export const deleteYachtImage = (idImage) => {
@@ -87,11 +87,11 @@ export const getScheduleYacht = (yachtId) => {
 }
 
 export const getAllRoomByYacht = (idYacht) => {
-    return axios.get(`/api/companies/getRoomByYacht/${idYacht}`);
+    return axios.get(`/api/rooms/room/all-by-yacht?yachtId=${idYacht}`);
 }
 
 export const getAllRoomTypeCompany = (yachtId) => {
-    return axios.get(`/api/companies/roomType/getAllRoomType/${yachtId}`);
+    return axios.get(`/api/rooms/roomtype/all-by-yacht?yachtId=${yachtId}`);
 }
 
 export const updateYacht = (idYacht, name, image, hullBody, description, rule, itinerary, idYachtType, idLocation) => {
@@ -162,10 +162,10 @@ export const upadteServiceYacht = (idYacht, idService, service, price) => {
 }
 
 export const updateScheduleYacht = (yachtId, scheduleId, startDate, endDate) => {
-    const data = new FormData();
-    data.append('startDate', startDate);
-    data.append('endDate', endDate);
-    return axios.put(`/api/companies/updateSchedule/${yachtId}/${scheduleId}`, data)
+    return axios.put(`/api/companies/yacht/updateSchedule/${yachtId}/${scheduleId}`, {
+        startDate: startDate,
+        endDate: endDate
+    })
 }
 
 export const updateRoomType = (roomTypeId, price, type, utilities) => {
@@ -207,10 +207,11 @@ export const updateImageRoom = (idImage, image) => {
 
 export const createRoomType = (price, type, utilities, yachtId) => {
     const data = new FormData();
-    data.append('price', price);
     data.append('type', type);
-    data.append('utilities', utilities);
-    return axios.post(`/api/companies/roomType/addRoomType/${yachtId}`, data);
+    data.append('utility', utilities);
+    data.append('price', price);
+    data.append('yachtId', yachtId);
+    return axios.post(`/api/rooms/roomtype/create`, data);
 }
 
 export const deleteRoomType = (roomTypeId) => {
@@ -254,12 +255,13 @@ export const createYacht = (name, image, launch, hullBody, description, rule, it
 
 export const createRoom = (roomName, area, description, roomType, avatar, idYacht) => {
     const data = new FormData();
-    data.append('roomName', roomName)
-    data.append('area', area)
-    data.append('description', description)
-    data.append('idRoomType', roomType)
-    data.append('avatar', avatar)
-    return axios.post(`/api/companies/room/addRoom/${idYacht}`, data);
+    data.append('roomName', roomName);
+    data.append('area', area);
+    data.append('description', description);
+    data.append('idRoomType', roomType);
+    data.append('avatar', avatar); // file
+    data.append('idYacht', idYacht);
+    return axios.post(`/api/rooms/room/create`, data);
 }
 
 export const createYachtImage = (idYacht, image) => {

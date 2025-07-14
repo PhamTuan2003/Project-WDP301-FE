@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Col, Form, Row, Button } from 'react-bootstrap';
-import { FcPlus } from "react-icons/fc";
-import { createRoom } from '../../../services/ApiServices';
-import { toast } from 'react-toastify';
 import _ from 'lodash';
-import { set } from 'nprogress';
+import { useEffect, useState } from 'react';
+import { Button, Col, Form, Modal, Row } from 'react-bootstrap';
+import { FcPlus } from "react-icons/fc";
+import { toast } from 'react-toastify';
+import { createRoom } from '../../../services/ApiServices';
 
 const ModalCreateRoom = (props) => {
     const { show, setIsShowModalCreateRoom, idYacht, listRoomType, fetchRoomType, getAllRoom } = props;
@@ -14,6 +13,7 @@ const ModalCreateRoom = (props) => {
     const [area, setArea] = useState(0);
     const [description, setDescription] = useState('');
     const [roomType, setRoomType] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchRoomType();
@@ -21,7 +21,7 @@ const ModalCreateRoom = (props) => {
             if (_.isEmpty(listRoomType)) {
                 toast.warning('Please create room type before creating room');
             } else {
-                setRoomType(listRoomType[0]?.idRoomType)
+                setRoomType(listRoomType[0]?._id)
             }
         }
     }, [show]);
@@ -58,13 +58,20 @@ const ModalCreateRoom = (props) => {
         } else if (area < 0) {
             toast.error('Area cannot be a negative number');
         } else {
-            const res = await createRoom(roomName.trim(), area, description.trim(), roomType, image, idYacht);
-            if (res?.data?.data) {
-                toast.success('Create Successfully');
-                handleClose();
-                await getAllRoom();
-            } else {
-                toast.error('Create Fail');
+            setLoading(true);
+            try {
+                const res = await createRoom(roomName.trim(), area, description.trim(), roomType, image, idYacht);
+                if (res?.data) {
+                    toast.success('Create Successfully');
+                    handleClose();
+                    await getAllRoom();
+                } else {
+                    toast.error('Create Fail');
+                }
+            } catch (error) {
+                toast.error('Có lỗi xảy ra khi tạo phòng');
+            } finally {
+                setLoading(false);
             }
         }
     };
@@ -110,7 +117,7 @@ const ModalCreateRoom = (props) => {
                                 onChange={e => setRoomType(e.target.value)}
                             >
                                 {listRoomType.map(type => (
-                                    <option key={type.idRoomType} value={type.idRoomType}>
+                                    <option key={type._id} value={type._id}>
                                         {type.type}
                                     </option>
                                 ))}
@@ -151,11 +158,11 @@ const ModalCreateRoom = (props) => {
                 </Form>
             </Modal.Body>
             <Modal.Footer>
-                <Button variant="secondary" onClick={handleClose}>
+                <Button variant="secondary" onClick={handleClose} disabled={loading}>
                     Close
                 </Button>
-                <Button variant="primary" onClick={handleCreateRoom}>
-                    Save
+                <Button variant="primary" onClick={handleCreateRoom} disabled={loading}>
+                    {loading ? 'Đang lưu...' : 'Save'}
                 </Button>
             </Modal.Footer>
         </Modal>

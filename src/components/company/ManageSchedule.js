@@ -71,7 +71,7 @@ const ManageSchedule = () => {
         setLoading(true);
         let res = await createScheduleYacht(getStartDate, getEndDate, idYacht);
         setLoading(false);
-        if (res && res.data && res.data.schedule) {
+        if (res && res.schedule) {
             toast.success("Created new schedule successfully");
             fetchScheduleYacht();
             setStartDate("");

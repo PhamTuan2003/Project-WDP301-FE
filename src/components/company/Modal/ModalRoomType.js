@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import Modal from 'react-bootstrap/Modal';
+import { useEffect, useState } from 'react';
+import { Accordion, Button } from 'react-bootstrap';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
+import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
-import { Accordion, Button } from 'react-bootstrap';
-import { createRoomType, deleteRoomType, getAllRoomTypeCompany } from '../../../services/ApiServices';
-import { toast } from 'react-toastify';
 import { GoArrowDown, GoArrowUp } from 'react-icons/go';
 import ReactPaginate from 'react-paginate';
+import { toast } from 'react-toastify';
+import { createRoomType, deleteRoomType, getAllRoomTypeCompany } from '../../../services/ApiServices';
 import ModalUpdateRoomType from './ModalUpdateRoomType';
 
 const ModalRoomType = (props) => {
@@ -36,7 +36,7 @@ const ModalRoomType = (props) => {
                 return;
             } else {
                 let res = await createRoomType(price, type.trim(), utilities.trim(), idYacht);
-                if (res && res.data.data === true) {
+                if (res && res.data) {
                     toast.success('Create Successfully')
                     await getRoomType()
                     handleClose()
@@ -60,8 +60,8 @@ const ModalRoomType = (props) => {
 
     const getRoomType = async () => {
         let res = await getAllRoomTypeCompany(idYacht);
-        if (res && res.data.data) {
-            setRoomType(res.data.data);
+        if (res && res.data) {
+            setRoomType(res.data);
         } else {
             toast.info('Not Found Room Type');
         }
@@ -181,10 +181,10 @@ const ModalRoomType = (props) => {
                             <tbody>
                                 {
                                     displayedRoomTypes && displayedRoomTypes.length > 0 && displayedRoomTypes.map((type) =>
-                                        <tr key={type.idRoomType}>
+                                        <tr key={type._id}>
                                             <td>{type.price.toLocaleString()}</td>
                                             <td>{type.type}</td>
-                                            <td>{type.utilities}</td>
+                                            <td>{type.utility}</td>
                                             <td>
                                                 <div className='d-flex' style={{ gap: 20, justifyContent: 'center' }}>
                                                     <Button onClick={() => handleUpdateRoomType(type)} className='btn btn-warning'>Update</Button>

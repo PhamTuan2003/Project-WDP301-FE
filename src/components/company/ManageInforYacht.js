@@ -33,8 +33,8 @@ const ManageInforYacht = (props) => {
 
     const getYacht = async () => {
         const res = await getYachtByIdYacht(idYacht);
-        if (res && res.data && res.data.data) {
-            setInforYacht(res.data.data);
+        if (res && res.data) {
+            setInforYacht(res.data);
         } else {
             toast.error('Not Found Data Yacht')
         }
@@ -43,16 +43,13 @@ const ManageInforYacht = (props) => {
     useEffect(() => {
         if (!_.isEmpty(inforYacht)) {
             setDataUpdate(inforYacht)
-            setIdLocation(inforYacht.location.idLocation);
-            setIdYachtType(inforYacht.yachtType.idYachtType);
+            setIdLocation(inforYacht.locationId._id);
+            setIdYachtType(inforYacht.yachtTypeId._id);
             if (inforYacht.image) {
                 setPreviewImage(inforYacht.image)
             }
         }
     }, [inforYacht]);
-
-
-
 
 
 

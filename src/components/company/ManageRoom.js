@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, FormControl } from 'react-bootstrap';
 import { AiFillHome } from "react-icons/ai";
 import { FaCirclePlus } from "react-icons/fa6";
@@ -58,8 +58,8 @@ const ManageRoom = () => {
 
     const getAllRoom = async () => {
         let res = await getAllRoomByYacht(idYacht);
-        if (res && res.data && res.data.data) {
-            setListRoom(res.data.data.sort((a, b) => {
+        if (res && res.data) {
+            setListRoom(res.data.sort((a, b) => {
                 return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
             }))
         } else {
@@ -89,8 +89,8 @@ const ManageRoom = () => {
     const fetchRoomType = async () => {
         let res = await getAllRoomTypeCompany(idYacht);
 
-        if (res && res.data && res.data.data) {
-            setListRoomType(res.data.data);
+        if (res && res.data) {
+            setListRoomType(res.data);
         } else {
             toast.info('Not Found Room Type');
         }
@@ -122,7 +122,7 @@ const ManageRoom = () => {
                 {
                     displayedRoom && displayedRoom.length > 0 && displayedRoom
                         .map((room) =>
-                            <div key={room.idRoom} className='d-flex my-5 room p-3 row ' style={{ gap: 50 }}>
+                            <div key={room._id} className='d-flex my-5 room p-3 row ' style={{ gap: 50 }}>
                                 <img className='col-md-2' width={170} src={room.avatar} alt='' />
                                 <div className=' col-md-4' >
                                     <div className='room-name'>
@@ -130,12 +130,12 @@ const ManageRoom = () => {
                                     </div>
                                     <div>{room.area} <TbMeterSquare size={25} className='pb-1' /></div>
 
-                                    <div>{room.roomType.price.toLocaleString()} đ/KHÁCH</div>
+                                    <div>{room.roomTypeId.price.toLocaleString()} đ/KHÁCH</div>
                                 </div>
 
                                 <div className='col-md-4'>
                                     <div className='ok'>
-                                        <Button onClick={() => handlManageImageRoom(room.idRoom)} className='btn btn-warning mx-3'>Manage Room Image </Button>
+                                        <Button onClick={() => handlManageImageRoom(room._id)} className='btn btn-warning mx-3'>Manage Room Image </Button>
                                         <Button onClick={() => handleUpdateRoom(room)} className='btn btn-primary'>Update</Button>
                                     </div>
                                 </div>
