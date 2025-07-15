@@ -125,9 +125,7 @@ const InvoiceModal = () => {
         )} đến ${end.toLocaleDateString("vi-VN")})`;
       }
     }
-    // Fallback to displayText
     if (schedule && schedule.displayText) return schedule.displayText;
-    // Fallback to yachtInfo.scheduleInfo if available
     if (
       invoiceData.yachtInfo?.scheduleInfo &&
       invoiceData.yachtInfo.scheduleInfo !== "undefined - undefined"
@@ -142,8 +140,8 @@ const InvoiceModal = () => {
     if (invoiceData.bookingId?.customer?.address) {
       return invoiceData.bookingId.customer.address;
     }
-    if (invoiceData.customerInfo?.address) {
-      return invoiceData.customerInfo.address;
+    if (invoiceData.customerId?.address) {
+      return invoiceData.customerId.address;
     }
     return "-";
   };
@@ -548,7 +546,7 @@ const InvoiceModal = () => {
                       fontWeight={700}
                       color={theme.palette.text.primary}
                     >
-                      {invoiceData.customerInfo?.fullName || "-"}
+                      {invoiceData?.customerId?.fullName || "-"}
                     </Typography>
                   </Box>
                 </Stack>
@@ -587,7 +585,7 @@ const InvoiceModal = () => {
                           Số điện thoại:
                         </Typography>
                         <Typography color={theme.palette.text.primary}>
-                          {invoiceData.customerInfo.phoneNumber}
+                          {invoiceData?.customerId?.phoneNumber}
                         </Typography>
                       </Box>
                     </Stack>
@@ -609,7 +607,7 @@ const InvoiceModal = () => {
                           sx={{ wordBreak: "break-all" }}
                           color={theme.palette.text.primary}
                         >
-                          {invoiceData.customerInfo.email}
+                          {invoiceData.customerId?.email}
                         </Typography>
                       </Box>
                     </Stack>
@@ -1297,9 +1295,9 @@ const InvoiceModal = () => {
                     Thời gian thanh toán
                   </Typography>
                   <Typography fontSize={14} color={theme.palette.text.primary}>
-                    {invoiceData.transactionId?.completedAt
+                    {invoiceData.transactionId?.transactionDate
                       ? new Date(
-                          invoiceData.transactionId.completedAt
+                          invoiceData.transactionId.transactionDate
                         ).toLocaleString("vi-VN")
                       : "N/A"}
                   </Typography>
@@ -1354,7 +1352,7 @@ const InvoiceModal = () => {
               mb={1}
             ></Box>
             <Typography fontWeight={600} color={theme.palette.text.primary}>
-              {invoiceData.customerInfo.fullName}
+              {invoiceData.customerId.fullName}
             </Typography>
           </Grid>
           <Grid item xs={12} md={6} textAlign="center">

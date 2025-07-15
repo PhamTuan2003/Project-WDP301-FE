@@ -122,7 +122,20 @@ export const updateBookingOrConsultationRequest =
       );
       if (response.data.success) {
         const updatedBookingOrder = response.data.data;
-        dispatch(bookingActions.genericBookingSuccess(updatedBookingOrder));
+        // Merge thông tin phòng/dịch vụ vào consultationData nếu là tư vấn (chưa xác nhận booking)
+        let consultationPayload = updatedBookingOrder;
+        if (requestType !== "pending_payment") {
+          const { selectedYachtServices } = getState().booking;
+          consultationPayload = {
+            ...updatedBookingOrder,
+            consultationData: {
+              requestedRooms: bookingData.selectedRooms || [],
+              requestServices: selectedYachtServices || [],
+              estimatedPrice: bookingData.totalPrice || 0,
+            },
+          };
+        }
+        dispatch(bookingActions.genericBookingSuccess(consultationPayload));
         dispatch(setSubmitting(false));
         dispatch(closeBookingModal());
         if (requestType === "pending_payment") {
@@ -156,7 +169,7 @@ export const updateBookingOrConsultationRequest =
           });
           dispatch(resetBookingForm());
         }
-        return { success: true, data: updatedBookingOrder };
+        return { success: true, data: consultationPayload };
       } else {
         throw new Error(response.data.message || "Cập nhật yêu cầu thất bại.");
       }
@@ -211,10 +224,20 @@ export const createBookingOrConsultationRequest =
       ) {
         throw new Error("Tổng giá phải lớn hơn 0 cho đặt trực tiếp.");
       }
+      // Map selectedRooms và selectedServices đúng định dạng ref
+      const roomsForApi = (bookingData.selectedRooms || []).map((room) => ({
+        roomId: room.roomId || room.id,
+        quantity: room.roomQuantity || room.quantity || 1,
+        roomPrice: room.roomPrice !== undefined ? room.roomPrice : room.price,
+      }));
+      const servicesForApi = (selectedYachtServices || []).map((service) => ({
+        serviceId: service.serviceId || service.id,
+        quantity: service.serviceQuantity || service.quantity || 1,
+      }));
       const requestPayload = {
         ...bookingData,
-        selectedRooms: bookingData.selectedRooms,
-        selectedServices: selectedYachtServices,
+        selectedRooms: roomsForApi,
+        selectedServices: servicesForApi,
         scheduleId: selectedSchedule || bookingData.scheduleId || null,
         requestType: requestType,
       };
@@ -230,7 +253,18 @@ export const createBookingOrConsultationRequest =
       );
       if (response.data.success) {
         const createdBookingOrder = response.data.data;
-        dispatch(bookingActions.genericBookingSuccess(createdBookingOrder));
+        let consultationPayload = createdBookingOrder;
+        if (requestType !== "pending_payment") {
+          consultationPayload = {
+            ...createdBookingOrder,
+            consultationData: {
+              requestedRooms: bookingData.selectedRooms || [],
+              requestServices: selectedYachtServices || [],
+              estimatedPrice: bookingData.totalPrice || 0,
+            },
+          };
+        }
+        dispatch(bookingActions.genericBookingSuccess(consultationPayload));
         dispatch(setSubmitting(false));
         dispatch(closeBookingModal());
         if (requestType === "pending_payment") {
@@ -265,7 +299,7 @@ export const createBookingOrConsultationRequest =
           dispatch(closeBookingModal());
           dispatch(resetBookingForm());
         }
-        return { success: true, data: createdBookingOrder };
+        return { success: true, data: consultationPayload };
       } else {
         throw new Error(
           response.data.message || `Yêu cầu (${requestType}) thất bại.`
@@ -502,21 +536,9 @@ export const fetchCustomerBookingDetail = (bookingId) => async (dispatch) => {
     );
     if (response.data.success) {
       let detail = response.data.data;
-      let booking = detail.booking || {};
-
-      // Xử lý bookedRooms từ backend
+      // Đảm bảo luôn có mảng (nếu backend không trả về thì gán mảng rỗng)
       detail.bookedRooms = detail.bookedRooms || [];
-
-      // Xử lý bookedServices từ backend hoặc fallback
-      detail.bookedServices =
-        detail.services && detail.services.length > 0
-          ? detail.services
-          : booking.requestServices || booking.selectedServices || [];
-
-      console.log("Debug - Backend response detail:", detail);
-      console.log("Debug - Processed bookedRooms:", detail.bookedRooms);
-      console.log("Debug - Processed bookedServices:", detail.bookedServices);
-
+      detail.bookedServices = detail.bookedServices || [];
       dispatch(bookingActions.fetchBookingDetailSuccess(detail));
       return { success: true, data: detail };
     } else {

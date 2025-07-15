@@ -9,8 +9,13 @@ export const validateBookingForm = (formData) => {
 
   if (!formData.phoneNumber?.trim()) {
     errors.phoneNumber = "Số điện thoại là bắt buộc";
-  } else if (!/^(?:\+84|0)(3[2-9]|5[6-9]|7[0-9]|8[1-9]|9[0-9])[0-9]{7}$/.test(formData.phoneNumber.trim())) {
-    errors.phoneNumber = "Số điện thoại phải bắt đầu bằng 0 hoặc +84, theo sau là đầu số hợp lệ (03, 05, 07, 08, 09) và 7 chữ số, tổng cộng 10 chữ số";
+  } else if (
+    !/^(?:\+84|0)(3[2-9]|5[6-9]|7[0-9]|8[1-9]|9[0-9])[0-9]{7}$/.test(
+      formData.phoneNumber.trim()
+    )
+  ) {
+    errors.phoneNumber =
+      "Số điện thoại phải bắt đầu bằng 0 hoặc +84, theo sau là đầu số hợp lệ (03, 05, 07, 08, 09) và 7 chữ số, tổng cộng 10 chữ số";
   }
 
   if (!formData.email?.trim()) {
@@ -57,13 +62,10 @@ export const validateRoomSelection = (rooms, selectedSchedule) => {
   };
 };
 
-export const formatPrice = (price) => {
-  if (!price || isNaN(price)) return "0 ₫";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(price);
-};
+export function formatPrice(value) {
+  if (typeof value !== "number" || isNaN(value)) return "0 ₫";
+  return value.toLocaleString("vi-VN") + " ₫";
+}
 
 export const formatDate = (dateString) => {
   try {

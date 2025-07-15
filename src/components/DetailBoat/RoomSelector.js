@@ -47,6 +47,7 @@ import {
 } from "../../redux/asyncActions/bookingAsyncActions";
 import RoomServicesModal from "./RoomServicesModal";
 import { getScheduleById } from "../../utils/scheduleHelpers";
+import { formatPrice } from "../../redux/validation";
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -448,7 +449,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 fontWeight: "bold",
                               }}
                             >
-                              {room.price.toLocaleString()}đ
+                              {formatPrice(room.price)}đ
                             </Typography>
                             <Typography
                               sx={{
@@ -578,8 +579,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 <Building2 size={20} />
                                 <p>
                                   {room.name} x {room.quantity}:{" "}
-                                  {roomTotal.toLocaleString()}đ (
-                                  {room.price.toLocaleString()}đ/phòng)
+                                  {formatPrice(roomTotal)}đ (
+                                  {formatPrice(room.price)}đ/phòng)
                                 </p>
                               </Typography>
                             </Box>
@@ -604,20 +605,19 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                             >
                               <Box>
                                 <li>
-                                  {sv.serviceName}: {sv.price.toLocaleString()}đ
-                                  x{" "}
+                                  {sv.serviceName}: {formatPrice(sv.price)}đ x{" "}
                                   {rooms.reduce(
                                     (acc, room) => acc + room.quantity,
                                     0
                                   )}{" "}
                                   khách ={" "}
-                                  {(
+                                  {formatPrice(
                                     sv.price *
-                                    rooms.reduce(
-                                      (acc, room) => acc + room.quantity,
-                                      0
-                                    )
-                                  ).toLocaleString()}
+                                      rooms.reduce(
+                                        (acc, room) => acc + room.quantity,
+                                        0
+                                      )
+                                  )}
                                   đ
                                 </li>
                               </Box>

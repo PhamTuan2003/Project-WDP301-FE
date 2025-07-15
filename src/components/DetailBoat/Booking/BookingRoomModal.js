@@ -82,8 +82,11 @@ const BookingRoomModal = ({
     editingBookingId,
     guestCounter,
   } = useSelector((state) => state.booking);
+  const authCustomer = useSelector((state) => state.auth.customer);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  const rooms = useSelector((state) => state.booking.rooms);
+  const services = useSelector((state) => state.services.data);
 
   const adults = Number(guestCounter?.adults ?? 0);
   const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
@@ -181,6 +184,22 @@ const BookingRoomModal = ({
       dispatch(fetchConsultationRequest(yachtData._id, checkInDateParam));
     }
   }, [show, yachtData, bookingForm.checkInDate, dispatch]);
+
+  useEffect(() => {
+    if (show && authCustomer) {
+      // Prefill nếu bookingForm chưa có giá trị (chưa từng nhập)
+      if (!bookingForm.fullName)
+        dispatch(updateBookingForm("fullName", authCustomer.fullName || ""));
+      if (!bookingForm.phoneNumber)
+        dispatch(
+          updateBookingForm("phoneNumber", authCustomer.phoneNumber || "")
+        );
+      if (!bookingForm.email)
+        dispatch(updateBookingForm("email", authCustomer.email || ""));
+      if (!bookingForm.address)
+        dispatch(updateBookingForm("address", authCustomer.address || ""));
+    }
+  }, [show, authCustomer]);
 
   const handleInputChange = (field, value) => {
     dispatch(updateBookingForm(field, value));
@@ -357,47 +376,54 @@ const BookingRoomModal = ({
         checkInDateValue = d.toISOString().slice(0, 10);
       }
       dispatch(updateBookingForm("checkInDate", checkInDateValue));
-      dispatch(
-        updateRooms(
-          (
-            consultation.data.selectedRooms ||
-            consultation.data.consultationData?.requestedRooms ||
-            []
-          ).map((room) => ({
-            id: room.roomId || room.id,
-            name: room.roomName || room.name,
-            price: room.roomPrice !== undefined ? room.roomPrice : room.price,
-            quantity:
-              room.roomQuantity !== undefined
-                ? room.roomQuantity
-                : room.quantity,
-            description: room.roomDescription || room.description,
-            area: room.roomArea || room.area,
-            avatar: room.roomAvatar || room.avatar,
-            max_people: room.roomMaxPeople || room.max_people,
-            images: room.roomImage ? [room.roomImage] : room.images || [],
-          }))
-        )
-      );
-      dispatch(
-        setSelectedYachtServices(
-          (
-            consultation.data.selectedServices ||
-            consultation.data.services ||
-            consultation.data.consultationData?.requestServices ||
-            []
-          ).map((sv) => ({
-            serviceId: sv.serviceId || sv._id || sv.id,
-            serviceName: sv.serviceName || sv.name,
-            price: sv.servicePrice !== undefined ? sv.servicePrice : sv.price,
-            quantity:
-              sv.serviceQuantity !== undefined
-                ? sv.serviceQuantity
-                : sv.quantity,
-            _id: sv._id || sv.serviceId || sv.id,
-          }))
-        )
-      );
+      // Map lại rooms từ ref sang object đầy đủ
+      const selectedRoomsFromConsult = (
+        consultation.data.selectedRooms ||
+        consultation.data.consultationData?.requestedRooms ||
+        []
+      ).map((room) => {
+        const detail = rooms.find(
+          (r) =>
+            (r._id?.toString?.() || r._id || r.id) ===
+            (room.roomId?.toString?.() || room.roomId || room.id)
+        );
+        return {
+          id: room.roomId || room.id,
+          name: detail?.name || room.roomName || room.name,
+          price: detail?.price ?? room.roomPrice ?? room.price,
+          quantity: room.roomQuantity ?? room.quantity,
+          description:
+            detail?.description || room.roomDescription || room.description,
+          area: detail?.area || room.roomArea,
+          avatar: detail?.avatar || room.roomAvatar,
+          max_people: detail?.max_people || room.roomMaxPeople,
+          images:
+            detail?.images ||
+            (room.roomImage ? [room.roomImage] : room.images || []),
+        };
+      });
+      dispatch(updateRooms(selectedRoomsFromConsult));
+      // Map lại services từ ref sang object đầy đủ
+      const selectedServicesFromConsult = (
+        consultation.data.selectedServices ||
+        consultation.data.services ||
+        consultation.data.consultationData?.requestServices ||
+        []
+      ).map((sv) => {
+        const detail = services.find(
+          (s) =>
+            (s._id?.toString?.() || s._id || s.id) ===
+            (sv.serviceId?.toString?.() || sv.serviceId || sv._id || sv.id)
+        );
+        return {
+          serviceId: sv.serviceId || sv._id || sv.id,
+          serviceName: detail?.serviceName || sv.serviceName || sv.serviceName,
+          price: detail?.price ?? sv.servicePrice ?? sv.price,
+          quantity: sv.serviceQuantity ?? sv.quantity,
+          _id: sv._id || sv.serviceId || sv.id,
+        };
+      });
+      dispatch(setSelectedYachtServices(selectedServicesFromConsult));
       setShowConsultationModal(false);
     } else {
       Swal.fire({
@@ -1221,6 +1247,8 @@ const BookingRoomModal = ({
         consultation={consultation?.data}
         onEdit={handleEditConsultation}
         onCancel={handleCancelConsultation}
+        rooms={rooms}
+        services={services}
       />
       <RoomServicesModal
         show={showServiceModal}

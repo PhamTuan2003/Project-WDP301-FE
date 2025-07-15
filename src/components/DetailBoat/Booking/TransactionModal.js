@@ -764,10 +764,11 @@ const TransactionModal = ({ onBack }) => {
             <ul className="text-sm text-gray-700 list-disc ml-6">
               {bookedServices.map((service, idx) => (
                 <li key={service._id || service.serviceId || service.id || idx}>
-                  {service.serviceName || service.name || "Dịch vụ"}
-                  {service.serviceQuantity || service.quantity
-                    ? ` x ${service.serviceQuantity || service.quantity}`
-                    : ""}
+                  {service.serviceName ||
+                    service.name ||
+                    service.serviceId?.serviceName ||
+                    "Dịch vụ"}
+                  {` x${service.serviceQuantity || service.quantity || 1}`}
                 </li>
               ))}
             </ul>
@@ -2048,6 +2049,7 @@ const TransactionModal = ({ onBack }) => {
                                 <Typography variant="body2" color="textPrimary">
                                   {service.serviceName ||
                                     service.name ||
+                                    service.serviceId?.name ||
                                     "Dịch vụ"}
                                   {service.serviceQuantity || service.quantity
                                     ? ` x ${
