@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -46,7 +46,6 @@ import {
 import Swal from "sweetalert2";
 import { ListCollapse, Receipt, Trash } from "lucide-react";
 import { getScheduleById } from "../utils/scheduleHelpers";
-import { theme } from "antd";
 
 const statusMap = {
   consultation_requested: {
@@ -68,10 +67,10 @@ const statusMap = {
     desc: "Vui lòng thanh toán để xác nhận booking.",
   },
   confirmed: {
-    label: "Đã xác nhận",
+    label: "Đã đặt",
     color: "success",
     icon: <CheckCircleIcon color="success" />,
-    desc: "Booking đã được xác nhận.",
+    desc: "Booking đã được đặt.",
   },
   completed: {
     label: "Hoàn thành",
@@ -98,6 +97,22 @@ function formatDate(dateStr) {
   return d.toLocaleString("vi-VN", { dateStyle: "medium", timeStyle: "short" });
 }
 
+// Countdown helper
+function getCountdown(targetTime) {
+  const now = new Date().getTime();
+  const diff = targetTime - now;
+  if (diff <= 0) return null;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return { hours, minutes, seconds };
+}
+
+function formatCountdown(cd) {
+  if (!cd) return "Đã hết hạn";
+  return `${cd.hours}h ${cd.minutes}m ${cd.seconds}s`;
+}
+
 export default function BookingHistory() {
   const dispatch = useDispatch();
   const bookings = useSelector((state) => state.booking.customerBookings || []);
@@ -119,14 +134,14 @@ export default function BookingHistory() {
     (page - 1) * bookingsPerPage,
     page * bookingsPerPage
   );
+  const [countdowns, setCountdowns] = useState({});
+  const intervalRef = useRef();
 
   useEffect(() => {
     dispatch(fetchCustomerBookings());
   }, [dispatch]);
 
-  // Fetch schedules cho tất cả yachtId có trong bookings
   useEffect(() => {
-    // Lấy tất cả yachtId duy nhất từ bookings
     const yachtIds = Array.from(
       new Set(bookings.map((b) => b.yacht?._id || b.yacht).filter(Boolean))
     );
@@ -169,8 +184,39 @@ export default function BookingHistory() {
     });
   }, [filteredBookings, bookingImages]);
 
+  // Countdown logic
   useEffect(() => {
-    setPage(1); // Reset về trang 1 khi filterStatus thay đổi
+    function updateCountdowns() {
+      const newCountdowns = {};
+      bookings.forEach((booking) => {
+        let target = null;
+        if (
+          ["pending_payment", "consultation_requested"].includes(booking.status)
+        ) {
+          target = new Date(booking.createdAt).getTime() + 60 * 60 * 1000;
+        } else if (booking.status === "cancelled" && booking.cancelledAt) {
+          target =
+            new Date(booking.cancelledAt).getTime() + 24 * 60 * 60 * 1000;
+        } else if (booking.status === "confirmed") {
+          // Hạn hủy: trước ngày check-in 1 ngày
+          target =
+            new Date(booking.checkInDate).getTime() - 24 * 60 * 60 * 1000;
+        }
+        if (target) {
+          newCountdowns[booking._id] = getCountdown(target);
+        }
+      });
+      setCountdowns(newCountdowns);
+    }
+    updateCountdowns();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(updateCountdowns, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [bookings]);
+
+  console.log(selectedBooking);
+  useEffect(() => {
+    setPage(1);
   }, [filterStatus]);
 
   const handleOpenDetail = (booking) => {
@@ -224,6 +270,23 @@ export default function BookingHistory() {
     });
   };
 
+  const handleCancelBooking = (booking) => {
+    Swal.fire({
+      title: "Bạn có chắc chắn muốn hủy booking này?",
+      text: "Sau khi hủy, booking sẽ không thể khôi phục!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Hủy booking",
+      cancelButtonText: "Đóng",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await dispatch(customerCancelBooking(booking._id));
+      }
+    });
+  };
+
   if (loading)
     return (
       <Box display="flex" justifyContent="center" mt={5}>
@@ -247,55 +310,57 @@ export default function BookingHistory() {
       })}
     >
       <Container maxWidth="lg" className="py-2 bg-white/30 rounded-3xl">
-        <Typography
-          variant="h4"
-          mb={3}
-          fontWeight={700}
-          sx={{
-            color: (theme) => theme.palette.primary.main,
-            bgcolor: (theme) => theme.palette.background.paper,
-            borderRadius: 2,
-            px: 1,
-            width: "fit-content",
-          }}
-        >
-          Lịch sử booking của bạn
-        </Typography>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          mb={3}
-          alignItems="center"
-        >
-          <FormControl
-            size="small"
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography
+            variant="h4"
+            mb={3}
+            fontWeight={700}
             sx={{
-              borderRadius: 2,
-              minWidth: 200,
-
               color: (theme) => theme.palette.primary.main,
               bgcolor: (theme) => theme.palette.background.paper,
-              border: (theme) => `1px solid ${theme.palette.primary.main}`,
-              "& .MuiOutlinedInput-notchedOutline": {
-                border: "none",
-              },
+              borderRadius: 2,
+              px: 1,
+              width: "fit-content",
             }}
           >
-            <InputLabel>Lọc theo trạng thái</InputLabel>
-            <Select
-              value={filterStatus}
-              label="Lọc theo trạng thái"
-              onChange={(e) => setFilterStatus(e.target.value)}
+            Lịch sử booking của bạn
+          </Typography>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            mb={3}
+            alignItems="center"
+          >
+            <FormControl
+              size="small"
+              sx={{
+                borderRadius: 2,
+                minWidth: 200,
+
+                color: (theme) => theme.palette.primary.main,
+                bgcolor: (theme) => theme.palette.background.paper,
+                border: (theme) => `1px solid ${theme.palette.primary.main}`,
+                "& .MuiOutlinedInput-notchedOutline": {
+                  border: "none",
+                },
+              }}
             >
-              <MenuItem value="all">Tất cả trạng thái</MenuItem>
-              {Object.entries(statusMap).map(([key, val]) => (
-                <MenuItem value={key} key={key}>
-                  {val.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
+              <InputLabel>Lọc theo trạng thái</InputLabel>
+              <Select
+                value={filterStatus}
+                label="Lọc theo trạng thái"
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <MenuItem value="all">Tất cả trạng thái</MenuItem>
+                {Object.entries(statusMap).map(([key, val]) => (
+                  <MenuItem value={key} key={key}>
+                    {val.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        </Box>
         {filteredBookings.length === 0 ? (
           <Typography textAlign="center">
             Không có booking nào phù hợp.
@@ -323,6 +388,49 @@ export default function BookingHistory() {
                       schedulesForYacht,
                       booking.schedule?._id || booking.scheduleId
                     );
+
+                    // Countdown logic
+                    let countdownText = null;
+                    if (
+                      ["pending_payment", "consultation_requested"].includes(
+                        booking.status
+                      )
+                    ) {
+                      countdownText =
+                        "Tự động huỷ sau: " +
+                        formatCountdown(countdowns[booking._id]);
+                    } else if (
+                      booking.status === "cancelled" &&
+                      booking.cancelledAt
+                    ) {
+                      countdownText =
+                        "Tự động xoá sau: " +
+                        formatCountdown(countdowns[booking._id]);
+                    } else if (booking.status === "confirmed") {
+                      const cd = countdowns[booking._id];
+                      if (
+                        cd &&
+                        (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
+                      ) {
+                        countdownText =
+                          "Có thể huỷ đến trước check-in 1 ngày: " +
+                          formatCountdown(cd);
+                      } else {
+                        countdownText = "Đã hết hạn huỷ";
+                      }
+                    }
+                    // Disable nút huỷ nếu không còn hợp lệ
+                    let canCancel = true;
+                    if (booking.status === "confirmed") {
+                      const cd = countdowns[booking._id];
+                      if (
+                        !cd ||
+                        (cd.hours <= 0 && cd.minutes <= 0 && cd.seconds <= 0)
+                      ) {
+                        canCancel = false;
+                      }
+                    }
+
                     return (
                       <Grid item xs={12} md={6} lg={4} key={booking._id}>
                         <Fade in timeout={500}>
@@ -458,17 +566,27 @@ export default function BookingHistory() {
                                         color="text.secondary"
                                         sx={{ mr: 1 }}
                                       >
-                                        • {rooms[0].roomName} (x
-                                        {rooms[0].roomQuantity})
+                                        •{" "}
+                                        {rooms[0].roomId?.name ||
+                                          rooms[0].roomName ||
+                                          rooms[0].name ||
+                                          "Phòng"}{" "}
+                                        (x
+                                        {rooms[0].quantity ||
+                                          rooms[0].roomQuantity ||
+                                          1}
+                                        )
                                       </Typography>
                                       {rooms.length > 1 && !isRoomsExpanded && (
                                         <Button
                                           size="small"
                                           variant="text"
                                           sx={{
-                                            px: 1,
-                                            border: "1px solid #90caf9",
-                                            fontSize: 13,
+                                            px: 0.5,
+                                            py: 0,
+                                            border: "1px solid #66bdb3",
+                                            borderRadius: "100%",
+                                            fontSize: 12,
                                             minWidth: 0,
                                           }}
                                           onClick={() =>
@@ -483,21 +601,34 @@ export default function BookingHistory() {
                                       )}
                                     </Box>
                                     {isRoomsExpanded &&
-                                      rooms.slice(1).map((room, idx) => (
-                                        <Typography
-                                          key={room.roomId || idx + 1}
-                                          variant="body2"
-                                          color="text.secondary"
-                                        >
-                                          • {room.roomName} (x
-                                          {room.roomQuantity})
-                                        </Typography>
-                                      ))}
+                                      rooms
+                                        .slice(1)
+                                        .filter(
+                                          (room) => !!room && !!room.roomId
+                                        )
+                                        .map((room, idx) => (
+                                          <Typography
+                                            key={room.roomId || idx + 1}
+                                            variant="body2"
+                                            color="text.secondary"
+                                          >
+                                            •{" "}
+                                            {room.roomId?.name ||
+                                              room.roomName ||
+                                              room.name ||
+                                              "Phòng"}{" "}
+                                            (x
+                                            {room.quantity ||
+                                              room.roomQuantity ||
+                                              1}
+                                            )
+                                          </Typography>
+                                        ))}
                                     {isRoomsExpanded && rooms.length > 1 && (
                                       <Button
                                         size="small"
                                         variant="text"
-                                        color="primary.dark"
+                                        color="primary"
                                         sx={{
                                           minWidth: 0,
                                           px: 1,
@@ -549,8 +680,17 @@ export default function BookingHistory() {
                                         color="text.secondary"
                                         sx={{ mr: 1 }}
                                       >
-                                        • {services[0].serviceName} (x
-                                        {services[0].serviceQuantity})
+                                        •{" "}
+                                        {services[0].serviceId?.serviceName ||
+                                          services[0].serviceId?.name ||
+                                          services[0].serviceName ||
+                                          services[0].name ||
+                                          "Dịch vụ"}{" "}
+                                        (x
+                                        {services[0].quantity ||
+                                          services[0].serviceQuantity ||
+                                          1}
+                                        )
                                       </Typography>
                                       {services.length > 1 &&
                                         !isServicesExpanded && (
@@ -583,8 +723,17 @@ export default function BookingHistory() {
                                           variant="body2"
                                           color="text.secondary"
                                         >
-                                          • {sv.serviceName} (x
-                                          {sv.serviceQuantity})
+                                          •{" "}
+                                          {sv.serviceId?.serviceName ||
+                                            sv.serviceId?.name ||
+                                            sv.serviceName ||
+                                            sv.name ||
+                                            "Dịch vụ"}{" "}
+                                          (x
+                                          {sv.quantity ||
+                                            sv.serviceQuantity ||
+                                            1}
+                                          )
                                         </Typography>
                                       ))}
                                     {isServicesExpanded &&
@@ -622,7 +771,15 @@ export default function BookingHistory() {
                                 )}
                               </Stack>
                             </Box>
-
+                            {countdownText && (
+                              <Typography
+                                variant="caption"
+                                color="secondary"
+                                fontWeight={600}
+                              >
+                                {countdownText}
+                              </Typography>
+                            )}
                             <Box
                               mt={2}
                               display="flex"
@@ -645,63 +802,80 @@ export default function BookingHistory() {
                                 alignItems="flex-end"
                                 justifyContent="flex-end"
                               >
-                                {booking.status === "pending_payment" && (
-                                  <>
-                                    <Button
-                                      variant="contained"
-                                      color="warning"
-                                      size="small"
-                                      sx={{
-                                        borderRadius: 2,
-                                        fontWeight: 700,
-                                        minWidth: 120,
-                                      }}
-                                      onClick={() => {
-                                        dispatch(
-                                          openTransactionModal(booking._id)
-                                        );
-                                      }}
-                                    >
-                                      Thanh toán
-                                    </Button>
-                                    <Button
-                                      variant="outlined"
-                                      size="small"
-                                      sx={{
-                                        borderRadius: 3,
-                                        minWidth: 20,
-                                      }}
-                                      onClick={() => handleOpenDetail(booking)}
-                                    >
-                                      <ListCollapse size={20} />
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      color="error"
-                                      onClick={() =>
-                                        dispatch(
-                                          customerCancelBooking(booking._id)
-                                        )
-                                      }
-                                      sx={{ minWidth: 20 }}
-                                    >
-                                      <CancelIcon size={19} />
-                                    </Button>
-                                  </>
-                                )}
-                                {booking.status !== "pending_payment" && (
+                                {/* Các nút thao tác */}
+                                {booking.status === "pending_payment" &&
+                                  countdowns[booking._id] &&
+                                  (countdowns[booking._id].hours > 0 ||
+                                    countdowns[booking._id].minutes > 0 ||
+                                    countdowns[booking._id].seconds > 0) && (
+                                    <>
+                                      <Button
+                                        variant="contained"
+                                        color="warning"
+                                        size="small"
+                                        sx={{
+                                          borderRadius: 2,
+                                          fontWeight: 700,
+                                          minWidth: 120,
+                                        }}
+                                        onClick={() => {
+                                          dispatch(
+                                            openTransactionModal(booking._id)
+                                          );
+                                        }}
+                                      >
+                                        Thanh toán
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        color="error"
+                                        onClick={() =>
+                                          handleCancelBooking(booking)
+                                        }
+                                        sx={{ minWidth: 20 }}
+                                        disabled={!canCancel}
+                                      >
+                                        <CancelIcon size={19} />
+                                      </Button>
+                                    </>
+                                  )}
+                                {booking.status === "confirmed" && (
                                   <Button
-                                    variant="outlined"
                                     size="small"
-                                    sx={{
-                                      borderRadius: 3,
-                                      minWidth: 20,
-                                    }}
-                                    onClick={() => handleOpenDetail(booking)}
+                                    color="error"
+                                    onClick={() => handleCancelBooking(booking)}
+                                    sx={{ minWidth: 20 }}
+                                    disabled={!canCancel}
                                   >
-                                    <ListCollapse size={20} />
+                                    <CancelIcon size={19} />
                                   </Button>
                                 )}
+                                {booking.status === "pending_payment" &&
+                                  !countdowns[booking._id] && (
+                                    <Button
+                                      variant="outlined"
+                                      color="error"
+                                      size="small"
+                                      sx={{ minWidth: 20 }}
+                                      onClick={() =>
+                                        handleDeleteBooking(booking)
+                                      }
+                                    >
+                                      <Trash size={20} />
+                                    </Button>
+                                  )}
+                                {/* Nút xem chi tiết luôn hiển thị */}
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{
+                                    borderRadius: 3,
+                                    minWidth: 20,
+                                  }}
+                                  onClick={() => handleOpenDetail(booking)}
+                                >
+                                  <ListCollapse size={20} />
+                                </Button>
                                 {(booking.status === "completed" ||
                                   booking.status === "fully_paid") && (
                                   <Button
@@ -1008,30 +1182,23 @@ export default function BookingHistory() {
                             sx={{ p: 2, bgcolor: "background.default" }}
                           >
                             <Typography fontWeight={600}>
-                              {room.roomName} (x{room.roomQuantity})
+                              {room.roomId?.name ||
+                                room.roomName ||
+                                room.name ||
+                                "Phòng"}{" "}
+                              (x{room.quantity || room.roomQuantity || 1})
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Giá/phòng:{" "}
-                              {room.roomPrice?.toLocaleString("vi-VN")}₫
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                Tổng:{" "}
-                                {(
-                                  room.roomPrice * room.roomQuantity
-                                )?.toLocaleString("vi-VN")}
-                                ₫
-                              </Typography>
+                              Giá:{" "}
+                              {room.roomId?.roomTypeId?.price?.toLocaleString(
+                                "vi-VN"
+                              ) ||
+                                room.roomId?.price?.toLocaleString("vi-VN") ||
+                                room.price?.toLocaleString("vi-VN") ||
+                                room.roomPrice?.toLocaleString("vi-VN") ||
+                                "-"}
+                              ₫
                             </Typography>
-                            {room.roomDescription && (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {room.roomDescription}
-                              </Typography>
-                            )}
                           </Paper>
                         </Grid>
                       )
@@ -1068,11 +1235,19 @@ export default function BookingHistory() {
                               noWrap
                               sx={{ textOverflow: "ellipsis" }}
                             >
-                              {sv.serviceName} (x{sv.serviceQuantity})
+                              {sv.serviceId?.serviceName ||
+                                sv.serviceId?.name ||
+                                sv.serviceName ||
+                                sv.name ||
+                                "Dịch vụ"}{" "}
+                              (x{sv.quantity || sv.serviceQuantity || 1})
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Giá dịch vụ:{" "}
-                              {sv.servicePrice?.toLocaleString("vi-VN")}₫
+                              {sv.serviceId?.price?.toLocaleString("vi-VN") ||
+                                sv.servicePrice?.toLocaleString("vi-VN") ||
+                                "-"}
+                              ₫
                             </Typography>
                           </Paper>
                         </Grid>
@@ -1088,6 +1263,46 @@ export default function BookingHistory() {
                     Không có dịch vụ được chọn
                   </Typography>
                 )}
+                {(() => {
+                  let countdownText = null;
+                  if (
+                    ["pending_payment", "consultation_requested"].includes(
+                      selectedBooking.status
+                    )
+                  ) {
+                    countdownText =
+                      "Tự động huỷ sau: " +
+                      formatCountdown(countdowns[selectedBooking._id]);
+                  } else if (
+                    selectedBooking.status === "cancelled" &&
+                    selectedBooking.cancelledAt
+                  ) {
+                    countdownText =
+                      "Tự động xoá sau: " +
+                      formatCountdown(countdowns[selectedBooking._id]);
+                  } else if (selectedBooking.status === "confirmed") {
+                    const cd = countdowns[selectedBooking._id];
+                    if (
+                      cd &&
+                      (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
+                    ) {
+                      countdownText =
+                        "Có thể huỷ đến trước check-in 1 ngày: " +
+                        formatCountdown(cd);
+                    } else {
+                      countdownText = "Đã hết hạn huỷ";
+                    }
+                  }
+                  return countdownText ? (
+                    <Typography
+                      variant="caption"
+                      color="secondary"
+                      fontWeight={600}
+                    >
+                      {countdownText}
+                    </Typography>
+                  ) : null;
+                })()}
               </Box>
             )}
           </DialogContent>

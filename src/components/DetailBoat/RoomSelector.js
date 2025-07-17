@@ -449,7 +449,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 fontWeight: "bold",
                               }}
                             >
-                              {formatPrice(room.price)}đ
+                              {formatPrice(room.price)}
                             </Typography>
                             <Typography
                               sx={{
@@ -579,8 +579,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 <Building2 size={20} />
                                 <p>
                                   {room.name} x {room.quantity}:{" "}
-                                  {formatPrice(roomTotal)}đ (
-                                  {formatPrice(room.price)}đ/phòng)
+                                  {formatPrice(roomTotal)}(
+                                  {formatPrice(room.price)}/phòng)
                                 </p>
                               </Typography>
                             </Box>
@@ -605,20 +605,25 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                             >
                               <Box>
                                 <li>
-                                  {sv.serviceName}: {formatPrice(sv.price)}đ x{" "}
-                                  {rooms.reduce(
-                                    (acc, room) => acc + room.quantity,
-                                    0
+                                  {sv.serviceName}: {formatPrice(sv.price)} x{" "}
+                                  {Math.min(
+                                    sv.quantity || 1,
+                                    rooms.reduce(
+                                      (sum, room) => sum + room.quantity,
+                                      0
+                                    )
                                   )}{" "}
                                   khách ={" "}
                                   {formatPrice(
                                     sv.price *
-                                      rooms.reduce(
-                                        (acc, room) => acc + room.quantity,
-                                        0
+                                      Math.min(
+                                        sv.quantity || 1,
+                                        rooms.reduce(
+                                          (sum, room) => sum + room.quantity,
+                                          0
+                                        )
                                       )
                                   )}
-                                  đ
                                 </li>
                               </Box>
                               <X
@@ -708,7 +713,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         fontWeight: "medium",
                       }}
                     >
-                      Tổng tiền:
+                      Tổng tiền ước tính:
                     </Typography>
                     <Typography
                       sx={{
@@ -792,6 +797,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
+        guestCount={rooms.reduce((sum, room) => sum + room.quantity, 0)}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import {
   Button,
   Checkbox,
   FormControlLabel,
+  TextField,
 } from "@mui/material";
 import { X } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -18,11 +19,13 @@ const RoomServicesModal = ({
   onClose,
   onSelectServices,
   selectedServices = [],
+  guestCount,
 }) => {
   const dispatch = useDispatch();
   const services = useSelector((state) => state.services.data) || [];
   const servicesLoading = useSelector((state) => state.services.loading);
   const [selected, setSelected] = useState([]);
+  const [quantities, setQuantities] = useState({});
 
   const getServiceId = (service, idx) =>
     (service._id || service.id || idx) + "";
@@ -37,17 +40,50 @@ const RoomServicesModal = ({
           (sv) => (sv._id || sv.id) + ""
         );
         setSelected(selectedIds);
+        // Set initial quantities from selectedServices, ép về guestCount nếu vượt quá
+        const initialQuantities = {};
+        selectedServices.forEach((sv) => {
+          const id = (sv._id || sv.id) + "";
+          let qty = sv.quantity || guestCount || 1;
+          if (qty > guestCount) qty = guestCount;
+          initialQuantities[id] = qty;
+        });
+        setQuantities(initialQuantities);
       } else {
         setSelected([]);
+        setQuantities({});
       }
     }
-  }, [show, selectedServices, yachtId]);
+  }, [show, selectedServices, yachtId, guestCount]);
+
+  // Khi guestCount thay đổi, cập nhật lại quantity cho các dịch vụ đã chọn nếu cần
+  useEffect(() => {
+    setQuantities((prev) => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach((id) => {
+        if (updated[id] > guestCount) updated[id] = guestCount;
+      });
+      return updated;
+    });
+  }, [guestCount]);
 
   const handleToggleService = (service, idx) => {
     const id = getServiceId(service, idx);
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
+    setSelected((prev) => {
+      if (prev.includes(id)) {
+        // Bỏ chọn: xóa quantity
+        setQuantities((q) => {
+          const newQ = { ...q };
+          delete newQ[id];
+          return newQ;
+        });
+        return prev.filter((sid) => sid !== id);
+      } else {
+        // Chọn: set quantity = guestCount nếu chưa có
+        setQuantities((q) => ({ ...q, [id]: guestCount || 1 }));
+        return [...prev, id];
+      }
+    });
   };
 
   const totalServicePrice = services
@@ -189,6 +225,22 @@ const RoomServicesModal = ({
                               ).toLocaleString()}{" "}
                               đ
                             </span>
+                            <TextField
+                              type="number"
+                              value={quantities[id] || 1}
+                              onChange={(e) =>
+                                setQuantities((q) => ({
+                                  ...q,
+                                  [id]: Math.max(
+                                    1,
+                                    Math.min(Number(e.target.value), guestCount)
+                                  ),
+                                }))
+                              }
+                              inputProps={{ min: 1, max: guestCount }}
+                              size="small"
+                              sx={{ width: 60, ml: 2 }}
+                            />
                           </Box>
                         }
                       />
@@ -220,24 +272,31 @@ const RoomServicesModal = ({
             </Typography>
             <Button
               onClick={() => {
+                // Ép lại quantity về guestCount nếu vượt quá
                 const selectedObjs = services
                   .map((serviceObj, idx) => serviceObj.serviceId || serviceObj)
                   .filter((service, idx) =>
                     selected.includes(getServiceId(service, idx))
                   )
-                  .map((service, idx) => ({
-                    ...service,
-                    serviceId:
-                      service._id ||
-                      service.serviceId ||
-                      service.id ||
-                      getServiceId(service, idx),
-                    _id:
-                      service._id ||
-                      service.serviceId ||
-                      service.id ||
-                      getServiceId(service, idx),
-                  }));
+                  .map((service, idx) => {
+                    const id = getServiceId(service, idx);
+                    let quantity = quantities[id] || 1;
+                    if (quantity > guestCount) quantity = guestCount;
+                    return {
+                      ...service,
+                      serviceId:
+                        service._id ||
+                        service.serviceId ||
+                        service.id ||
+                        getServiceId(service, idx),
+                      _id:
+                        service._id ||
+                        service.serviceId ||
+                        service.id ||
+                        getServiceId(service, idx),
+                      quantity,
+                    };
+                  });
                 onSelectServices(selectedObjs);
                 onClose();
               }}

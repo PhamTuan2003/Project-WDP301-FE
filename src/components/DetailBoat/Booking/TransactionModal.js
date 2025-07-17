@@ -24,7 +24,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Button,
   Typography,
   Box,
@@ -34,19 +33,15 @@ import {
   Grid,
   Paper,
   IconButton,
-  Divider,
   List,
   ListItem,
-  ListItemIcon,
   ListItemText,
-  Tabs,
   Tab,
   Alert,
   CircularProgress,
   useTheme,
   useMediaQuery,
   Fade,
-  Slide,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
@@ -556,6 +551,9 @@ const TransactionModal = ({ onBack }) => {
   const bookedRooms = currentBookingDetail.bookedRooms || [];
   const totalRooms = bookedRooms.reduce((sum, r) => sum + (r.quantity || 0), 0);
 
+  console.log("bookedRooms", bookedRooms);
+  console.log("totalRooms", totalRooms);
+  console.log("booking.roomCount", booking.roomCount);
   // Fallback cho số phòng nếu không có dữ liệu bookedRooms
   const displayTotalRooms =
     totalRooms > 0 ? totalRooms : booking.roomCount || 1;
@@ -764,11 +762,12 @@ const TransactionModal = ({ onBack }) => {
             <ul className="text-sm text-gray-700 list-disc ml-6">
               {bookedServices.map((service, idx) => (
                 <li key={service._id || service.serviceId || service.id || idx}>
-                  {service.serviceName ||
+                  {service.serviceId?.serviceName ||
+                    service.serviceId?.name ||
                     service.name ||
-                    service.serviceId?.serviceName ||
+                    service.serviceName ||
                     "Dịch vụ"}
-                  {` x${service.serviceQuantity || service.quantity || 1}`}
+                  {` x${service.quantity || service.serviceQuantity || 1}`}
                 </li>
               ))}
             </ul>
@@ -2047,16 +2046,16 @@ const TransactionModal = ({ onBack }) => {
                             <ListItemText
                               primary={
                                 <Typography variant="body2" color="textPrimary">
-                                  {service.serviceName ||
-                                    service.name ||
+                                  {service.serviceId?.serviceName ||
                                     service.serviceId?.name ||
+                                    service.name ||
+                                    service.serviceName ||
                                     "Dịch vụ"}
-                                  {service.serviceQuantity || service.quantity
-                                    ? ` x ${
-                                        service.serviceQuantity ||
-                                        service.quantity
-                                      }`
-                                    : ""}
+                                  {` x${
+                                    service.quantity ||
+                                    service.serviceQuantity ||
+                                    1
+                                  }`}
                                 </Typography>
                               }
                             />

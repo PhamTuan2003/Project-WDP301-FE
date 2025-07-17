@@ -91,13 +91,15 @@ const BookingRoomModal = ({
   const adults = Number(guestCounter?.adults ?? 0);
   const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
   const totalGuests = adults + Math.floor(childrenAbove10 / 2);
-
   const totalRoomPrice = selectedRooms.reduce(
     (sum, room) => sum + room.price * room.quantity,
     0
   );
   const totalServicePrice = selectedYachtServices
-    ? selectedYachtServices.reduce((sum, sv) => sum + sv.price * totalGuests, 0)
+    ? selectedYachtServices.reduce(
+        (sum, sv) => sum + sv.price * (sv.quantity || 1),
+        0
+      )
     : 0;
 
   // Kiểm tra trạng thái booking
@@ -187,7 +189,6 @@ const BookingRoomModal = ({
 
   useEffect(() => {
     if (show && authCustomer) {
-      // Prefill nếu bookingForm chưa có giá trị (chưa từng nhập)
       if (!bookingForm.fullName)
         dispatch(updateBookingForm("fullName", authCustomer.fullName || ""));
       if (!bookingForm.phoneNumber)
@@ -200,6 +201,40 @@ const BookingRoomModal = ({
         dispatch(updateBookingForm("address", authCustomer.address || ""));
     }
   }, [show, authCustomer]);
+
+  useEffect(() => {
+    if (show) {
+      const minAdults = selectedRooms.reduce(
+        (sum, room) => sum + (room.quantity || 0),
+        0
+      );
+      if (guestCounter.adults < minAdults) {
+        window.Swal &&
+          Swal.fire({
+            icon: "warning",
+            title: "Số người lớn không được nhỏ hơn tổng số phòng!",
+            text: `Bạn đã chọn ${minAdults} phòng, cần ít nhất ${minAdults} người lớn.`,
+          });
+        dispatch(
+          setGuestCounter({
+            ...guestCounter,
+            adults: minAdults,
+          })
+        );
+        // Cập nhật luôn text hiển thị
+        let guestCountText = `${minAdults} người lớn`;
+        if (guestCounter.childrenAbove10 > 0)
+          guestCountText += `, ${guestCounter.childrenAbove10} trẻ em từ 10 tuổi`;
+        if (guestCounter.childrenUnder10 > 0)
+          guestCountText += `, ${guestCounter.childrenUnder10} trẻ em dưới 10 tuổi (không tính vào tổng khách)`;
+        dispatch({
+          type: "UPDATE_BOOKING_FORM",
+          payload: { field: "guestCount", value: guestCountText },
+        });
+      }
+      // Không ép adults về minAdults nếu họ đang chọn nhiều hơn
+    }
+  }, [show, selectedRooms]);
 
   const handleInputChange = (field, value) => {
     dispatch(updateBookingForm(field, value));
@@ -276,8 +311,7 @@ const BookingRoomModal = ({
       serviceId: sv.serviceId || sv._id || sv.id,
       serviceName: sv.serviceName || sv.name,
       servicePrice: sv.servicePrice !== undefined ? sv.servicePrice : sv.price,
-      serviceQuantity:
-        sv.serviceQuantity !== undefined ? sv.serviceQuantity : sv.quantity,
+      quantity: sv.quantity !== undefined ? sv.quantity : 1,
     }));
 
     return {
@@ -780,7 +814,10 @@ const BookingRoomModal = ({
                     }
                   `}</style>
                 </div>
-                <GuestCounter maxPeople={maxPeople} />
+                <GuestCounter
+                  maxPeople={maxPeople}
+                  minAdults={selectedRooms.length}
+                />
               </Box>
               {/* Hiển thị chi tiết phòng và dịch vụ */}
               <Box
@@ -910,9 +947,12 @@ const BookingRoomModal = ({
                                   mt: 0.5,
                                 }}
                               >
-                                {sv.price?.toLocaleString()}đ/người ×{" "}
-                                {totalGuests} khách ={" "}
-                                {(sv.price * totalGuests)?.toLocaleString()}đ
+                                {sv.price?.toLocaleString()}đ x{" "}
+                                {sv.quantity || 1} khách ={" "}
+                                {(
+                                  sv.price * (sv.quantity || 1)
+                                )?.toLocaleString()}
+                                đ
                               </Typography>
                               {sv.description && (
                                 <Typography
@@ -1256,6 +1296,7 @@ const BookingRoomModal = ({
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
+        guestCount={selectedRooms.reduce((sum, room) => sum + room.quantity, 0)}
       />
     </>
   );
