@@ -90,18 +90,13 @@ function AppWrapper() {
     dispatch(initializeAuth());
   }, [dispatch]);
 
+  // Sửa: chỉ mở lại modal khi load app, không phụ thuộc showTransactionModal
   useEffect(() => {
     const bookingId = localStorage.getItem("bookingIdForTransaction");
-    console.log(
-      "App.js bookingIdForTransaction:",
-      bookingId,
-      "showTransactionModal:",
-      showTransactionModal
-    );
-    if (bookingId && !showTransactionModal) {
+    if (bookingId) {
       dispatch(openTransactionModal(bookingId));
     }
-  }, [showTransactionModal, dispatch]);
+  }, [dispatch]);
 
   useBodyScrollLock();
 

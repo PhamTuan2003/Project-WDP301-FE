@@ -247,24 +247,28 @@ const TransactionModal = ({ onBack }) => {
   }, [showTransactionModal, bookingIdFortransaction, dispatch, isPolling]);
 
   useEffect(() => {
+    console.log(
+      "paymentStatus:",
+      paymentStatus,
+      "showTransactionModal:",
+      showTransactionModal
+    );
     if (
-      (paymentStatus === "fully_paid" || paymentStatus === "deposit_paid") &&
+      (paymentStatus === "fully_paid" ||
+        paymentStatus === "deposit_paid" ||
+        paymentStatus === "completed") &&
       showTransactionModal
     ) {
+      console.log("Trigger close modal after 2s");
       localStorage.removeItem("bookingIdForTransaction");
-      // Hiển thị thông báo thành công 2 giây rồi mới đóng modal
       setTimeout(() => {
         dispatch(closeTransactionModal());
         dispatch(clearQRCodeData());
-        const transactionId = qrCodeData?.transactionId;
-        if (transactionId) {
-          dispatch(fetchInvoiceByTransactionId(transactionId));
-        }
         if (bookingIdFortransaction) {
           dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
         }
         dispatch(fetchCustomerBookings());
-      }, 2000); // 2 giây
+      }, 2000);
     }
   }, [paymentStatus, showTransactionModal]);
 
@@ -2168,7 +2172,18 @@ const TransactionModal = ({ onBack }) => {
                     <p className="text-green-700">
                       Booking này đã được thanh toán đầy đủ.
                     </p>
-                    {/* Không hiện nút mô phỏng chuyển sang invoice ở trạng thái đã thanh toán */}
+                    <Button
+                      variant="contained"
+                      color="success"
+                      sx={{ mt: 2, borderRadius: 2 }}
+                      onClick={() => {
+                        dispatch(closeTransactionModal());
+                        dispatch(clearQRCodeData());
+                        localStorage.removeItem("bookingIdForTransaction");
+                      }}
+                    >
+                      Hoàn tất
+                    </Button>
                   </SuccessContainer>
                 ) : booking.paymentStatus === "deposit_paid" ? (
                   <SuccessContainer>
@@ -2182,7 +2197,18 @@ const TransactionModal = ({ onBack }) => {
                       Bạn đã thanh toán tiền cọc. Vui lòng thanh toán phần còn
                       lại trước hạn.
                     </p>
-                    {/* Không hiện nút mô phỏng chuyển sang invoice ở trạng thái đã đặt cọc */}
+                    <Button
+                      variant="contained"
+                      color="success"
+                      sx={{ mt: 2, borderRadius: 2 }}
+                      onClick={() => {
+                        dispatch(closeTransactionModal());
+                        dispatch(clearQRCodeData());
+                        localStorage.removeItem("bookingIdForTransaction");
+                      }}
+                    >
+                      Hoàn tất
+                    </Button>
                   </SuccessContainer>
                 ) : !qrCodeData ? (
                   <>

@@ -1074,7 +1074,10 @@ export default function BookingHistory() {
                       <b>Tổng tiền: </b>
                       <Typography fontWeight={600} color="primary.dark">
                         {" "}
-                        {selectedBooking.amount?.toLocaleString("vi-VN")}₫
+                        {selectedBooking.paymentBreakdown.totalAmount.toLocaleString(
+                          "vi-VN"
+                        )}
+                        ₫
                       </Typography>
                     </Typography>
                   </Grid>
@@ -1190,14 +1193,18 @@ export default function BookingHistory() {
                               (x{room.quantity || room.roomQuantity || 1})
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Giá:{" "}
-                              {room.roomId?.roomTypeId?.price?.toLocaleString(
-                                "vi-VN"
-                              ) ||
-                                room.roomId?.price?.toLocaleString("vi-VN") ||
-                                room.price?.toLocaleString("vi-VN") ||
-                                room.roomPrice?.toLocaleString("vi-VN") ||
-                                "-"}
+                              Giá phòng:{" "}
+                              {room.roomId?.roomTypeId?.price
+                                ? room.roomId.roomTypeId.price.toLocaleString(
+                                    "vi-VN"
+                                  )
+                                : room.roomId?.price
+                                ? room.roomId.price.toLocaleString("vi-VN")
+                                : room.price
+                                ? room.price.toLocaleString("vi-VN")
+                                : room.roomPrice
+                                ? room.roomPrice.toLocaleString("vi-VN")
+                                : "-"}
                               ₫
                             </Typography>
                           </Paper>
