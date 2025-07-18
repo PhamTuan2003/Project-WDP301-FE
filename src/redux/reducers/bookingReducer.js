@@ -365,11 +365,11 @@ const bookingReducer = (state = bookingInitialState, action) => {
         bookingForm: {
           checkInDate: "",
           guestCount: "1 Người lớn - 0 Trẻ em",
-          fullName: "",
-          phoneNumber: "",
-          email: "",
+          fullName: state.bookingForm.fullName || "",
+          phoneNumber: state.bookingForm.phoneNumber || "",
+          email: state.bookingForm.email || "",
           requirements: "",
-          address: "",
+          address: state.bookingForm.address || "",
         },
         bookingErrors: {},
         guestCounter: {

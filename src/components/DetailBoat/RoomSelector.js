@@ -47,6 +47,7 @@ import {
 } from "../../redux/asyncActions/bookingAsyncActions";
 import RoomServicesModal from "./RoomServicesModal";
 import { getScheduleById } from "../../utils/scheduleHelpers";
+import { formatPrice } from "../../redux/validation";
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -109,8 +110,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     selectedMaxPeople === "all"
       ? rooms
       : rooms.filter((room) => room.max_people === parseInt(selectedMaxPeople));
-
-  // Get selected rooms for BookingRoomModal
   const getSelectedRooms = () => {
     return rooms.filter((room) => room.quantity > 0);
   };
@@ -127,8 +126,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
   // Tính tổng tiền dịch vụ theo du thuyền
   const totalServicePrice = selectedYachtServices.reduce(
-    (sum, sv) =>
-      sum + sv.price * rooms.reduce((acc, room) => acc + room.quantity, 0),
+    (sum, sv) => sum + sv.price * (sv.quantity || 1),
     0
   );
   const totalPrice =
@@ -448,7 +446,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 fontWeight: "bold",
                               }}
                             >
-                              {room.price.toLocaleString()}đ
+                              {formatPrice(room.price)}
                             </Typography>
                             <Typography
                               sx={{
@@ -458,7 +456,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               }}
                             >
                               {" "}
-                              / khách
+                              / phòng
                             </Typography>
                           </Box>
                         </Box>
@@ -578,8 +576,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                 <Building2 size={20} />
                                 <p>
                                   {room.name} x {room.quantity}:{" "}
-                                  {roomTotal.toLocaleString()}đ (
-                                  {room.price.toLocaleString()}đ/phòng)
+                                  {formatPrice(roomTotal)}(
+                                  {formatPrice(room.price)}/phòng)
                                 </p>
                               </Typography>
                             </Box>
@@ -604,21 +602,25 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                             >
                               <Box>
                                 <li>
-                                  {sv.serviceName}: {sv.price.toLocaleString()}đ
-                                  x{" "}
-                                  {rooms.reduce(
-                                    (acc, room) => acc + room.quantity,
-                                    0
-                                  )}{" "}
-                                  khách ={" "}
-                                  {(
-                                    sv.price *
+                                  {sv.serviceName}: {formatPrice(sv.price)} x{" "}
+                                  {Math.min(
+                                    sv.quantity || 1,
                                     rooms.reduce(
-                                      (acc, room) => acc + room.quantity,
+                                      (sum, room) => sum + room.quantity,
                                       0
                                     )
-                                  ).toLocaleString()}
-                                  đ
+                                  )}{" "}
+                                  khách ={" "}
+                                  {formatPrice(
+                                    sv.price *
+                                      Math.min(
+                                        sv.quantity || 1,
+                                        rooms.reduce(
+                                          (sum, room) => sum + room.quantity,
+                                          0
+                                        )
+                                      )
+                                  )}
                                 </li>
                               </Box>
                               <X
@@ -708,7 +710,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         fontWeight: "medium",
                       }}
                     >
-                      Tổng tiền:
+                      Tổng tiền ước tính:
                     </Typography>
                     <Typography
                       sx={{
@@ -792,6 +794,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
+        guestCount={rooms.reduce((sum, room) => sum + room.quantity, 0)}
       />
     </div>
   );

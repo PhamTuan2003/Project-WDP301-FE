@@ -7,7 +7,7 @@ import {
   updateAdults,
 } from "../../../redux/actions/bookingActions";
 
-const GuestCounter = ({ maxPeople }) => {
+const GuestCounter = ({ maxPeople, minAdults = 1 }) => {
   const dispatch = useDispatch();
   const {
     guestCounter: { isOpen, adults, childrenUnder10 = 0, childrenAbove10 = 0 },
@@ -26,6 +26,12 @@ const GuestCounter = ({ maxPeople }) => {
     if (delta > 0 && maxPeople && newTotalGuests > maxPeople) {
       setError(
         `Tổng số khách quy đổi (${newTotalGuests}) không được vượt quá sức chứa tối đa (${maxPeople}) của các phòng đã chọn. 2 trẻ em trên 10 tuổi = 1 người lớn.`
+      );
+      return;
+    }
+    if (newAdults < minAdults) {
+      setError(
+        `Mỗi phòng cần ít nhất 1 người lớn. Bạn đã chọn ${minAdults} phòng.`
       );
       return;
     }
@@ -149,7 +155,7 @@ const GuestCounter = ({ maxPeople }) => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Button
                 onClick={() => handleUpdateAdults(-1)}
-                disabled={adults <= 1}
+                disabled={adults <= minAdults}
                 sx={{
                   minWidth: 32,
                   height: 32,
@@ -399,9 +405,7 @@ const GuestCounter = ({ maxPeople }) => {
           {/* Hiển thị tổng khách quy đổi */}
           <Box
             sx={{
-              border: overLimit
-                ? "1px solid #4f908a"
-                : "1px solid #68bfb5",
+              border: overLimit ? "1px solid #4f908a" : "1px solid #68bfb5",
               color: "primary.main",
               p: 0.5,
               borderRadius: 1,
@@ -438,11 +442,19 @@ const GuestCounter = ({ maxPeople }) => {
                   mt: 0.5,
                 }}
               >
-                {totalGuests > maxPeople
-                  ? `⚠️ Vượt quá ${totalGuests - maxPeople} người`
-                  : totalGuests === maxPeople
-                  ? <Typography sx={{ color: "error.main", fontSize: "0.7rem" }}>⚠️ Đã đạt giới hạn tối đa</Typography>
-                  : <Typography sx={{ color: "success.main", fontSize: "0.7rem" }}>✅ Còn {maxPeople - totalGuests} chỗ trống</Typography>}
+                {totalGuests > maxPeople ? (
+                  `⚠️ Vượt quá ${totalGuests - maxPeople} người`
+                ) : totalGuests === maxPeople ? (
+                  <Typography sx={{ color: "error.main", fontSize: "0.7rem" }}>
+                    ⚠️ Đã đạt giới hạn tối đa
+                  </Typography>
+                ) : (
+                  <Typography
+                    sx={{ color: "success.main", fontSize: "0.7rem" }}
+                  >
+                    ✅ Còn {maxPeople - totalGuests} chỗ trống
+                  </Typography>
+                )}
               </Typography>
             )}
           </Box>

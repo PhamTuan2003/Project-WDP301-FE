@@ -24,7 +24,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Button,
   Typography,
   Box,
@@ -34,19 +33,15 @@ import {
   Grid,
   Paper,
   IconButton,
-  Divider,
   List,
   ListItem,
-  ListItemIcon,
   ListItemText,
-  Tabs,
   Tab,
   Alert,
   CircularProgress,
   useTheme,
   useMediaQuery,
   Fade,
-  Slide,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
@@ -252,25 +247,28 @@ const TransactionModal = ({ onBack }) => {
   }, [showTransactionModal, bookingIdFortransaction, dispatch, isPolling]);
 
   useEffect(() => {
+    console.log(
+      "paymentStatus:",
+      paymentStatus,
+      "showTransactionModal:",
+      showTransactionModal
+    );
     if (
-      (paymentStatus === "fully_paid" || paymentStatus === "deposit_paid") &&
+      (paymentStatus === "fully_paid" ||
+        paymentStatus === "deposit_paid" ||
+        paymentStatus === "completed") &&
       showTransactionModal
     ) {
-      // Chỉ xóa bookingId khỏi localStorage khi không còn ở trạng thái test simulate
+      console.log("Trigger close modal after 2s");
       localStorage.removeItem("bookingIdForTransaction");
-
-      // Tự động đóng modal và chuyển sang invoice
-      dispatch(closeTransactionModal());
-      dispatch(clearQRCodeData());
-      const transactionId = qrCodeData?.transactionId;
-      if (transactionId) {
-        dispatch(fetchInvoiceByTransactionId(transactionId));
-      }
-      if (bookingIdFortransaction) {
-        dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
-      }
-      // Cập nhật danh sách booking
-      dispatch(fetchCustomerBookings());
+      setTimeout(() => {
+        dispatch(closeTransactionModal());
+        dispatch(clearQRCodeData());
+        if (bookingIdFortransaction) {
+          dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
+        }
+        dispatch(fetchCustomerBookings());
+      }, 2000);
     }
   }, [paymentStatus, showTransactionModal]);
 
@@ -341,20 +339,17 @@ const TransactionModal = ({ onBack }) => {
   };
 
   const handleClose = () => {
-    // setIsVisible(false); // This state is removed, so this line is removed.
+    console.log("handleClose called");
+    dispatch({ type: "CLOSE_TRANSACTION_MODAL" });
+    localStorage.removeItem("bookingIdForTransaction");
+    // Nếu có các dispatch khác, log thêm
     setTimeout(() => {
-      dispatch(closeTransactionModal());
-      dispatch(clearQRCodeData());
-      if (isPolling) {
-        dispatch(stopPaymentStatusPolling());
-      }
-      // Xóa bookingId khỏi localStorage khi đóng modal
-      localStorage.removeItem("bookingIdForTransaction");
-      // Gọi onBack nếu có, nếu không thì không làm gì thêm
-      if (onBack) {
-        onBack();
-      }
-    }, 300);
+      console.log("showTransactionModal after close:", showTransactionModal);
+      console.log(
+        "localStorage after close:",
+        localStorage.getItem("bookingIdForTransaction")
+      );
+    }, 500);
   };
 
   const copyToClipboard = async (text, label) => {
@@ -453,6 +448,33 @@ const TransactionModal = ({ onBack }) => {
   };
 
   // Nếu booking chưa có (null/undefined), không render modal hoặc render loading
+  if (!bookingIdFortransaction) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300">
+        <div>
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full border border-red-100">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Thiếu thông tin booking
+              </h3>
+              <p className="text-red-600 mb-6">
+                Vui lòng chọn lại booking để thanh toán.
+              </p>
+              <button
+                onClick={handleClose}
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!booking) return null;
 
   // Error State
@@ -526,8 +548,7 @@ const TransactionModal = ({ onBack }) => {
     );
   }
 
-  const totalAmount =
-    booking.paymentBreakdown?.totalAmount || booking.amount || 0;
+  const totalAmount = booking.paymentBreakdown?.totalAmount || 0;
   const depositAmountValue = booking.paymentBreakdown?.depositAmount || 0;
   const remainingAmountValue =
     booking.paymentBreakdown?.remainingAmount || totalAmount;
@@ -556,6 +577,9 @@ const TransactionModal = ({ onBack }) => {
   const bookedRooms = currentBookingDetail.bookedRooms || [];
   const totalRooms = bookedRooms.reduce((sum, r) => sum + (r.quantity || 0), 0);
 
+  console.log("bookedRooms", bookedRooms);
+  console.log("totalRooms", totalRooms);
+  console.log("booking.roomCount", booking.roomCount);
   // Fallback cho số phòng nếu không có dữ liệu bookedRooms
   const displayTotalRooms =
     totalRooms > 0 ? totalRooms : booking.roomCount || 1;
@@ -590,9 +614,12 @@ const TransactionModal = ({ onBack }) => {
           if (bookingIdFortransaction) {
             dispatch(fetchCustomerBookingDetail(bookingIdFortransaction));
           }
+          // Đóng modal sau khi mô phỏng thành công
+          localStorage.removeItem("bookingIdForTransaction");
+          dispatch(closeTransactionModal());
+          dispatch(clearQRCodeData());
         })
         .catch((error) => {});
-    } else {
     }
   };
 
@@ -764,10 +791,12 @@ const TransactionModal = ({ onBack }) => {
             <ul className="text-sm text-gray-700 list-disc ml-6">
               {bookedServices.map((service, idx) => (
                 <li key={service._id || service.serviceId || service.id || idx}>
-                  {service.serviceName || service.name || "Dịch vụ"}
-                  {service.serviceQuantity || service.quantity
-                    ? ` x ${service.serviceQuantity || service.quantity}`
-                    : ""}
+                  {service.serviceId?.serviceName ||
+                    service.serviceId?.name ||
+                    service.name ||
+                    service.serviceName ||
+                    "Dịch vụ"}
+                  {` x${service.quantity || service.serviceQuantity || 1}`}
                 </li>
               ))}
             </ul>
@@ -1830,7 +1859,13 @@ const TransactionModal = ({ onBack }) => {
   return (
     <StyledDialog
       open={showTransactionModal}
-      onClose={handleClose}
+      onClose={(event, reason) => {
+        if (reason === "backdropClick") {
+          return;
+        }
+        handleClose();
+      }}
+      disableEscapeKeyDown={true}
       TransitionComponent={Fade}
     >
       <StyledDialogTitle>
@@ -2046,15 +2081,16 @@ const TransactionModal = ({ onBack }) => {
                             <ListItemText
                               primary={
                                 <Typography variant="body2" color="textPrimary">
-                                  {service.serviceName ||
+                                  {service.serviceId?.serviceName ||
+                                    service.serviceId?.name ||
                                     service.name ||
+                                    service.serviceName ||
                                     "Dịch vụ"}
-                                  {service.serviceQuantity || service.quantity
-                                    ? ` x ${
-                                        service.serviceQuantity ||
-                                        service.quantity
-                                      }`
-                                    : ""}
+                                  {` x${
+                                    service.quantity ||
+                                    service.serviceQuantity ||
+                                    1
+                                  }`}
                                 </Typography>
                               }
                             />
@@ -2136,15 +2172,18 @@ const TransactionModal = ({ onBack }) => {
                     <p className="text-green-700">
                       Booking này đã được thanh toán đầy đủ.
                     </p>
-                    {process.env.NODE_ENV === "development" &&
-                      qrCodeData?.transactionId && (
-                        <button
-                          onClick={handleSimulatePayment}
-                          className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-                        >
-                          🧪 Mô phỏng chuyển sang invoice
-                        </button>
-                      )}
+                    <Button
+                      variant="contained"
+                      color="success"
+                      sx={{ mt: 2, borderRadius: 2 }}
+                      onClick={() => {
+                        dispatch(closeTransactionModal());
+                        dispatch(clearQRCodeData());
+                        localStorage.removeItem("bookingIdForTransaction");
+                      }}
+                    >
+                      Hoàn tất
+                    </Button>
                   </SuccessContainer>
                 ) : booking.paymentStatus === "deposit_paid" ? (
                   <SuccessContainer>
@@ -2158,15 +2197,18 @@ const TransactionModal = ({ onBack }) => {
                       Bạn đã thanh toán tiền cọc. Vui lòng thanh toán phần còn
                       lại trước hạn.
                     </p>
-                    {process.env.NODE_ENV === "development" &&
-                      qrCodeData?.transactionId && (
-                        <button
-                          onClick={handleSimulatePayment}
-                          className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 transform hover:scale-105"
-                        >
-                          🧪 Mô phỏng chuyển sang invoice
-                        </button>
-                      )}
+                    <Button
+                      variant="contained"
+                      color="success"
+                      sx={{ mt: 2, borderRadius: 2 }}
+                      onClick={() => {
+                        dispatch(closeTransactionModal());
+                        dispatch(clearQRCodeData());
+                        localStorage.removeItem("bookingIdForTransaction");
+                      }}
+                    >
+                      Hoàn tất
+                    </Button>
                   </SuccessContainer>
                 ) : !qrCodeData ? (
                   <>

@@ -52,15 +52,70 @@ const itemVariants = {
   }),
 };
 
+// Thêm props rooms, services
 const ConsultationDetailsModal = ({
   open,
   onClose,
   consultation,
   onEdit,
   onCancel,
+  rooms = [],
+  services = [],
 }) => {
   const theme = useTheme();
   if (!consultation) return null;
+
+  // Helper lấy chi tiết phòng/dịch vụ
+  const getRoomDetail = (roomId) => {
+    const idStr = roomId?.toString?.() || roomId;
+    return rooms.find(
+      (r) =>
+        (r._id?.toString?.() || r._id) === idStr ||
+        (r.id?.toString?.() || r.id) === idStr
+    );
+  };
+  const getServiceDetail = (serviceId) =>
+    services.find((s) => s._id === (serviceId?.toString?.() || serviceId));
+
+  // Map phòng đã chọn với thông tin chi tiết
+  const selectedRooms = (
+    consultation.selectedRooms ||
+    consultation.consultationData?.requestedRooms ||
+    []
+  ).map((room) => {
+    const detail = getRoomDetail(room.roomId || room.id);
+    if (!detail) {
+      console.warn(
+        "Không tìm thấy room detail cho",
+        room.roomId || room.id,
+        rooms
+      );
+    }
+    return {
+      ...room,
+      roomName: detail?.name || room.roomName || room.name,
+      roomPrice: detail?.price ?? room.roomPrice ?? room.price,
+      roomArea: detail?.area || room.roomArea,
+      roomDescription: detail?.description || room.roomDescription,
+      roomAvatar: detail?.avatar || room.roomAvatar,
+      roomMaxPeople: detail?.max_people || room.roomMaxPeople,
+    };
+  });
+  // Map dịch vụ đã chọn với thông tin chi tiết
+  const selectedServices = (
+    consultation.selectedServices ||
+    consultation.services ||
+    consultation.consultationData?.requestServices ||
+    []
+  ).map((sv) => {
+    const detail = getServiceDetail(sv.serviceId || sv._id || sv.id);
+    return {
+      ...sv,
+      serviceName: detail?.serviceName || sv.serviceName || sv.serviceName,
+      servicePrice: detail?.price ?? sv.servicePrice ?? sv.price,
+    };
+  });
+  console.log("Consultation data in modal:", consultation);
   return (
     <Modal
       open={open}
@@ -200,11 +255,7 @@ const ConsultationDetailsModal = ({
           Phòng đã chọn
         </Typography>
         <Stack spacing={1}>
-          {(
-            consultation.selectedRooms ||
-            consultation.consultationData?.requestedRooms ||
-            []
-          ).map((room, i) => (
+          {selectedRooms.map((room, i) => (
             <MotionCard
               key={i}
               component="div"
@@ -223,7 +274,7 @@ const ConsultationDetailsModal = ({
               <Stack direction="row" spacing={1} alignItems="center">
                 <Building size={18} />
                 <Typography fontFamily="Archivo, sans-serif">
-                  {room.roomName || room.name}
+                  {room.roomName}
                 </Typography>
                 <Chip
                   label={`x${room.roomQuantity || room.quantity}`}
@@ -250,56 +301,44 @@ const ConsultationDetailsModal = ({
           Dịch vụ đã chọn
         </Typography>
         <Stack spacing={1}>
-          {(() => {
-            const services =
-              consultation.selectedServices ||
-              consultation.services ||
-              consultation.consultationData?.requestServices ||
-              [];
-            if (services.length > 0) {
-              return services.map((sv, i) => (
-                <MotionCard
-                  key={sv.serviceId || sv._id || sv.id || i}
-                  component="div"
-                  variants={itemVariants}
-                  custom={i + 20}
-                  initial="hidden"
-                  animate="visible"
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    p: 2,
-                    boxShadow: theme.shadows[4],
-                  }}
-                >
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <FileText size={18} />
-                    <Typography fontFamily="Archivo, sans-serif">
-                      {sv.serviceName || sv.name}
-                    </Typography>
-                    <Chip
-                      label={`x${sv.serviceQuantity || sv.quantity}`}
-                      size="small"
-                      color="info"
-                    />
-                  </Stack>
-                  <Typography fontFamily="Archivo, sans-serif" fontWeight={500}>
-                    {formatPrice(sv.servicePrice || sv.price)}
+          {selectedServices.length > 0 ? (
+            selectedServices.map((sv, i) => (
+              <MotionCard
+                key={sv.serviceId || sv._id || sv.id || i}
+                component="div"
+                variants={itemVariants}
+                custom={i + 20}
+                initial="hidden"
+                animate="visible"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  p: 2,
+                  boxShadow: theme.shadows[4],
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <FileText size={18} />
+                  <Typography fontFamily="Archivo, sans-serif">
+                    {sv.serviceName}
                   </Typography>
-                </MotionCard>
-              ));
-            } else {
-              return (
-                <Typography
-                  fontFamily="Archivo, sans-serif"
-                  color="text.secondary"
-                >
-                  Không có dịch vụ nào được chọn
+                  <Chip
+                    label={`x${sv.serviceQuantity || sv.quantity}`}
+                    size="small"
+                    color="info"
+                  />
+                </Stack>
+                <Typography fontFamily="Archivo, sans-serif" fontWeight={500}>
+                  {formatPrice(sv.servicePrice || sv.price)}
                 </Typography>
-              );
-            }
-          })()}
+              </MotionCard>
+            ))
+          ) : (
+            <Typography fontFamily="Archivo, sans-serif" color="text.secondary">
+              Không có dịch vụ nào được chọn
+            </Typography>
+          )}
         </Stack>
 
         {/* Tổng tiền */}

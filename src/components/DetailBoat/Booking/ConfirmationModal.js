@@ -76,8 +76,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
       confirmationData.guestCounter?.childrenAbove10 ??
       0
   );
-  const totalGuests =
-    adults + childrenUnder10 + Math.floor(childrenAbove10 / 2);
+  const totalGuests = adults + Math.floor(childrenAbove10 / 2);
 
   const handleProceedToPayment = () => {
     if (!bookingId) {
@@ -542,9 +541,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
                       >
                         <Typography fontWeight={500}>
                           {service.serviceName}
-                          {service.serviceQuantity
-                            ? ` × ${service.serviceQuantity}`
-                            : ""}
+                          {service.quantity ? ` × ${service.quantity}` : ""}
                         </Typography>
                         <Typography
                           color={theme.palette.primary.main}

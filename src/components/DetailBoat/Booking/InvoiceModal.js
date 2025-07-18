@@ -48,6 +48,20 @@ import {
   useTheme,
 } from "@mui/material";
 
+function getScheduleText(schedule) {
+  // Nếu scheduleId là object đã populate
+  const s = schedule.scheduleId;
+  if (!s || !s.startDate || !s.endDate) return "-";
+  const start = new Date(s.startDate);
+  const end = new Date(s.endDate);
+  if (isNaN(start) || isNaN(end)) return "-";
+  // Số ngày = số ngày thực tế (tính cả ngày bắt đầu và kết thúc)
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const days = Math.round((end - start) / msPerDay) + 1;
+  const nights = days - 1;
+  return `${days} ngày ${nights} đêm`;
+}
+
 const InvoiceModal = () => {
   const dispatch = useDispatch();
   const { showInvoiceModal, invoiceData } = useSelector(
@@ -83,70 +97,70 @@ const InvoiceModal = () => {
     dispatch(downloadInvoicePDF(invoiceData._id));
   };
 
-  // Lấy số liệu tài chính từ invoiceData.financials (backend trả về)
-  const subtotal = invoiceData.financials?.subtotal ?? 0;
+  // Tính lại giá thực tế cho từng item
+  const itemsWithRealPrice =
+    invoiceData.items?.map((item) => {
+      const roomObj =
+        invoiceData.bookingId?.consultationData?.requestedRooms?.find(
+          (r) => String(r.roomId && r.roomId._id) === String(item.itemId)
+        );
+      const serviceObj =
+        invoiceData.bookingId?.consultationData?.requestServices?.find(
+          (s) => String(s.serviceId && s.serviceId._id) === String(item.itemId)
+        );
+      const unitPrice =
+        item.type === "room"
+          ? roomObj?.roomId?.roomTypeId?.price ?? item.unitPrice
+          : item.type === "service"
+          ? serviceObj?.serviceId?.price ?? item.unitPrice
+          : item.unitPrice;
+      const totalPrice = unitPrice * item.quantity;
+      return { ...item, unitPrice, totalPrice };
+    }) || [];
+
+  // Tính lại các trường tổng
+  const subtotal = itemsWithRealPrice.reduce(
+    (sum, item) => sum + item.totalPrice,
+    0
+  );
   const discount = invoiceData.financials?.totalDiscount ?? 0;
   const amountBeforeTax = subtotal - discount;
-  const tax = amountBeforeTax * 0.05; // VAT 5%
+  const tax = amountBeforeTax * 0.05;
   const total = amountBeforeTax + tax;
   const paidAmount = invoiceData.financials?.paidAmount ?? 0;
   const remainingAmount = total - paidAmount;
-
-  // Helper to get schedule text (match TransactionModal logic)
-  const getScheduleText = () => {
-    // Try to get from bookingId.schedule.scheduleId (YachtSchedule)
-    const schedule = invoiceData.bookingId?.schedule;
-    if (schedule && schedule.scheduleId) {
-      const s = schedule.scheduleId;
-      if (s.startDate && s.endDate) {
-        const start = new Date(s.startDate);
-        const end = new Date(s.endDate);
-        if (!isNaN(start) && !isNaN(end)) {
-          const msPerDay = 24 * 60 * 60 * 1000;
-          const days = Math.round((end - start) / msPerDay) + 1;
-          const nights = days - 1;
-          return `${days} ngày ${nights} đêm (từ ${start.toLocaleDateString(
-            "vi-VN"
-          )} đến ${end.toLocaleDateString("vi-VN")})`;
-        }
-      }
-      if (s.displayText) return s.displayText;
-    }
-    // Fallback to schedule.startDate/endDate (nếu không phải YachtSchedule)
-    if (schedule && schedule.startDate && schedule.endDate) {
-      const start = new Date(schedule.startDate);
-      const end = new Date(schedule.endDate);
-      if (!isNaN(start) && !isNaN(end)) {
-        const msPerDay = 24 * 60 * 60 * 1000;
-        const days = Math.round((end - start) / msPerDay) + 1;
-        const nights = days - 1;
-        return `${days} ngày ${nights} đêm (từ ${start.toLocaleDateString(
-          "vi-VN"
-        )} đến ${end.toLocaleDateString("vi-VN")})`;
-      }
-    }
-    // Fallback to displayText
-    if (schedule && schedule.displayText) return schedule.displayText;
-    // Fallback to yachtInfo.scheduleInfo if available
-    if (
-      invoiceData.yachtInfo?.scheduleInfo &&
-      invoiceData.yachtInfo.scheduleInfo !== "undefined - undefined"
-    ) {
-      return invoiceData.yachtInfo.scheduleInfo;
-    }
-    return "-";
-  };
 
   // Helper to get customer address
   const getCustomerAddress = () => {
     if (invoiceData.bookingId?.customer?.address) {
       return invoiceData.bookingId.customer.address;
     }
-    if (invoiceData.customerInfo?.address) {
-      return invoiceData.customerInfo.address;
+    if (invoiceData.customerId?.address) {
+      return invoiceData.customerId.address;
     }
-    return "-";
+    return "Phường Cầu Giấy - Hà Nội";
   };
+  invoiceData.items?.forEach((item, idx) => {
+    console.log(`ITEM ${idx}:`, item);
+    if (item.type === "room") {
+      invoiceData.bookingId?.consultationData?.requestedRooms?.forEach(
+        (r, i) => {}
+      );
+      const roomName =
+        invoiceData.bookingId?.consultationData?.requestedRooms?.find(
+          (r) => String(r.roomId && r.roomId._id) === String(item.itemId)
+        )?.name;
+    }
+    if (item.type === "service") {
+      invoiceData.bookingId?.consultationData?.requestServices?.forEach(
+        (s, i) => {}
+      );
+      const serviceName =
+        invoiceData.bookingId?.consultationData?.requestServices?.find(
+          (s) => String(s.serviceId && s.serviceId._id) === String(item.itemId)
+        )?.serviceName;
+    }
+  });
 
   return (
     <Dialog
@@ -548,7 +562,7 @@ const InvoiceModal = () => {
                       fontWeight={700}
                       color={theme.palette.text.primary}
                     >
-                      {invoiceData.customerInfo?.fullName || "-"}
+                      {invoiceData?.customerId?.fullName || "-"}
                     </Typography>
                   </Box>
                 </Stack>
@@ -587,7 +601,7 @@ const InvoiceModal = () => {
                           Số điện thoại:
                         </Typography>
                         <Typography color={theme.palette.text.primary}>
-                          {invoiceData.customerInfo.phoneNumber}
+                          {invoiceData?.customerId?.phoneNumber}
                         </Typography>
                       </Box>
                     </Stack>
@@ -609,7 +623,7 @@ const InvoiceModal = () => {
                           sx={{ wordBreak: "break-all" }}
                           color={theme.palette.text.primary}
                         >
-                          {invoiceData.customerInfo.email}
+                          {invoiceData.customerId?.email}
                         </Typography>
                       </Box>
                     </Stack>
@@ -620,196 +634,197 @@ const InvoiceModal = () => {
           </Grid>
         </Grid>
         {/* Thông tin dịch vụ */}
-        {invoiceData.yachtInfo && (
-          <Box
-            mb={3}
-            p={2}
-            sx={{
-              bgcolor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.primary.main}`,
-              borderRadius: theme.shape.borderRadius * 0.2,
-              boxShadow: theme.shadows[1],
-            }}
-          >
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              mb={1}
-              pb={1}
-              borderBottom={1}
-              borderColor={theme.palette.divider}
+        {invoiceData.yachtInfo ||
+          (invoiceData.yachtId && (
+            <Box
+              mb={3}
+              p={2}
+              sx={{
+                bgcolor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.primary.main}`,
+                borderRadius: theme.shape.borderRadius * 0.2,
+                boxShadow: theme.shadows[1],
+              }}
             >
-              <Ship className="w-6 h-5" color={theme.palette.primary.main} />
-              <Typography
-                fontWeight={700}
-                color={theme.palette.primary.main}
-                fontSize={16}
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                mb={1}
+                pb={1}
+                borderBottom={1}
+                borderColor={theme.palette.divider}
               >
-                Thông tin dịch vụ
-              </Typography>
-            </Stack>
-            <Grid container spacing={2}>
-              {invoiceData.yachtInfo.name && (
-                <Grid item xs={12} md={6}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Ship
-                      className="w-4 h-4"
-                      color={theme.palette.primary.main}
-                    />
-                    <Box>
-                      <Typography
-                        variant="caption"
+                <Ship className="w-6 h-5" color={theme.palette.primary.main} />
+                <Typography
+                  fontWeight={700}
+                  color={theme.palette.primary.main}
+                  fontSize={16}
+                >
+                  Thông tin dịch vụ
+                </Typography>
+              </Stack>
+              <Grid container spacing={2}>
+                {invoiceData.yachtId.name && (
+                  <Grid item xs={12} md={6}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Ship
+                        className="w-4 h-4"
                         color={theme.palette.primary.main}
-                      >
-                        Du thuyền
-                      </Typography>
-                      <Typography
-                        fontWeight={600}
-                        color={theme.palette.text.primary}
-                      >
-                        {invoiceData.yachtInfo.name}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
-              )}
-              {invoiceData.yachtInfo.locationId && (
-                <Grid item xs={12} md={4}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <MapPin
-                      className="w-4 h-4"
-                      color={theme.palette.primary.main}
-                    />
-                    <Box>
-                      <Typography
-                        variant="caption"
+                      />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.primary.main}
+                        >
+                          Du thuyền
+                        </Typography>
+                        <Typography
+                          fontWeight={600}
+                          color={theme.palette.text.primary}
+                        >
+                          {invoiceData.yachtId.name}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                )}
+                {invoiceData.bookingId.yacht.locationId.name && (
+                  <Grid item xs={12} md={4}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <MapPin
+                        className="w-4 h-4"
                         color={theme.palette.primary.main}
-                      >
-                        Địa điểm
-                      </Typography>
-                      <Typography color={theme.palette.text.primary}>
-                        {invoiceData.yachtInfo.locationId.name}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
-              )}
+                      />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.primary.main}
+                        >
+                          Địa điểm
+                        </Typography>
+                        <Typography color={theme.palette.text.primary}>
+                          {invoiceData.bookingId.yacht.locationId.name}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                )}
 
-              {invoiceData.yachtInfo.checkInDate && (
-                <Grid item xs={12} md={6}>
+                {invoiceData.bookingId.checkInDate && (
+                  <Grid item xs={12} md={6}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Calendar
+                        className="w-4 h-4"
+                        color={theme.palette.primary.main}
+                      />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.primary.main}
+                        >
+                          Ngày nhận phòng
+                        </Typography>
+                        <Typography color={theme.palette.text.primary}>
+                          {new Date(
+                            invoiceData.bookingId.checkInDate
+                          ).toLocaleDateString("vi-VN")}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                )}
+                {invoiceData.bookingId.checkOutDate && (
+                  <Grid item xs={12} md={4}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Calendar
+                        className="w-4 h-4"
+                        color={theme.palette.primary.main}
+                      />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.primary.main}
+                        >
+                          Ngày trả phòng
+                        </Typography>
+                        <Typography color={theme.palette.text.primary}>
+                          {new Date(
+                            invoiceData.bookingId.checkOutDate
+                          ).toLocaleDateString("vi-VN")}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                )}
+              </Grid>
+              {/* Số khách */}
+              {invoiceData.bookingId.guestCount && (
+                <Box mt={2}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Calendar
+                    <User
                       className="w-4 h-4"
                       color={theme.palette.primary.main}
                     />
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color={theme.palette.primary.main}
-                      >
-                        Ngày nhận phòng
-                      </Typography>
-                      <Typography color={theme.palette.text.primary}>
-                        {new Date(
-                          invoiceData.yachtInfo.checkInDate
-                        ).toLocaleDateString("vi-VN")}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
-              )}
-              {invoiceData.yachtInfo.checkOutDate && (
-                <Grid item xs={12} md={4}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Calendar
-                      className="w-4 h-4"
+                    <Typography
+                      variant="caption"
                       color={theme.palette.primary.main}
-                    />
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color={theme.palette.primary.main}
-                      >
-                        Ngày trả phòng
-                      </Typography>
-                      <Typography color={theme.palette.text.primary}>
-                        {new Date(
-                          invoiceData.yachtInfo.checkOutDate
-                        ).toLocaleDateString("vi-VN")}
-                      </Typography>
-                    </Box>
+                      fontWeight={600}
+                    >
+                      Số khách:
+                    </Typography>
+                    <Typography
+                      fontWeight={700}
+                      color={theme.palette.text.primary}
+                    >
+                      {invoiceData.bookingId.adults || 0} người lớn
+                      {typeof invoiceData.bookingId.childrenUnder10 === "number"
+                        ? `, ${invoiceData.bookingId.childrenUnder10} trẻ em dưới 10 tuổi`
+                        : ""}
+                      {typeof invoiceData.bookingId.childrenAbove10 === "number"
+                        ? `, ${invoiceData.bookingId.childrenAbove10} trẻ em từ 10 tuổi`
+                        : ""}
+                    </Typography>
                   </Stack>
-                </Grid>
+                  <Typography
+                    variant="caption"
+                    color={theme.palette.text.secondary}
+                    ml={4}
+                  >
+                    Tổng khách quy đổi:{" "}
+                    {invoiceData.bookingId.adults +
+                      Math.floor(
+                        (invoiceData.bookingId.childrenAbove10 || 0) / 2
+                      )}{" "}
+                    (2 trẻ em từ 10 tuổi = 1 người lớn, trẻ em dưới 10 tuổi
+                    không tính)
+                  </Typography>
+                </Box>
               )}
-            </Grid>
-            {/* Số khách */}
-            {invoiceData.guestInfo && (
-              <Box mt={2}>
+              <Grid item xs={12} md={6}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <User
+                  <Calendar
                     className="w-4 h-4"
                     color={theme.palette.primary.main}
                   />
-                  <Typography
-                    variant="caption"
-                    color={theme.palette.primary.main}
-                    fontWeight={600}
-                  >
-                    Số khách:
-                  </Typography>
-                  <Typography
-                    fontWeight={700}
-                    color={theme.palette.text.primary}
-                  >
-                    {invoiceData.guestInfo.adults || 0} người lớn
-                    {typeof invoiceData.guestInfo.childrenUnder10 === "number"
-                      ? `, ${invoiceData.guestInfo.childrenUnder10} trẻ em dưới 10 tuổi`
-                      : ""}
-                    {typeof invoiceData.guestInfo.childrenAbove10 === "number"
-                      ? `, ${invoiceData.guestInfo.childrenAbove10} trẻ em từ 10 tuổi`
-                      : ""}
-                  </Typography>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color={theme.palette.primary.main}
+                    >
+                      Lịch trình
+                    </Typography>
+                    <Typography
+                      fontWeight={600}
+                      color={theme.palette.text.primary}
+                    >
+                      {getScheduleText(invoiceData.bookingId?.schedule)}
+                    </Typography>
+                  </Box>
                 </Stack>
-                <Typography
-                  variant="caption"
-                  color={theme.palette.text.secondary}
-                  ml={4}
-                >
-                  Tổng khách quy đổi:{" "}
-                  {invoiceData.guestInfo.adults +
-                    Math.floor(
-                      (invoiceData.guestInfo.childrenAbove10 || 0) / 2
-                    )}{" "}
-                  (2 trẻ em từ 10 tuổi = 1 người lớn, trẻ em dưới 10 tuổi không
-                  tính)
-                </Typography>
-              </Box>
-            )}
-            <Grid item xs={12} md={6}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Calendar
-                  className="w-4 h-4"
-                  color={theme.palette.primary.main}
-                />
-                <Box>
-                  <Typography
-                    variant="caption"
-                    color={theme.palette.primary.main}
-                  >
-                    Lịch trình
-                  </Typography>
-                  <Typography
-                    fontWeight={600}
-                    color={theme.palette.text.primary}
-                  >
-                    {getScheduleText()}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Grid>
-          </Box>
-        )}
+              </Grid>
+            </Box>
+          ))}
         {/* Bảng chi tiết dịch vụ */}
         <Box mb={3}>
           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
@@ -918,86 +933,111 @@ const InvoiceModal = () => {
                 </tr>
               </thead>
               <tbody>
-                {invoiceData.items?.map((item, index) => (
-                  <tr
-                    key={index}
-                    style={{
-                      borderBottom: `1px solid ${theme.palette.divider}`,
-                      background:
-                        index % 2 === 0
-                          ? theme.palette.background.paper
-                          : theme.palette.background.default,
-                    }}
-                  >
-                    <td
+                {itemsWithRealPrice.map((item, index) => {
+                  const roomObj =
+                    invoiceData.bookingId?.consultationData?.requestedRooms?.find(
+                      (r) =>
+                        String(r.roomId && r.roomId._id) === String(item.itemId)
+                    );
+                  const serviceObj =
+                    invoiceData.bookingId?.consultationData?.requestServices?.find(
+                      (s) =>
+                        String(s.serviceId && s.serviceId._id) ===
+                        String(item.itemId)
+                    );
+                  const unitPrice = item.unitPrice;
+                  const totalPrice = item.totalPrice;
+                  return (
+                    <tr
+                      key={index}
                       style={{
-                        padding: 12,
-                        textAlign: "center",
-                        color: theme.palette.text.secondary,
-                        fontWeight: 500,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        background:
+                          index % 2 === 0
+                            ? theme.palette.background.paper
+                            : theme.palette.background.default,
                       }}
                     >
-                      {index + 1}
-                    </td>
-                    <td style={{ padding: 12 }}>
-                      <Typography
-                        fontWeight={600}
-                        color={theme.palette.text.primary}
+                      <td
+                        style={{
+                          padding: 12,
+                          textAlign: "center",
+                          color: theme.palette.text.secondary,
+                          fontWeight: 500,
+                        }}
                       >
-                        {item.name}
-                      </Typography>
-                      {item.description && (
+                        {index + 1}
+                      </td>
+                      <td style={{ padding: 12 }}>
                         <Typography
-                          variant="caption"
-                          color={theme.palette.text.secondary}
+                          fontWeight={600}
+                          color={theme.palette.text.primary}
                         >
-                          {item.description}
+                          {item.type === "room"
+                            ? roomObj?.roomId?.name ||
+                              item.displayName ||
+                              item.name
+                            : item.type === "service"
+                            ? serviceObj?.serviceId?.serviceName ||
+                              item.displayName ||
+                              item.name
+                            : item.name}
                         </Typography>
-                      )}
-                    </td>
-                    <td
-                      style={{
-                        padding: 12,
-                        textAlign: "center",
-                        color: theme.palette.text.secondary,
-                      }}
-                    >
-                      {item.name && item.name.toLowerCase().includes("phòng")
-                        ? "Phòng"
-                        : "Người"}
-                    </td>
-                    <td
-                      style={{
-                        padding: 12,
-                        textAlign: "center",
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                      }}
-                    >
-                      {item.quantity}
-                    </td>
-                    <td
-                      style={{
-                        padding: 12,
-                        textAlign: "right",
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                      }}
-                    >
-                      {formatPrice(item.unitPrice)}
-                    </td>
-                    <td
-                      style={{
-                        padding: 12,
-                        textAlign: "right",
-                        fontWeight: 700,
-                        color: theme.palette.primary.main,
-                      }}
-                    >
-                      {formatPrice(item.totalPrice)}
-                    </td>
-                  </tr>
-                ))}
+                        {item.description && (
+                          <Typography
+                            variant="caption"
+                            color={theme.palette.text.secondary}
+                          >
+                            {item.description}
+                          </Typography>
+                        )}
+                      </td>
+                      <td
+                        style={{
+                          padding: 12,
+                          textAlign: "center",
+                          color: theme.palette.text.secondary,
+                        }}
+                      >
+                        {item.type === "room"
+                          ? "Phòng"
+                          : item.type === "service"
+                          ? "Người"
+                          : ""}
+                      </td>
+                      <td
+                        style={{
+                          padding: 12,
+                          textAlign: "center",
+                          fontWeight: 600,
+                          color: theme.palette.text.primary,
+                        }}
+                      >
+                        {item.quantity}
+                      </td>
+                      <td
+                        style={{
+                          padding: 12,
+                          textAlign: "right",
+                          fontWeight: 600,
+                          color: theme.palette.text.primary,
+                        }}
+                      >
+                        {formatPrice(unitPrice)}
+                      </td>
+                      <td
+                        style={{
+                          padding: 12,
+                          textAlign: "right",
+                          fontWeight: 700,
+                          color: theme.palette.primary.main,
+                        }}
+                      >
+                        {formatPrice(totalPrice)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </Box>
@@ -1297,9 +1337,9 @@ const InvoiceModal = () => {
                     Thời gian thanh toán
                   </Typography>
                   <Typography fontSize={14} color={theme.palette.text.primary}>
-                    {invoiceData.transactionId?.completedAt
+                    {invoiceData.transactionId?.transactionDate
                       ? new Date(
-                          invoiceData.transactionId.completedAt
+                          invoiceData.transactionId.transactionDate
                         ).toLocaleString("vi-VN")
                       : "N/A"}
                   </Typography>
@@ -1354,7 +1394,7 @@ const InvoiceModal = () => {
               mb={1}
             ></Box>
             <Typography fontWeight={600} color={theme.palette.text.primary}>
-              {invoiceData.customerInfo.fullName}
+              {invoiceData.customerId.fullName}
             </Typography>
           </Grid>
           <Grid item xs={12} md={6} textAlign="center">
@@ -1413,17 +1453,17 @@ const InvoiceModal = () => {
             >
               <CheckCircle
                 className="w-6 h-6"
-                color={theme.palette.purple?.contrastText || "#fff"}
+                color={theme.palette.primary.main || "#fff"}
               />
               <Typography
                 fontWeight={700}
-                color={theme.palette.purple?.contrastText || "#fff"}
+                color={theme.palette.primary.main || "#fff"}
                 fontSize={20}
               >
                 Cảm ơn quý khách!
               </Typography>
             </Stack>
-            <Typography color={theme.palette.purple?.contrastText || "#fff"}>
+            <Typography color={theme.palette.primary.main || "#fff"}>
               Chúng tôi hy vọng được phục vụ quý khách trong những chuyến đi
               tiếp theo.
             </Typography>

@@ -82,19 +82,24 @@ const BookingRoomModal = ({
     editingBookingId,
     guestCounter,
   } = useSelector((state) => state.booking);
+  const authCustomer = useSelector((state) => state.auth.customer);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  const rooms = useSelector((state) => state.booking.rooms);
+  const services = useSelector((state) => state.services.data);
 
   const adults = Number(guestCounter?.adults ?? 0);
   const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
   const totalGuests = adults + Math.floor(childrenAbove10 / 2);
-
   const totalRoomPrice = selectedRooms.reduce(
     (sum, room) => sum + room.price * room.quantity,
     0
   );
   const totalServicePrice = selectedYachtServices
-    ? selectedYachtServices.reduce((sum, sv) => sum + sv.price * totalGuests, 0)
+    ? selectedYachtServices.reduce(
+        (sum, sv) => sum + sv.price * (sv.quantity || 1),
+        0
+      )
     : 0;
 
   // Kiểm tra trạng thái booking
@@ -154,8 +159,6 @@ const BookingRoomModal = ({
   };
 
   const handleBookingButtonClick = () => {
-    const status = getBookingStatus();
-
     if (isBookingActive()) {
       navigate("/booking-history");
       dispatch(closeBookingModal());
@@ -166,7 +169,6 @@ const BookingRoomModal = ({
 
   useEffect(() => {
     if (show && yachtData?._id) {
-      // Chuyển đổi checkInDate từ format dd/mm/yyyy sang ISO string
       let checkInDateParam = null;
       if (bookingForm.checkInDate && bookingForm.checkInDate.includes("/")) {
         try {
@@ -181,6 +183,55 @@ const BookingRoomModal = ({
       dispatch(fetchConsultationRequest(yachtData._id, checkInDateParam));
     }
   }, [show, yachtData, bookingForm.checkInDate, dispatch]);
+
+  useEffect(() => {
+    if (show && authCustomer) {
+      if (!bookingForm.fullName)
+        dispatch(updateBookingForm("fullName", authCustomer.fullName || ""));
+      if (!bookingForm.phoneNumber)
+        dispatch(
+          updateBookingForm("phoneNumber", authCustomer.phoneNumber || "")
+        );
+      if (!bookingForm.email)
+        dispatch(updateBookingForm("email", authCustomer.email || ""));
+      if (!bookingForm.address)
+        dispatch(updateBookingForm("address", authCustomer.address || ""));
+    }
+  }, [show, authCustomer]);
+
+  useEffect(() => {
+    if (show) {
+      const minAdults = selectedRooms.reduce(
+        (sum, room) => sum + (room.quantity || 0),
+        0
+      );
+      if (guestCounter.adults < minAdults) {
+        window.Swal &&
+          Swal.fire({
+            icon: "warning",
+            title: "Số người lớn không được nhỏ hơn tổng số phòng!",
+            text: `Bạn đã chọn ${minAdults} phòng, cần ít nhất ${minAdults} người lớn.`,
+          });
+        dispatch(
+          setGuestCounter({
+            ...guestCounter,
+            adults: minAdults,
+          })
+        );
+        // Cập nhật luôn text hiển thị
+        let guestCountText = `${minAdults} người lớn`;
+        if (guestCounter.childrenAbove10 > 0)
+          guestCountText += `, ${guestCounter.childrenAbove10} trẻ em từ 10 tuổi`;
+        if (guestCounter.childrenUnder10 > 0)
+          guestCountText += `, ${guestCounter.childrenUnder10} trẻ em dưới 10 tuổi (không tính vào tổng khách)`;
+        dispatch({
+          type: "UPDATE_BOOKING_FORM",
+          payload: { field: "guestCount", value: guestCountText },
+        });
+      }
+      // Không ép adults về minAdults nếu họ đang chọn nhiều hơn
+    }
+  }, [show, selectedRooms]);
 
   const handleInputChange = (field, value) => {
     dispatch(updateBookingForm(field, value));
@@ -257,8 +308,7 @@ const BookingRoomModal = ({
       serviceId: sv.serviceId || sv._id || sv.id,
       serviceName: sv.serviceName || sv.name,
       servicePrice: sv.servicePrice !== undefined ? sv.servicePrice : sv.price,
-      serviceQuantity:
-        sv.serviceQuantity !== undefined ? sv.serviceQuantity : sv.quantity,
+      quantity: sv.quantity !== undefined ? sv.quantity : 1,
     }));
 
     return {
@@ -357,47 +407,54 @@ const BookingRoomModal = ({
         checkInDateValue = d.toISOString().slice(0, 10);
       }
       dispatch(updateBookingForm("checkInDate", checkInDateValue));
-      dispatch(
-        updateRooms(
-          (
-            consultation.data.selectedRooms ||
-            consultation.data.consultationData?.requestedRooms ||
-            []
-          ).map((room) => ({
-            id: room.roomId || room.id,
-            name: room.roomName || room.name,
-            price: room.roomPrice !== undefined ? room.roomPrice : room.price,
-            quantity:
-              room.roomQuantity !== undefined
-                ? room.roomQuantity
-                : room.quantity,
-            description: room.roomDescription || room.description,
-            area: room.roomArea || room.area,
-            avatar: room.roomAvatar || room.avatar,
-            max_people: room.roomMaxPeople || room.max_people,
-            images: room.roomImage ? [room.roomImage] : room.images || [],
-          }))
-        )
-      );
-      dispatch(
-        setSelectedYachtServices(
-          (
-            consultation.data.selectedServices ||
-            consultation.data.services ||
-            consultation.data.consultationData?.requestServices ||
-            []
-          ).map((sv) => ({
-            serviceId: sv.serviceId || sv._id || sv.id,
-            serviceName: sv.serviceName || sv.name,
-            price: sv.servicePrice !== undefined ? sv.servicePrice : sv.price,
-            quantity:
-              sv.serviceQuantity !== undefined
-                ? sv.serviceQuantity
-                : sv.quantity,
-            _id: sv._id || sv.serviceId || sv.id,
-          }))
-        )
-      );
+      // Map lại rooms từ ref sang object đầy đủ
+      const selectedRoomsFromConsult = (
+        consultation.data.selectedRooms ||
+        consultation.data.consultationData?.requestedRooms ||
+        []
+      ).map((room) => {
+        const detail = rooms.find(
+          (r) =>
+            (r._id?.toString?.() || r._id || r.id) ===
+            (room.roomId?.toString?.() || room.roomId || room.id)
+        );
+        return {
+          id: room.roomId || room.id,
+          name: detail?.name || room.roomName || room.name,
+          price: detail?.price ?? room.roomPrice ?? room.price,
+          quantity: room.roomQuantity ?? room.quantity,
+          description:
+            detail?.description || room.roomDescription || room.description,
+          area: detail?.area || room.roomArea,
+          avatar: detail?.avatar || room.roomAvatar,
+          max_people: detail?.max_people || room.roomMaxPeople,
+          images:
+            detail?.images ||
+            (room.roomImage ? [room.roomImage] : room.images || []),
+        };
+      });
+      dispatch(updateRooms(selectedRoomsFromConsult));
+      // Map lại services từ ref sang object đầy đủ
+      const selectedServicesFromConsult = (
+        consultation.data.selectedServices ||
+        consultation.data.services ||
+        consultation.data.consultationData?.requestServices ||
+        []
+      ).map((sv) => {
+        const detail = services.find(
+          (s) =>
+            (s._id?.toString?.() || s._id || s.id) ===
+            (sv.serviceId?.toString?.() || sv.serviceId || sv._id || sv.id)
+        );
+        return {
+          serviceId: sv.serviceId || sv._id || sv.id,
+          serviceName: detail?.serviceName || sv.serviceName || sv.serviceName,
+          price: detail?.price ?? sv.servicePrice ?? sv.price,
+          quantity: sv.serviceQuantity ?? sv.quantity,
+          _id: sv._id || sv.serviceId || sv.id,
+        };
+      });
+      dispatch(setSelectedYachtServices(selectedServicesFromConsult));
       setShowConsultationModal(false);
     } else {
       Swal.fire({
@@ -754,7 +811,10 @@ const BookingRoomModal = ({
                     }
                   `}</style>
                 </div>
-                <GuestCounter maxPeople={maxPeople} />
+                <GuestCounter
+                  maxPeople={maxPeople}
+                  minAdults={selectedRooms.length}
+                />
               </Box>
               {/* Hiển thị chi tiết phòng và dịch vụ */}
               <Box
@@ -884,9 +944,12 @@ const BookingRoomModal = ({
                                   mt: 0.5,
                                 }}
                               >
-                                {sv.price?.toLocaleString()}đ/người ×{" "}
-                                {totalGuests} khách ={" "}
-                                {(sv.price * totalGuests)?.toLocaleString()}đ
+                                {sv.price?.toLocaleString()}đ x{" "}
+                                {sv.quantity || 1} khách ={" "}
+                                {(
+                                  sv.price * (sv.quantity || 1)
+                                )?.toLocaleString()}
+                                đ
                               </Typography>
                               {sv.description && (
                                 <Typography
@@ -1221,6 +1284,8 @@ const BookingRoomModal = ({
         consultation={consultation?.data}
         onEdit={handleEditConsultation}
         onCancel={handleCancelConsultation}
+        rooms={rooms}
+        services={services}
       />
       <RoomServicesModal
         show={showServiceModal}
@@ -1228,6 +1293,8 @@ const BookingRoomModal = ({
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
+        guestCount={adults + Math.floor(childrenAbove10 / 2)}
+        key={adults + Math.floor(childrenAbove10 / 2)}
       />
     </>
   );

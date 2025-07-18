@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { getTheme } from "./theme/theme";
 import { useDispatch, useSelector } from "react-redux";
 import { initializeAuth } from "./redux/asyncActions";
-import { openTransactionModal } from "./redux/actions";
+import { openTransactionModal, closeTransactionModal } from "./redux/actions";
 
 // Pages & Components
 import HomePage from "./pages/HomePage";
@@ -79,12 +79,13 @@ function AppWrapper() {
     dispatch(initializeAuth());
   }, [dispatch]);
 
+  // Sửa: chỉ mở lại modal khi load app, không phụ thuộc showTransactionModal
   useEffect(() => {
     const bookingId = localStorage.getItem("bookingIdForTransaction");
     if (bookingId) {
       dispatch(openTransactionModal(bookingId));
     }
-  }, []);
+  }, [dispatch]);
 
   useBodyScrollLock();
 
@@ -166,7 +167,7 @@ function AppWrapper() {
 
       {/* Global Modals */}
       <InvoiceModal />
-      <TransactionModal />
+      {showTransactionModal && <TransactionModal />}
       <ConfirmationModal />
     </ThemeProvider>
   );
