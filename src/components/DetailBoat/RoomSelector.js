@@ -110,8 +110,6 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     selectedMaxPeople === "all"
       ? rooms
       : rooms.filter((room) => room.max_people === parseInt(selectedMaxPeople));
-
-  // Get selected rooms for BookingRoomModal
   const getSelectedRooms = () => {
     return rooms.filter((room) => room.quantity > 0);
   };
@@ -128,8 +126,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
   // Tính tổng tiền dịch vụ theo du thuyền
   const totalServicePrice = selectedYachtServices.reduce(
-    (sum, sv) =>
-      sum + sv.price * rooms.reduce((acc, room) => acc + room.quantity, 0),
+    (sum, sv) => sum + sv.price * (sv.quantity || 1),
     0
   );
   const totalPrice =
@@ -459,7 +456,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               }}
                             >
                               {" "}
-                              / khách
+                              / phòng
                             </Typography>
                           </Box>
                         </Box>

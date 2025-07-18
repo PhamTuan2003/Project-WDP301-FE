@@ -109,12 +109,13 @@ const RoomServicesModal = ({
         sx={{
           bgcolor: "background.paper",
           borderRadius: (theme) => theme.shape.borderRadius / 4,
-          maxWidth: "45rem",
+          maxWidth: "55rem",
           width: "100%",
           mx: 2,
           maxHeight: "70vh",
           p: 3,
-          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
           boxShadow: (theme) => theme.shadows[1],
           border: (theme) => `1px solid ${theme.palette.divider}`,
         }}
@@ -162,7 +163,7 @@ const RoomServicesModal = ({
             Dịch vụ thêm:
           </Typography>
         </Box>
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, flex: 1, overflowY: "auto" }}>
           <Box
             sx={{
               display: "flex",
@@ -200,7 +201,6 @@ const RoomServicesModal = ({
                           <Box
                             sx={{
                               display: "flex",
-                              flexDirection: "column",
                               justifyContent: "space-between",
                               width: "100%",
                               fontFamily: "Archivo, sans-serif",
@@ -209,38 +209,61 @@ const RoomServicesModal = ({
                               borderRadius: 1,
                               bgcolor: (theme) =>
                                 theme.palette.background.paper,
+                              minHeight: 64,
                             }}
                           >
-                            <span>
-                              {serviceObj.serviceName ||
-                                serviceObj.name ||
-                                "Dịch vụ"}
-                            </span>
-                            <span style={{ color: "#14b8a6", fontWeight: 500 }}>
-                              {(
-                                (serviceObj.serviceId &&
-                                  serviceObj.serviceId.price) ||
-                                serviceObj.price ||
-                                0
-                              ).toLocaleString()}{" "}
-                              đ
-                            </span>
-                            <TextField
-                              type="number"
-                              value={quantities[id] || 1}
-                              onChange={(e) =>
-                                setQuantities((q) => ({
-                                  ...q,
-                                  [id]: Math.max(
-                                    1,
-                                    Math.min(Number(e.target.value), guestCount)
-                                  ),
-                                }))
-                              }
-                              inputProps={{ min: 1, max: guestCount }}
-                              size="small"
-                              sx={{ width: 60, ml: 2 }}
-                            />
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                minWidth: 0,
+                                flex: 1,
+                                pr: 2,
+                              }}
+                            >
+                              <span style={{ wordBreak: "break-word" }}>
+                                {serviceObj.serviceName ||
+                                  serviceObj.name ||
+                                  "Dịch vụ"}
+                              </span>
+                              <span
+                                style={{ color: "#14b8a6", fontWeight: 500 }}
+                              >
+                                {(
+                                  (serviceObj.serviceId &&
+                                    serviceObj.serviceId.price) ||
+                                  serviceObj.price ||
+                                  0
+                                ).toLocaleString()}{" "}
+                                đ/khách
+                              </span>
+                            </Box>
+                            {selected.includes(id) && (
+                              <TextField
+                                type="number"
+                                value={quantities[id] || 1}
+                                onChange={(e) =>
+                                  setQuantities((q) => ({
+                                    ...q,
+                                    [id]: Math.max(
+                                      1,
+                                      Math.min(
+                                        Number(e.target.value),
+                                        guestCount
+                                      )
+                                    ),
+                                  }))
+                                }
+                                inputProps={{ min: 1, max: guestCount }}
+                                size="small"
+                                sx={{
+                                  width: 60,
+                                  flexShrink: 0,
+                                  ml: "auto",
+                                  textAlign: "right",
+                                }}
+                              />
+                            )}
                           </Box>
                         }
                       />
@@ -255,6 +278,10 @@ const RoomServicesModal = ({
             borderTop: (theme) => `1px solid ${theme.palette.divider}`,
             pt: 2,
             mt: 2,
+            position: "sticky",
+            bottom: 0,
+            bgcolor: "background.paper",
+            zIndex: 1,
           }}
         >
           <Box
@@ -268,11 +295,10 @@ const RoomServicesModal = ({
               fontFamily={"Archivo, sans-serif"}
               sx={{ fontWeight: "bold", color: "primary.main", mb: 1 }}
             >
-              Tổng dịch vụ: {totalServicePrice.toLocaleString()} đ
+              Tiền dịch vụ: {totalServicePrice.toLocaleString()} đ
             </Typography>
             <Button
               onClick={() => {
-                // Ép lại quantity về guestCount nếu vượt quá
                 const selectedObjs = services
                   .map((serviceObj, idx) => serviceObj.serviceId || serviceObj)
                   .filter((service, idx) =>

@@ -34,8 +34,8 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import axios from "axios";
 import Pagination from "@mui/material/Pagination";
 import { openTransactionModal } from "../redux/actions";
-import TransactionModal from "../components/DetailBoat/Booking/TransactionModal";
-import InvoiceModal from "../components/DetailBoat/Booking/InvoiceModal";
+// import TransactionModal from "../components/DetailBoat/Booking/TransactionModal";
+// import InvoiceModal from "../components/DetailBoat/Booking/InvoiceModal";
 import { openInvoiceModal } from "../redux/actions/uiActions";
 import { fetchInvoiceByBookingId } from "../redux/asyncActions/invoiceAsyncActions";
 import {
@@ -214,7 +214,6 @@ export default function BookingHistory() {
     return () => clearInterval(intervalRef.current);
   }, [bookings]);
 
-  console.log(selectedBooking);
   useEffect(() => {
     setPage(1);
   }, [filterStatus]);
@@ -794,7 +793,10 @@ export default function BookingHistory() {
                                 sx={{ alignSelf: "flex-end" }}
                               >
                                 <b>Tổng tiền:</b>{" "}
-                                {booking.amount?.toLocaleString("vi-VN")}₫
+                                {booking.paymentBreakdown.totalAmount.toLocaleString(
+                                  "vi-VN"
+                                )}
+                                ₫
                               </Typography>
                               <Box
                                 display="flex"
@@ -876,8 +878,7 @@ export default function BookingHistory() {
                                 >
                                   <ListCollapse size={20} />
                                 </Button>
-                                {(booking.status === "completed" ||
-                                  booking.status === "fully_paid") && (
+                                {booking.status === "completed" && (
                                   <Button
                                     variant="contained"
                                     color="success"
@@ -1317,8 +1318,6 @@ export default function BookingHistory() {
           </DialogActions>
         </Dialog>
       </Container>
-      <TransactionModal />
-      <InvoiceModal />
     </Box>
   );
 }

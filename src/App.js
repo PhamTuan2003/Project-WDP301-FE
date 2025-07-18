@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { getTheme } from "./theme/theme";
 import { useDispatch, useSelector } from "react-redux";
 import { initializeAuth } from "./redux/asyncActions";
-import { openTransactionModal } from "./redux/actions";
+import { openTransactionModal, closeTransactionModal } from "./redux/actions";
 
 // Pages & Components
 import HomePage from "./pages/HomePage";
@@ -59,7 +59,6 @@ function useBodyScrollLock() {
   const showConfirmationModal = useSelector(
     (state) => state.ui.modals.showConfirmationModal
   );
-  // Nếu có thêm modal khác, thêm vào đây
   useEffect(() => {
     if (showTransactionModal || showConfirmationModal) {
       document.body.style.overflow = "hidden";
@@ -93,10 +92,16 @@ function AppWrapper() {
 
   useEffect(() => {
     const bookingId = localStorage.getItem("bookingIdForTransaction");
-    if (bookingId) {
+    console.log(
+      "App.js bookingIdForTransaction:",
+      bookingId,
+      "showTransactionModal:",
+      showTransactionModal
+    );
+    if (bookingId && !showTransactionModal) {
       dispatch(openTransactionModal(bookingId));
     }
-  }, []);
+  }, [showTransactionModal, dispatch]);
 
   useBodyScrollLock();
 
@@ -177,7 +182,7 @@ function AppWrapper() {
 
       {/* Global Modals */}
       <InvoiceModal />
-      <TransactionModal />
+      {showTransactionModal && <TransactionModal />}
       <ConfirmationModal />
     </ThemeProvider>
   );

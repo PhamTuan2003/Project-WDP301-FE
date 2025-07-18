@@ -159,8 +159,6 @@ const BookingRoomModal = ({
   };
 
   const handleBookingButtonClick = () => {
-    const status = getBookingStatus();
-
     if (isBookingActive()) {
       navigate("/booking-history");
       dispatch(closeBookingModal());
@@ -171,7 +169,6 @@ const BookingRoomModal = ({
 
   useEffect(() => {
     if (show && yachtData?._id) {
-      // Chuyển đổi checkInDate từ format dd/mm/yyyy sang ISO string
       let checkInDateParam = null;
       if (bookingForm.checkInDate && bookingForm.checkInDate.includes("/")) {
         try {
@@ -1296,7 +1293,8 @@ const BookingRoomModal = ({
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
-        guestCount={selectedRooms.reduce((sum, room) => sum + room.quantity, 0)}
+        guestCount={adults + Math.floor(childrenAbove10 / 2)}
+        key={adults + Math.floor(childrenAbove10 / 2)}
       />
     </>
   );
