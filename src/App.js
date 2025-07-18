@@ -53,12 +53,8 @@ import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal
 
 // Custom hook để lock scroll khi có modal mở
 function useBodyScrollLock() {
-  const showTransactionModal = useSelector(
-    (state) => state.ui.modals.showTransactionModal
-  );
-  const showConfirmationModal = useSelector(
-    (state) => state.ui.modals.showConfirmationModal
-  );
+  const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
+  const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
   // Nếu có thêm modal khác, thêm vào đây
   useEffect(() => {
     if (showTransactionModal || showConfirmationModal) {
@@ -73,19 +69,11 @@ function useBodyScrollLock() {
 }
 
 function AppWrapper() {
-  const [mode, setMode] = useState(
-    localStorage.getItem("themeMode") || "light"
-  );
+  const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
   const dispatch = useDispatch();
-  const showTransactionModal = useSelector(
-    (state) => state.ui.modals.showTransactionModal
-  );
-  const bookingIdFortransaction = useSelector(
-    (state) => state.ui.modals.bookingIdFortransaction
-  );
-  const showConfirmationModal = useSelector(
-    (state) => state.ui.modals.showConfirmationModal
-  );
+  const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
+  const bookingIdFortransaction = useSelector((state) => state.ui.modals.bookingIdFortransaction);
+  const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
 
   useEffect(() => {
     dispatch(initializeAuth());
@@ -121,10 +109,7 @@ function AppWrapper() {
           <Route path="/register" element={<Register />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/ve-chung-toi" element={<AboutUs />} />
-          <Route
-            path="/dieu-khoan-va-dieu-kien"
-            element={<TermsAndConditions />}
-          />
+          <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
           <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
           <Route path="/huong-dan-su-dung" element={<UserGuide />} />
           <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
@@ -142,7 +127,7 @@ function AppWrapper() {
         <Route
           path="/manage-company"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["COMPANY"]}>
               <ManageCompany />
             </ProtectedRoute>
           }
@@ -156,7 +141,11 @@ function AppWrapper() {
         {/* Admin Route */}
         <Route
           path="/admin"
-          element={<Admin toggleTheme={toggleTheme} mode={mode} />}
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <Admin toggleTheme={toggleTheme} mode={mode} />
+            </ProtectedRoute>
+          }
         />
       </Routes>
 

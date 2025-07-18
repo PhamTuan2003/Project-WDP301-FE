@@ -2,6 +2,7 @@ const authInitialState = {
   isAuthenticated: false,
   customer: null,
   customerId: null,
+  authChecked: false,
 };
 
 const authReducer = (state = authInitialState, action) => {
@@ -12,11 +13,8 @@ const authReducer = (state = authInitialState, action) => {
         ...state,
         isAuthenticated: true,
         customer: action.payload,
-        customerId:
-          action.payload.customerId ||
-          action.payload.id ||
-          action.payload._id ||
-          null,
+        customerId: action.payload.customerId || action.payload.id || action.payload._id || null,
+        authChecked: true,
       };
     case "SET_CUSTOMER_ID":
       return {
@@ -33,8 +31,8 @@ const authReducer = (state = authInitialState, action) => {
             ...state,
             isAuthenticated: true,
             customer: parsedUser,
-            customerId:
-              parsedUser.customerId || parsedUser.id || parsedUser._id || null,
+            customerId: parsedUser.customerId || parsedUser.id || parsedUser._id || null,
+            authChecked: true,
           };
         } catch (error) {
           return state;
@@ -49,6 +47,7 @@ const authReducer = (state = authInitialState, action) => {
         isAuthenticated: false,
         customer: null,
         customerId: null,
+        authChecked: true,
       };
     default:
       return state;
