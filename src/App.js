@@ -31,7 +31,7 @@ import ContactSection from "./layout/componentsFooter/ContactSection";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 import MainLayout from "./layout/MainLayout";
-import ProtectedRoute from "./components/routers/ProtectedRoute";
+//import ProtectedRoute from "./components/routers/ProtectedRoute";
 
 // Company
 import Dashboard from "./components/company/Dashboard";
@@ -55,7 +55,6 @@ import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal
 function useBodyScrollLock() {
   const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
   const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
-  // Nếu có thêm modal khác, thêm vào đây
   useEffect(() => {
     if (showTransactionModal || showConfirmationModal) {
       document.body.style.overflow = "hidden";
@@ -128,9 +127,7 @@ function AppWrapper() {
         <Route
           path="/manage-company"
           element={
-            <ProtectedRoute allowedRoles={["COMPANY"]}>
-              <ManageCompany />
-            </ProtectedRoute>
+            <ManageCompany />
           }
         >
           <Route index element={<Dashboard />} />
@@ -140,14 +137,7 @@ function AppWrapper() {
         </Route>
 
         {/* Admin Route */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["ADMIN"]}>
-              <Admin toggleTheme={toggleTheme} mode={mode} />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin" element={<Admin toggleTheme={toggleTheme} mode={mode} />} />
       </Routes>
 
       {/* {!hideHeaderFooter && <Footer />} */}

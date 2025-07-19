@@ -23,6 +23,8 @@ const Sidebar = (props) => {
 
   const handleLogout = () => {
     dispatch(doLogout());
+    localStorage.removeItem("token");
+    localStorage.removeItem("customer");
   };
   return (
     <div>

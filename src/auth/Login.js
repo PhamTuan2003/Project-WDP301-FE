@@ -57,7 +57,6 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setSuccess("");
-
     try {
       const response = await axios.post("http://localhost:9999/api/v1/customers/login", formData);
       const user = response.data.customer;
@@ -67,28 +66,17 @@ export default function Login() {
 
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("customer", JSON.stringify(user));
-
       setShowTransition(true);
-
       setTimeout(() => {
-        const role = user.role;
-
-        if (role === "ADMIN") {
-          console.log("➡️ Redirecting to /admin");
-          navigate("/admin");
-        } else if (role === "COMPANY") {
-          console.log("➡️ Redirecting to /manage-company");
+        if (user.role === "COMPANY") {
           navigate("/manage-company");
-        } else {
-          console.log("➡️ Redirecting to /view-profile (CUSTOMER or fallback)");
+        } else if (user.role === "CUSTOMER") {
           navigate("/");
         }
-
-        window.location.reload(); // Có thể bỏ nếu ông dùng Redux rồi
+        window.location.reload();
       }, 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.");
-      console.error("❌ Lỗi khi đăng nhập:", err);
     }
   };
 
