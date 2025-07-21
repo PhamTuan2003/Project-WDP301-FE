@@ -170,11 +170,13 @@ const ViewYacht = () => {
                                         <img className="mr-4" src={yacht.image} alt="Generic placeholder" />
 
                                         <div className="media-body">
-                                            <div className='card-content'>
-                                                <div className='location'><FaLocationDot />{yacht.locationId.name}</div>
-                                                <div className='name'>{yacht.name}</div>
-                                                <div> <RiShipLine /> Hạ Thủy {yacht.launch} - Tàu Vỏ {yacht.hullBody}  </div>
-
+                                            <div className="yacht-info">
+                                                <h2>{yacht.name}</h2>
+                                                <div className="yacht-details">
+                                                    <p><FaLocationDot /> {yacht.locationId?.name || 'N/A'}</p>
+                                                    <p><RiShipLine /> {yacht.yachtTypeId?.name || 'N/A'}</p>
+                                                    <p>Số phòng tối đa: {yacht.maxRoom || 0}</p>
+                                                </div>
                                             </div>
                                             <div className='action d-flex'>
                                                 <p className="mb-0 text-dark text-dark pt-2"><span className="text-dark font-weight-bold"></span>

@@ -26,6 +26,7 @@ const ModalCreateYacht = (props) => {
         description: '',
         location: '',
         yachtType: '',
+        maxRoom: 0,
     }
 
 
@@ -70,8 +71,10 @@ const ModalCreateYacht = (props) => {
         }
     }
     const handleCreateYacht = async () => {
-        if (!data.name || !image || !data.launch || !data.hullBody || !data.description || !data.rule || !data.itinerary || !data.location || !data.yachtType) {
+        if (!data.name || !image || !data.launch || !data.hullBody || !data.description || !data.rule || !data.itinerary || !data.location || !data.yachtType || !data.maxRoom) {
             toast.error("Vui lòng điền đầy đủ thông tin");
+        } else if (data.maxRoom < 0) {
+            toast.error("Số phòng tối đa không thể âm");
         } else {
             setLoading(true);
             let res = await createYacht(
@@ -84,7 +87,8 @@ const ModalCreateYacht = (props) => {
                 data.itinerary.trim(),
                 data.yachtType,
                 data.location,
-                idCompany
+                idCompany,
+                data.maxRoom
             );
             console.log('RESPONSE:', res);
             if (res && typeof res === 'object' && (res._id || res.name)) {
@@ -214,6 +218,19 @@ const ModalCreateYacht = (props) => {
 
 
                                 </Form.Select>
+                            </Form.Group>
+                        </Row>
+                        <Row className="mb-3">
+                            <Form.Group as={Col} >
+                                <Form.Label>Maximum Rooms</Form.Label>
+                                <Form.Control
+                                    name='maxRoom'
+                                    type="number"
+                                    min="0"
+                                    placeholder="Maximum number of rooms"
+                                    onChange={handleChange}
+                                    value={data.maxRoom}
+                                />
                             </Form.Group>
                         </Row>
                         <Row className="mb-3">

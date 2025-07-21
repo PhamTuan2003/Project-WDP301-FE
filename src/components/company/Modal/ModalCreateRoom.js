@@ -14,6 +14,7 @@ const ModalCreateRoom = (props) => {
     const [description, setDescription] = useState('');
     const [roomType, setRoomType] = useState('');
     const [loading, setLoading] = useState(false);
+    const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
         fetchRoomType();
@@ -42,6 +43,7 @@ const ModalCreateRoom = (props) => {
         setRoomType(listRoomType[0]?.idRoomType);
         setPreviewImage('');
         setImage('');
+        setQuantity(1);
     };
 
     const handleUploadImage = (event) => {
@@ -53,14 +55,16 @@ const ModalCreateRoom = (props) => {
     };
 
     const handleCreateRoom = async () => {
-        if (!roomName || !area || !description || !roomType || !image) {
+        if (!roomName || !area || !description || !roomType || !image || !quantity) {
             toast.error('Please fill in all fields');
         } else if (area < 0) {
             toast.error('Area cannot be a negative number');
+        } else if (quantity < 1) {
+            toast.error('Quantity must be at least 1');
         } else {
             setLoading(true);
             try {
-                const res = await createRoom(roomName.trim(), area, description.trim(), roomType, image, idYacht);
+                const res = await createRoom(roomName.trim(), area, description.trim(), roomType, image, idYacht, quantity);
                 if (res?.data) {
                     toast.success('Create Successfully');
                     handleClose();
@@ -122,6 +126,16 @@ const ModalCreateRoom = (props) => {
                                     </option>
                                 ))}
                             </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group as={Col}>
+                            <Form.Label>Quantity</Form.Label>
+                            <Form.Control
+                                type="number"
+                                min="1"
+                                value={quantity}
+                                onChange={e => setQuantity(parseInt(e.target.value))}
+                            />
                         </Form.Group>
                     </Row>
 

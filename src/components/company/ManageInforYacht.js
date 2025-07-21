@@ -22,7 +22,7 @@ const ManageInforYacht = (props) => {
         itinerary: '',
         rule: '',
         description: '',
-
+        maxRoom: 0,
     }
 
     useEffect(() => {
@@ -88,9 +88,13 @@ const ManageInforYacht = (props) => {
     }
 
     const validateInput = () => {
-        const { name, hullBody, itinerary, rule, description } = dataUpdate;
-        if (!name || !hullBody || !itinerary || !rule || !description || !idLocation || !idYachtType) {
+        const { name, hullBody, itinerary, rule, description, maxRoom } = dataUpdate;
+        if (!name || !hullBody || !itinerary || !rule || !description || !idLocation || !idYachtType || !maxRoom) {
             toast.error('Please fill in all fields');
+            return false;
+        }
+        if (maxRoom < 0) {
+            toast.error('Maximum rooms cannot be negative');
             return false;
         }
         return true;
@@ -101,7 +105,7 @@ const ManageInforYacht = (props) => {
         let res = await updateYacht(idYacht, dataUpdate.name.trim(), image,
             dataUpdate.hullBody.trim(), dataUpdate.description.trim(),
             dataUpdate.rule.trim(), dataUpdate.itinerary.trim(),
-            idYachtType, idLocation);
+            idYachtType, idLocation, dataUpdate.maxRoom);
 
         if (res && res.data.data === true) {
             toast.success('Update Success');
@@ -119,16 +123,28 @@ const ManageInforYacht = (props) => {
                     <Accordion.Body>
                         <Form>
                             <Row className="mb-3">
-                                <Form.Group as={Col} >
-                                    <Form.Label>Name</Form.Label>
+                                <Form.Group as={Col}>
+                                    <Form.Label>Yacht Name</Form.Label>
                                     <Form.Control
-                                        name='name'
                                         type="text"
-                                        onChange={handleChange}
+                                        name="name"
                                         value={dataUpdate.name}
+                                        onChange={handleChange}
                                     />
                                 </Form.Group>
 
+                                <Form.Group as={Col}>
+                                    <Form.Label>Maximum Rooms</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        name="maxRoom"
+                                        min="0"
+                                        value={dataUpdate.maxRoom}
+                                        onChange={handleChange}
+                                    />
+                                </Form.Group>
+                            </Row>
+                            <Row className="mb-3">
                                 <Form.Group as={Col} >
                                     <Form.Label>Hull-Body</Form.Label>
                                     <Form.Control

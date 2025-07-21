@@ -1,19 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Form from 'react-bootstrap/Form';
-import './Dashboard.scss'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { FaCalendar } from "react-icons/fa";
-import { FaCalendarCheck } from "react-icons/fa";
-import { FaCalendarTimes } from "react-icons/fa";
-import { FaCalendarDay } from "react-icons/fa";
-import { FaMoneyCheckAlt } from "react-icons/fa";
-import { exportBookingOrder, getAllBooking, getBookingByYear, getStatisticBooking, getStatisticService } from '../../services/ApiServices';
-import { useSelector } from 'react-redux';
+import { FaCalendar, FaCalendarCheck, FaCalendarDay, FaCalendarTimes, FaMoneyCheckAlt } from "react-icons/fa";
 import { RiFileExcel2Fill } from "react-icons/ri";
+import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
+import { exportBookingOrder, getAllBooking, getBookingByYear, getStatisticBooking, getStatisticService } from '../../services/ApiServices';
+import './Dashboard.scss';
 const Dashboard = () => {
-
-
-    const idCompany = useSelector(state => state.account.account.idCompany)
+    // const idCompany = useSelector(state => state.account.account.idCompany)
+    const idCompany = "682ab2c581f0fd7069e74058";
     const [totalBooking, setTotalBooking] = useState('');
     const [totalService, setTotalService] = useState('');
     const [allBooking, setAllBooking] = useState({});
@@ -32,10 +26,11 @@ const Dashboard = () => {
     const getTotalBooking = async () => {
         try {
             let res = await getStatisticBooking(idCompany, month, year)
-            if (res && res.data && res.data.data) {
-                setTotalBooking(res.data.data);
-            } else if (res.data.data === 0) {
-                setTotalBooking(res.data.data)
+            // console.log('Get Total Booking', res.data)
+            if (res && res.data) {
+                setTotalBooking(res.data);
+            } else if (res.data === 0) {
+                setTotalBooking(res.data)
             }
 
         } catch (error) {
@@ -45,10 +40,10 @@ const Dashboard = () => {
     const getTotalService = async () => {
         try {
             let res = await getStatisticService(idCompany, month, year)
-            if (res && res.data && res.data.data) {
-                setTotalService(res.data.data);
-            } else if (res.data.data === 0) {
-                setTotalService(res.data.data)
+            if (res && res.data) {
+                setTotalService(res.data);
+            } else if (res.data === 0) {
+                setTotalService(res.data)
             }
 
         } catch (error) {
@@ -59,8 +54,8 @@ const Dashboard = () => {
         try {
 
             let res = await getAllBooking(idCompany, month, year)
-            if (res && res.data && res.data.data) {
-                setAllBooking(res.data.data);
+            if (res && res.data) {
+                setAllBooking(res.data);
             }
         } catch (error) {
             console.log('Get Booking By Status Error')
@@ -70,8 +65,8 @@ const Dashboard = () => {
         try {
 
             let res = await getBookingByYear(idCompany, year)
-            if (res && res.data && res.data.data) {
-                setAllBookingByYear(res.data.data);
+            if (res && res.data) {
+                setAllBookingByYear(res.data);
             }
         } catch (error) {
             console.log('Get Booking By Year Error')
@@ -153,7 +148,7 @@ const Dashboard = () => {
                     </div>
                     <div style={{ backgroundColor: '#F2F6FD' }} className='child'>
                         <div className='d-flex justify-content-between'>
-                            <h4 className='fw-bold'>{allBooking.Pending ? allBooking.Pending : 0}</h4>
+                            <h4 className='fw-bold'>{allBooking.completed ? allBooking.completed : 0}</h4>
                             <FaCalendarDay />
                         </div>
                         <p>Pending Booking</p>
@@ -162,14 +157,14 @@ const Dashboard = () => {
                 <div style={{ backgroundColor: "#F5F6F7" }} className='d-flex revenue my-2 py-2'>
                     <div style={{ backgroundColor: 'white' }} className='child1 mx-5'>
                         <div className='d-flex justify-content-between'>
-                            <h4 className='fw-bold'>{totalBooking.toLocaleString() === "0" ? 0 : totalBooking.toLocaleString()} vnd</h4>
+                            <h4 className='fw-bold'>{totalBooking?.revenue?.toLocaleString() === "0" ? 0 : totalBooking?.revenue?.toLocaleString()} vnd</h4>
                             <FaMoneyCheckAlt />
                         </div>
                         <p>Revenue Booking</p>
                     </div>
                     <div style={{ backgroundColor: 'white' }} className='child1'>
                         <div className='d-flex justify-content-between'>
-                            <h4 className='fw-bold'>{totalService.toLocaleString() === "0" ? 0 : totalService.toLocaleString()} vnd</h4>
+                            <h4 className='fw-bold'>{totalService?.revenueService?.toLocaleString() === "0" ? 0 : totalService?.revenueService?.toLocaleString()} vnd</h4>
                             <FaMoneyCheckAlt />
                         </div>
                         <p>Revenue Service</p>

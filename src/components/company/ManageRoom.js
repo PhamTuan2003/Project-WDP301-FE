@@ -58,6 +58,7 @@ const ManageRoom = () => {
 
     const getAllRoom = async () => {
         let res = await getAllRoomByYacht(idYacht);
+        console.log('rommmmm', res.data);
         if (res && res.data) {
             setListRoom(res.data.sort((a, b) => {
                 return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
@@ -129,8 +130,8 @@ const ManageRoom = () => {
                                         <p className='fw-bold'>{room.name}</p>
                                     </div>
                                     <div>{room.area} <TbMeterSquare size={25} className='pb-1' /></div>
-
                                     <div>{room.roomTypeId.price.toLocaleString()} đ/KHÁCH</div>
+                                    <div>Số lượng phòng: {room.quantity}</div>
                                 </div>
 
                                 <div className='col-md-4'>
