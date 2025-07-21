@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
-import Col from 'react-bootstrap/Col';
-import { Form, FormControl } from 'react-bootstrap';
-import Row from 'react-bootstrap/Row';
-import { updateScheduleYacht } from '../../../services/ApiServices';
 import _ from 'lodash';
+import { useEffect, useState } from 'react';
+import { Form, FormControl } from 'react-bootstrap';
+import Button from 'react-bootstrap/Button';
+import Col from 'react-bootstrap/Col';
+import Modal from 'react-bootstrap/Modal';
+import Row from 'react-bootstrap/Row';
 import { toast } from 'react-toastify';
+import { updateScheduleYacht } from '../../../services/ApiServices';
 
 const ModalUpdateScheduleYacht = (props) => {
     const { show, handleClose, scheduleUpdate, yachtId } = props;
@@ -38,8 +38,8 @@ const ModalUpdateScheduleYacht = (props) => {
             return;
         }
 
-        let res = await updateScheduleYacht(yachtId.idYacht, scheduleUpdate.idSchedule, getStartDate, getEndDate);
-        if (res && res.data.data === true) {
+        let res = await updateScheduleYacht(yachtId, scheduleUpdate.scheduleId._id, getStartDate, getEndDate);
+        if (res && res.schedule) {
             toast.success("Updated schedule successfully");
             setStartDate('');
             setEndDate('');

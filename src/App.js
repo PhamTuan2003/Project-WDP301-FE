@@ -1,55 +1,58 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { getTheme } from "./theme/theme";
 import { useDispatch, useSelector } from "react-redux";
+import { openTransactionModal } from "./redux/actions";
 import { initializeAuth } from "./redux/asyncActions";
-import { openTransactionModal, closeTransactionModal } from "./redux/actions";
+import { getTheme } from "./theme/theme";
 
 // Pages & Components
-import HomePage from "./pages/HomePage";
-import FindBoat from "./pages/FindBoat";
-import DetailBoat from "./pages/DetailBoat";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
-import CustomerProfile from "./layout/componentsHeader/CustomerProfile";
-import ChangePassword from "./layout/componentsHeader/ChangePassword";
-import BookingHistory from "./pages/BookingHistory";
-import BlogList from "./components/Blog/BlogList";
 import BlogDetail from "./components/Blog/BlogDetail";
+import BlogList from "./components/Blog/BlogList";
+import Enterprise from "./components/Enterprise/Enterprise";
+import AboutUs from "./layout/componentsFooter/AboutUs";
+import ContactSection from "./layout/componentsFooter/ContactSection";
+import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
+import PrivacyPolicy from "./layout/componentsFooter/PrivacyPolicy";
+import TermsAndConditions from "./layout/componentsFooter/TermsAndConditions";
+import UserGuide from "./layout/componentsFooter/UserGuide";
+import ChangePassword from "./layout/componentsHeader/ChangePassword";
+import CustomerProfile from "./layout/componentsHeader/CustomerProfile";
+import BookingHistory from "./pages/BookingHistory";
+import DetailBoat from "./pages/DetailBoat";
+import FindBoat from "./pages/FindBoat";
+import HomePage from "./pages/HomePage";
+// import Company from "./components/company/Company";
+import 'react-toastify/dist/ReactToastify.css';
+import Calender from './components/calender/Calender';
+import Dashboard from './components/company/Dashboard';
+import ManageCompany from './components/company/ManageCompany';
+import ManageRoom from './components/company/ManageRoom';
+import ManageSchedule from './components/company/ManageSchedule';
+import ManageServiceYacht from './components/company/ManageServiceYacht';
+import ManageYacht from './components/company/ManageYacht';
+import ProfileCompany from './components/company/Profile';
+import ViewBooking from './components/company/ViewBooking';
+import ViewYacht from './components/company/ViewYacht';
+import ProtectedRoute from './components/routers/ProtectedRoute';
 
 // Footer Info Pages
-import AboutUs from "./layout/componentsFooter/AboutUs";
-import TermsAndConditions from "./layout/componentsFooter/TermsAndConditions";
-import PrivacyPolicy from "./layout/componentsFooter/PrivacyPolicy";
-import UserGuide from "./layout/componentsFooter/UserGuide";
-import PaymentMethods from "./layout/componentsFooter/PaymentMethods";
-import ContactSection from "./layout/componentsFooter/ContactSection";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 import MainLayout from "./layout/MainLayout";
 //import ProtectedRoute from "./components/routers/ProtectedRoute";
-
-// Company
-import Dashboard from "./components/company/Dashboard";
-import ManageCompany from "./components/company/ManageCompany";
-import ProfileCompany from "./components/company/Profile";
-import ViewBooking from "./components/company/ViewBooking";
-import ViewYacht from "./components/company/ViewYacht";
-
-// Enterprise
-import Enterprise from "./components/Enterprise/Enterprise";
-
+;
 // Admin
-import Admin from "./components/Admin/AdminDashboard";
 
 // Modals
+import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal";
 import InvoiceModal from "./components/DetailBoat/Booking/InvoiceModal";
 import TransactionModal from "./components/DetailBoat/Booking/TransactionModal";
-import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal";
 
 // Custom hook để lock scroll khi có modal mở
 function useBodyScrollLock() {
@@ -124,20 +127,22 @@ function AppWrapper() {
         </Route>
 
         {/* Company Routes */}
-        <Route
-          path="/manage-company"
-          element={
+        <Route path="/manage-company" element={
+          <ProtectedRoute>
             <ManageCompany />
-          }
-        >
+          </ProtectedRoute>
+        }>
           <Route index element={<Dashboard />} />
           <Route path="booking" element={<ViewBooking />} />
           <Route path="view-yacht" element={<ViewYacht />} />
           <Route path="profile" element={<ProfileCompany />} />
+          <Route path='schedule' element={<Calender/>}/>
         </Route>
 
-        {/* Admin Route */}
-        <Route path="/admin" element={<Admin toggleTheme={toggleTheme} mode={mode} />} />
+        <Route path='manage-yacht/:idYacht' element={<ManageYacht />} />
+        <Route path='manage-room/:idYacht' element={<ManageRoom />} />
+        <Route path='manage-services-yacht/:idYacht' element={<ManageServiceYacht />} />
+        <Route path='manage-schedule/:idYacht' element={<ManageSchedule />} />
       </Routes>
 
       {/* {!hideHeaderFooter && <Footer />} */}

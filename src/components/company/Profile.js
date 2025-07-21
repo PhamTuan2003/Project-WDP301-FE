@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, ButtonGroup } from 'react-bootstrap';
 import ModalUpdateProfile from './Modal/ModalUpdateProfile';
-import { useSelector } from 'react-redux';
+// import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { getProfileCompany } from '../../services/ApiServices';
 import ModalChangePassCompany from './Modal/ModalChangePassCompany';
 
 const ProfileCompany = () => {
 
-    const idCompany = useSelector(state => state.account.account.idCompany);
+    // const idCompany = useSelector(state => state.account.account.idCompany);
+    const idCompany = "682ab2c581f0fd7069e74058";
 
     const [isShowModal, setIsShowModal] = useState(false);
     const [profile, setProfile] = useState({});
@@ -25,8 +26,8 @@ const ProfileCompany = () => {
 
     const getProfile = async () => {
         let res = await getProfileCompany(idCompany);
-        if (res && res.data && res.data.data) {
-            setProfile(res.data.data);
+        if (res && res.data) {
+            setProfile(res.data);
         }
     }
 

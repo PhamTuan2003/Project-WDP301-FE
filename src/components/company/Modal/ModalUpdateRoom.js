@@ -1,15 +1,13 @@
-import React, { useEffect } from 'react';
-import { useState } from 'react';
+import _ from 'lodash';
+import React, { useEffect, useState } from 'react';
 import Button from 'react-bootstrap/Button';
-import Modal from 'react-bootstrap/Modal';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
+import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
-import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import { FcPlus } from "react-icons/fc";
-import _ from 'lodash';
-import { updateRoom } from '../../../services/ApiServices';
 import { toast } from 'react-toastify';
+import { updateRoom } from '../../../services/ApiServices';
 
 
 
@@ -17,6 +15,7 @@ const ModalUpdateRoom = (props) => {
     const { show, setIsShowModalUpdateRoom, dataUpdateRoom } = props;
     const [name, setName] = useState('');
     const [description, setDescription] = useState('')
+    const [quantity, setQuantity] = useState(1);
 
 
     const [image, setImage] = useState("");
@@ -25,7 +24,8 @@ const ModalUpdateRoom = (props) => {
         if (!_.isEmpty(dataUpdateRoom)) {
             setName(dataUpdateRoom.name);
             setDescription(dataUpdateRoom.description);
-            setPreviewImage(dataUpdateRoom.avatar)
+            setPreviewImage(dataUpdateRoom.avatar);
+            setQuantity(dataUpdateRoom.quantity || 1);
         }
     }, [dataUpdateRoom])
 
@@ -44,8 +44,10 @@ const ModalUpdateRoom = (props) => {
     const handleUpdateRoom = async () => {
         if (!name || !description) {
             toast.error("Please fill in all fields")
+        } else if (quantity < 1) {
+            toast.error("Quantity must be at least 1")
         } else {
-            let res = await updateRoom(dataUpdateRoom.idRoom, description.trim(), name.trim(), image)
+            let res = await updateRoom(dataUpdateRoom.idRoom, description.trim(), name.trim(), image, quantity)
             if (res && res.data.data === true) {
                 toast.success("Update Successfully")
                 handleClose();
@@ -66,26 +68,35 @@ const ModalUpdateRoom = (props) => {
                 <Modal.Body>
                     <Form>
                         <Row className="mb-3">
-                            <Form.Group as={Col} controlId="formGridEmail">
-                                <Form.Label>Name</Form.Label>
+                            <Form.Group as={Col}>
+                                <Form.Label>Room Name</Form.Label>
                                 <Form.Control
                                     type="text"
-                                    placeholder='Name room'
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={e => setName(e.target.value)}
+                                />
+                            </Form.Group>
+
+                            <Form.Group as={Col}>
+                                <Form.Label>Quantity</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    min="1"
+                                    value={quantity}
+                                    onChange={e => setQuantity(parseInt(e.target.value))}
                                 />
                             </Form.Group>
                         </Row>
 
-                        <FloatingLabel controlId="floatingTextarea2" label="Description">
+                        <Form.Group className="mb-3">
+                            <Form.Label>Description</Form.Label>
                             <Form.Control
                                 as="textarea"
-                                style={{ height: '100px' }}
+                                rows={3}
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-
+                                onChange={e => setDescription(e.target.value)}
                             />
-                        </FloatingLabel>
+                        </Form.Group>
                         <div className='col-mad-12 my-3'>
                             <label style={{ width: 'fit-content' }} className='form-label label-upload' htmlFor='labelUpload'> <FcPlus /> Upload File IMAGE</label>
                             <input

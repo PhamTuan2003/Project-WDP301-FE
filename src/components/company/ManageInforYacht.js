@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import _ from 'lodash';
+import { useEffect, useState } from 'react';
 import { Button, Col, Row } from 'react-bootstrap';
 import Accordion from 'react-bootstrap/Accordion';
-import { getAllLocation, getYachtByIdYacht, getYachtType, updateYacht } from '../../services/ApiServices';
 import Form from 'react-bootstrap/Form';
 import { FcPlus } from "react-icons/fc";
-import _ from 'lodash'
 import { toast } from 'react-toastify';
+import { getAllLocation, getYachtByIdYacht, getYachtType, updateYacht } from '../../services/ApiServices';
 const ManageInforYacht = (props) => {
     const { idYacht } = props;
     const [inforYacht, setInforYacht] = useState({})
@@ -22,7 +22,7 @@ const ManageInforYacht = (props) => {
         itinerary: '',
         rule: '',
         description: '',
-
+        maxRoom: 0,
     }
 
     useEffect(() => {
@@ -33,8 +33,8 @@ const ManageInforYacht = (props) => {
 
     const getYacht = async () => {
         const res = await getYachtByIdYacht(idYacht);
-        if (res && res.data && res.data.data) {
-            setInforYacht(res.data.data);
+        if (res && res.data) {
+            setInforYacht(res.data);
         } else {
             toast.error('Not Found Data Yacht')
         }
@@ -43,8 +43,8 @@ const ManageInforYacht = (props) => {
     useEffect(() => {
         if (!_.isEmpty(inforYacht)) {
             setDataUpdate(inforYacht)
-            setIdLocation(inforYacht.location.idLocation);
-            setIdYachtType(inforYacht.yachtType.idYachtType);
+            setIdLocation(inforYacht.locationId._id);
+            setIdYachtType(inforYacht.yachtTypeId._id);
             if (inforYacht.image) {
                 setPreviewImage(inforYacht.image)
             }
@@ -53,23 +53,20 @@ const ManageInforYacht = (props) => {
 
 
 
-
-
-
     const [dataUpdate, setDataUpdate] = useState(initInforYacht)
 
     const getLocation = async () => {
         let res = await getAllLocation();
-        if (res && res.data.data.length > 0) {
-            setListLocation(res.data.data);
+        if (res && res.data.length > 0) {
+            setListLocation(res.data);
         } else {
             toast.error('Location Not Found')
         }
     }
     const getAllType = async () => {
         let res = await getYachtType();
-        if (res && res.data.data.length > 0) {
-            setListYachtType(res.data.data)
+        if (res && res.data.length > 0) {
+            setListYachtType(res.data)
         } else {
             toast.error('Yacht Type Not Found')
         }
@@ -91,9 +88,13 @@ const ManageInforYacht = (props) => {
     }
 
     const validateInput = () => {
-        const { name, hullBody, itinerary, rule, description } = dataUpdate;
-        if (!name || !hullBody || !itinerary || !rule || !description || !idLocation || !idYachtType) {
+        const { name, hullBody, itinerary, rule, description, maxRoom } = dataUpdate;
+        if (!name || !hullBody || !itinerary || !rule || !description || !idLocation || !idYachtType || !maxRoom) {
             toast.error('Please fill in all fields');
+            return false;
+        }
+        if (maxRoom < 0) {
+            toast.error('Maximum rooms cannot be negative');
             return false;
         }
         return true;
@@ -104,7 +105,7 @@ const ManageInforYacht = (props) => {
         let res = await updateYacht(idYacht, dataUpdate.name.trim(), image,
             dataUpdate.hullBody.trim(), dataUpdate.description.trim(),
             dataUpdate.rule.trim(), dataUpdate.itinerary.trim(),
-            idYachtType, idLocation);
+            idYachtType, idLocation, dataUpdate.maxRoom);
 
         if (res && res.data.data === true) {
             toast.success('Update Success');
@@ -122,16 +123,28 @@ const ManageInforYacht = (props) => {
                     <Accordion.Body>
                         <Form>
                             <Row className="mb-3">
-                                <Form.Group as={Col} >
-                                    <Form.Label>Name</Form.Label>
+                                <Form.Group as={Col}>
+                                    <Form.Label>Yacht Name</Form.Label>
                                     <Form.Control
-                                        name='name'
                                         type="text"
-                                        onChange={handleChange}
+                                        name="name"
                                         value={dataUpdate.name}
+                                        onChange={handleChange}
                                     />
                                 </Form.Group>
 
+                                <Form.Group as={Col}>
+                                    <Form.Label>Maximum Rooms</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        name="maxRoom"
+                                        min="0"
+                                        value={dataUpdate.maxRoom}
+                                        onChange={handleChange}
+                                    />
+                                </Form.Group>
+                            </Row>
+                            <Row className="mb-3">
                                 <Form.Group as={Col} >
                                     <Form.Label>Hull-Body</Form.Label>
                                     <Form.Control
@@ -168,7 +181,7 @@ const ManageInforYacht = (props) => {
                                     <Form.Select value={idLocation} onChange={event => setIdLocation(event.target.value)} >
                                         {
                                             listLocation && listLocation.map((location) =>
-                                                <option key={location.idLocation} value={location.idLocation}>{location.name}</option>
+                                                <option key={location._id} value={location._id}>{location.name}</option>
                                             )
                                         }
 
@@ -179,7 +192,7 @@ const ManageInforYacht = (props) => {
                                     <Form.Select value={idYachtType} onChange={event => setIdYachtType(event.target.value)} >
                                         {
                                             listYachtType && listYachtType.map((type) =>
-                                                <option key={type.idYachtType} value={type.idYachtType}>{type.starRanking} Sao</option>
+                                                <option key={type._id} value={type._id}>{type.starRanking} Sao</option>
                                             )
                                         }
 

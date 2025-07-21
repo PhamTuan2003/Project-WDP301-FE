@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Form, FormControl, FormGroup } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { canelBooking, confirmBooking, getBookingByAmount, getBookingOrder } from '../../services/ApiServices';
+import { confirmBooking, getBookingByAmount, getBookingOrder } from '../../services/ApiServices';
 import './Company.scss';
 
 import { Link } from 'react-router-dom';
-import ModalViewDetailBooking from './ModalViewDetailBooking';
 import ModalReasonCompany from './Modal/ModalReasonCompany';
+import ModalViewDetailBooking from './ModalViewDetailBooking';
 
 const ViewBooking = () => {
     const idCompany = useSelector(state => state.account.account.idCompany);
@@ -226,7 +226,7 @@ const ViewBooking = () => {
                     idCancel={idCancel}
                     getBooking={getBooking}
                 />
-            </div >
+            </div>
 
 
 
