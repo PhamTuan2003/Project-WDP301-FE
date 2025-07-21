@@ -1,6 +1,6 @@
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { useEffect, useState } from "react";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -27,8 +27,7 @@ import BookingHistory from "./pages/BookingHistory";
 import DetailBoat from "./pages/DetailBoat";
 import FindBoat from "./pages/FindBoat";
 import HomePage from "./pages/HomePage";
-// import Company from "./components/company/Company";
-import 'react-toastify/dist/ReactToastify.css';
+
 import Calender from './components/calender/Calender';
 import Dashboard from './components/company/Dashboard';
 import ManageCompany from './components/company/ManageCompany';
@@ -45,16 +44,12 @@ import ProtectedRoute from './components/routers/ProtectedRoute';
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 import MainLayout from "./layout/MainLayout";
-//import ProtectedRoute from "./components/routers/ProtectedRoute";
-;
-// Admin
 
 // Modals
 import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal";
 import InvoiceModal from "./components/DetailBoat/Booking/InvoiceModal";
 import TransactionModal from "./components/DetailBoat/Booking/TransactionModal";
 
-// Custom hook để lock scroll khi có modal mở
 function useBodyScrollLock() {
   const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
   const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
@@ -81,7 +76,6 @@ function AppWrapper() {
     dispatch(initializeAuth());
   }, [dispatch]);
 
-  // Sửa: chỉ mở lại modal khi load app, không phụ thuộc showTransactionModal
   useEffect(() => {
     const bookingId = localStorage.getItem("bookingIdForTransaction");
     if (bookingId) {
@@ -98,7 +92,6 @@ function AppWrapper() {
   };
 
   const theme = getTheme(mode);
-  // const hideHeaderFooter = ["/admin"].includes(location.pathname);
 
   return (
     <ThemeProvider theme={theme}>
@@ -126,7 +119,6 @@ function AppWrapper() {
           <Route path="/blog/:id" element={<BlogDetail />} />
         </Route>
 
-        {/* Company Routes */}
         <Route path="/manage-company" element={
           <ProtectedRoute>
             <ManageCompany />
@@ -136,7 +128,7 @@ function AppWrapper() {
           <Route path="booking" element={<ViewBooking />} />
           <Route path="view-yacht" element={<ViewYacht />} />
           <Route path="profile" element={<ProfileCompany />} />
-          <Route path='schedule' element={<Calender/>}/>
+          <Route path='schedule' element={<Calender />} />
         </Route>
 
         <Route path='manage-yacht/:idYacht' element={<ManageYacht />} />
@@ -144,8 +136,6 @@ function AppWrapper() {
         <Route path='manage-services-yacht/:idYacht' element={<ManageServiceYacht />} />
         <Route path='manage-schedule/:idYacht' element={<ManageSchedule />} />
       </Routes>
-
-      {/* {!hideHeaderFooter && <Footer />} */}
 
       <ToastContainer
         position="top-right"
@@ -160,7 +150,6 @@ function AppWrapper() {
         theme={mode}
       />
 
-      {/* Global Modals */}
       <InvoiceModal />
       {showTransactionModal && <TransactionModal />}
       <ConfirmationModal />
@@ -168,11 +157,10 @@ function AppWrapper() {
   );
 }
 
+// ✅ Bao ngoài bằng BrowserRouter đúng cách
 function App() {
   return (
-    <Router>
       <AppWrapper />
-    </Router>
   );
 }
 
