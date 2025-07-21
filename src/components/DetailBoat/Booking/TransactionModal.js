@@ -42,6 +42,7 @@ import {
   useTheme,
   useMediaQuery,
   Fade,
+  DialogActions,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
@@ -2759,7 +2760,7 @@ const TransactionModal = ({ onBack }) => {
           </Grid>
         </Grid>
       </DialogContent>
-      {/* <DialogActions>
+      <DialogActions>
         <Button
           onClick={handleClose}
           variant="contained"
@@ -2769,7 +2770,7 @@ const TransactionModal = ({ onBack }) => {
         >
           Đóng
         </Button>
-      </DialogActions> */}
+      </DialogActions>
     </StyledDialog>
   );
 };

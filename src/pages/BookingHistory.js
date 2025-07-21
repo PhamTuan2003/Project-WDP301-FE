@@ -90,6 +90,12 @@ const statusMap = {
     icon: <BlockIcon color="error" />,
     desc: "Booking đã bị từ chối.",
   },
+  confirmed_deposit: {
+    label: "Đã đặt cọc",
+    color: "info",
+    icon: <MonetizationOnIcon color="info" />,
+    desc: "Bạn đã thanh toán đặt cọc. Bạn có thể thanh toán phần còn lại trước hoặc sau chuyến đi.",
+  },
 };
 
 function formatDate(dateStr) {

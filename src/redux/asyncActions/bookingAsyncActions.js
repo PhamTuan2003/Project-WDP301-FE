@@ -202,7 +202,6 @@ export const createBookingOrConsultationRequest =
         "email",
         "phoneNumber",
         "guestCount",
-        "checkInDate",
       ];
       const missingFields = requiredFields.filter(
         (field) => !bookingData[field]

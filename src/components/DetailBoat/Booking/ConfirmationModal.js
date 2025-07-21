@@ -184,7 +184,7 @@ const ConfirmationModal = ({ scheduleObj }) => {
             elevation={3}
             sx={{
               p: theme.spacing(6),
-              borderRadius: theme.shape.borderRadius * 2,
+              borderRadius: theme.shape.borderRadius * 4,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -391,26 +391,6 @@ const ConfirmationModal = ({ scheduleObj }) => {
                       ? `, ${childrenAbove10} trẻ em từ 10 tuổi`
                       : ""
                   })`,
-                },
-                {
-                  icon: (
-                    <Calendar
-                      size={16}
-                      style={{
-                        marginRight: theme.spacing(0.5),
-                        color: theme.palette.primary.dark,
-                      }}
-                    />
-                  ),
-                  label: "Ngày check-in",
-                  value: new Date(
-                    confirmationData.checkInDate
-                  ).toLocaleDateString("vi-VN", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }),
                 },
                 {
                   icon: (
