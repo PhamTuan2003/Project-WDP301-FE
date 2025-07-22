@@ -4,6 +4,7 @@ import Form from 'react-bootstrap/Form';
 import { FaCirclePlus, FaLocationDot } from "react-icons/fa6";
 import { RiShipLine } from "react-icons/ri";
 import ReactPaginate from 'react-paginate';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { deleteYacht, getAllLocation, getYachtByIdCompany, getYachtType } from '../../services/ApiServices';
@@ -13,8 +14,7 @@ import './ViewYacht.scss';
 const ViewYacht = () => {
     const navigate = useNavigate();
     const [isShowModal, setIsShowModal] = useState(false);
-    // const idCompany = useSelector(state => state.account.account.idCompany);
-    const idCompany = "682ab2c581f0fd7069e74058";
+    const idCompany = useSelector(state => state.account.account.idCompany);
     const [yachtType, setYachtType] = useState([]);
     const [yacht, setYacht] = useState([]);
 
@@ -39,6 +39,7 @@ const ViewYacht = () => {
 
     const listYacht = async () => {
         let res = await getYachtByIdCompany(idCompany);
+        console.log("tétttttttttt" , res.data);
         if (res && res.data) {
             setYacht(res.data);
             setFilteredYachts(res.data);
@@ -119,7 +120,7 @@ const ViewYacht = () => {
                 </div>
 
                 <div className='col-lg-2 col-md-3 col-sm-6'>
-                    <Form.Select 
+                    <Form.Select
                         onChange={event => setFilterLocation(event.target.value)}
                         className='h-100'
                     >
@@ -133,7 +134,7 @@ const ViewYacht = () => {
                 </div>
 
                 <div className='col-lg-2 col-md-3 col-sm-6'>
-                    <Form.Select 
+                    <Form.Select
                         onChange={event => setFilterYachtType(event.target.value)}
                         className='h-100'
                     >

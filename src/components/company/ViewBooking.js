@@ -3,7 +3,7 @@ import { Button, Form, FormControl, FormGroup } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { confirmBooking, getBookingByAmount, getBookingOrder } from '../../services/ApiServices';
+import { companyCancelBooking, companyCompleteBooking, confirmBooking, confirmFullPaymentBooking, getBookingByAmount, getBookingOrder } from '../../services/ApiServices';
 import './Company.scss';
 
 import { Link } from 'react-router-dom';
@@ -51,11 +51,19 @@ const ViewBooking = () => {
         return `${hours}:${formattedMinutes} ${day}/${month}/${year}`;
     };
 
+    // Helper: kiểm tra quá 1 ngày chưa
+    const isOverOneDay = (dateString) => {
+        const now = new Date();
+        const date = new Date(dateString);
+        const diff = now - date;
+        return diff > 24 * 60 * 60 * 1000;
+    };
+
 
     const getBooking = async () => {
         let res = await getBookingOrder(idCompany);
-        if (res && res.data && res.data.data) {
-            const sortedBookings = res.data.data.sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime));
+        if (res && res.data) {
+            const sortedBookings = res.data.sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime));
             setListBooking(sortedBookings);
         } else (
             toast.error('Not Found Booking')
@@ -72,7 +80,7 @@ const ViewBooking = () => {
 
     const handleConfrimBooking = async (idBooking) => {
         let res = await confirmBooking(idCompany, idBooking);
-        if (res && res.data && res.data.data === true) {
+        if (res && res.data) {
             toast.success('Confimed Booking Successfully')
             getBooking();
         } else {
@@ -81,10 +89,18 @@ const ViewBooking = () => {
     }
 
     const handleCancelBooking = async (idBooking) => {
-        setIdCancel(idBooking);
-        setShowModalReason(true);
-
-    }
+        try {
+            const res = await companyCancelBooking(idBooking);
+            if (res && res.data) {
+                toast.success('Đã huỷ booking!');
+                getBooking();
+            } else {
+                toast.error('Huỷ booking thất bại!');
+            }
+        } catch (err) {
+            toast.error('Lỗi khi huỷ booking!');
+        }
+    };
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -92,7 +108,7 @@ const ViewBooking = () => {
 
     const filterAndPaginateBooking = () => {
         const filtered = listBooking
-            .filter(b => b.customerDTO.fullName.toLowerCase().includes(filterSearch.toLowerCase().trim()))
+            .filter(b => (b.customerInfo?.fullName || b.customer?.fullName || '').toLowerCase().includes(filterSearch.toLowerCase().trim()))
             .filter(b => filterStatus === '0' ? b : b.status.includes(filterStatus))
 
         setFilterBooking(filtered);
@@ -100,13 +116,89 @@ const ViewBooking = () => {
 
     const displayedBooking = filterBooking.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
+    // Helper: render trạng thái đẹp
+    const renderStatus = (booking) => {
+        if (booking.status === 'completed') return <span style={{color: 'green', fontWeight: 600}}>Completed</span>;
+        if (booking.status === 'confirmed' && booking.paymentStatus === 'fully_paid') return <span style={{color: 'blue'}}>Đã thanh toán đủ</span>;
+        if (booking.status === 'confirmed_deposit' && booking.paymentStatus === 'deposit_paid') return <span style={{color: 'orange'}}>Đặt cọc</span>;
+        if (booking.status === 'canceled') return <span style={{color: 'red'}}>Khách tự huỷ</span>;
+        if (booking.status === 'rejected') return <span style={{color: 'red'}}>Company huỷ</span>;
+        if (booking.status === 'pending') return <span style={{color: 'gray'}}>Chờ xác nhận</span>;
+        return <span>{booking.status}</span>;
+    };
+
+    // Helper: render nút thao tác
+    const renderActions = (booking) => {
+        // Đã hoàn thành hoặc đã huỷ thì không thao tác
+        if (booking.status === 'completed' || booking.status === 'canceled' || booking.status === 'rejected') {
+            return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
+        }
+        // Đặt cọc, chờ xác nhận thanh toán đủ
+        if (booking.status === 'confirmed_deposit' && booking.paymentStatus === 'deposit_paid') {
+            return <>
+                <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
+                <Link onClick={() => handleConfirmFullPayment(booking._id)} className="btn btn-sm btn-success">Xác nhận thanh toán đủ</Link>
+            </>;
+        }
+        // Đã thanh toán đủ, chờ xác nhận hoàn thành
+        if (booking.status === 'confirmed' && booking.paymentStatus === 'fully_paid') {
+            // Nếu quá 1 ngày hoặc có quyền, hiển thị nút xác nhận hoàn thành
+            if (isOverOneDay(booking.updatedAt)) {
+                return <>
+                    <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
+                    <Link onClick={() => handleConfirmCompleted(booking._id)} className="btn btn-sm btn-primary">Xác nhận hoàn thành</Link>
+                </>;
+            }
+            return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
+        }
+        // Chờ xác nhận
+        if (booking.status === 'pending') {
+            return <>
+                <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
+                <Link onClick={() => handleConfrimBooking(booking._id)} className="btn btn-sm btn-success">Confirm</Link>
+                <Link onClick={() => handleCancelBooking(booking._id)} className="btn btn-sm btn-danger">Cancel</Link>
+            </>;
+        }
+        // Trường hợp khác
+        return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
+    };
+
     const handleFilterByAmount = async () => {
         let res = await getBookingByAmount(idCompany, min, max)
-        if (res && res.data && res.data.data) {
-            setListBooking(res.data.data)
+        if (res && res.data) {
+            setListBooking(res.data)
         }
     }
 
+    // Xác nhận thanh toán đủ
+    const handleConfirmFullPayment = async (bookingId) => {
+        try {
+            const res = await confirmFullPaymentBooking(bookingId);
+            if (res && res.data) {
+                toast.success('Đã xác nhận thanh toán đủ!');
+                getBooking();
+            } else {
+                toast.error('Xác nhận thanh toán đủ thất bại!');
+            }
+        } catch (err) {
+            console.error('Error confirming full payment:', err);
+            toast.error('Lỗi khi xác nhận thanh toán đủ!');
+        }
+    };
+    // Xác nhận hoàn thành
+    const handleConfirmCompleted = async (bookingId) => {
+        try {
+            const res = await companyCompleteBooking(bookingId);
+            if (res && res.data) {
+                toast.success('Đã xác nhận hoàn thành booking!');
+                getBooking();
+            } else {
+                toast.error('Xác nhận hoàn thành thất bại!');
+            }
+        } catch (err) {
+            toast.error('Lỗi khi xác nhận hoàn thành!');
+        }
+    };
 
 
     return (
@@ -142,44 +234,54 @@ const ViewBooking = () => {
                         {
                             displayedBooking && displayedBooking.map((booking) =>
 
-                                <div style={{ cursor: 'pointer' }} key={booking.idBooking} className="card mb-4 order-list">
+                                <div style={{ cursor: 'pointer' }} key={booking._id} className="card mb-4 order-list">
                                     <div className="gold-members p-4">
-
                                         <div className="media">
-
                                             <div className="media-body">
-                                                <b >
-                                                    <span className="float-right text-success">{formatDate(booking.bookingTime)}<i className="feather-check-circle text-success" /></span>
-                                                </b>
-                                                <h6 className="mb-3"><b href="#">
-                                                </b><b className="text-dark">{booking.customerDTO.fullName}</b>
-                                                </h6>
-                                                <p className="text-black-50 mb-1"><i className="feather-map-pin" /> {booking.yachtName}, Amount: {booking.amount.toLocaleString()}VNĐ
-                                                </p>
-                                                <p className="text-black-50 mb-1"><i className="feather-list" /> Schedule - <i className="feather-clock ml-2" />
-                                                    Start Date: {formatDate(booking.schedule.startDate)}, End Date: {formatDate(booking.schedule.endDate)} </p>
-                                                <p className="text-black-50 mb-3"><i className="feather-list" /> Requirement: <i className="feather-clock ml-2" />{booking.requirement}</p>
-
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <b>Khách hàng:</b> {booking.customerInfo?.fullName || booking.customer?.fullName} | {booking.customerInfo?.email || booking.customer?.email} | {booking.customerInfo?.phoneNumber || booking.customer?.phoneNumber}
+                                                    </div>
+                                                    <div>
+                                                        <b>Ngày tạo:</b> {formatDate(booking.createdAt)}
+                                                    </div>
+                                                </div>
+                                                <div className="d-flex justify-content-between align-items-center mt-2">
+                                                    <div>
+                                                        <b>Du thuyền:</b> {booking.yacht?.name || booking.yachtName}
+                                                    </div>
+                                                    <div>
+                                                        <b>Mã booking:</b> {booking.bookingCode} | <b>Mã xác nhận:</b> {booking.confirmationCode}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-2">
+                                                    <b>Phòng:</b> {booking.consultationData?.requestedRooms && booking.consultationData.requestedRooms.length > 0 ? (
+                                                        booking.consultationData.requestedRooms.map((room, idx) => (
+                                                            <span key={room.roomId._id}>{room.roomId.name} (x{room.quantity}){idx < booking.consultationData.requestedRooms.length - 1 ? ', ' : ''}</span>
+                                                        ))
+                                                    ) : 'Không có'}
+                                                </div>
+                                                <div className="mt-1">
+                                                    <b>Dịch vụ:</b> {booking.consultationData?.requestServices && booking.consultationData.requestServices.length > 0 ? (
+                                                        booking.consultationData.requestServices.map((service, idx) => (
+                                                            <span key={service.serviceId._id}>{service.serviceId.serviceName} (x{service.quantity}){idx < booking.consultationData.requestServices.length - 1 ? ', ' : ''}</span>
+                                                        ))
+                                                    ) : 'Không có'}
+                                                </div>
+                                                <div className="mt-1">
+                                                    <b>Yêu cầu đặc biệt:</b> {booking.consultationData?.requirements || booking.requirement || 'Không có'}
+                                                </div>
+                                                <div className="mt-2">
+                                                    <b>Thanh toán:</b> Tổng tiền: {booking.paymentBreakdown?.totalAmount?.toLocaleString() || booking.amount?.toLocaleString()} VNĐ |
+                                                    Đặt cọc: {booking.paymentBreakdown?.depositAmount?.toLocaleString() || 0} VNĐ ({booking.paymentBreakdown?.depositPercentage || 0}%) |
+                                                    Đã thanh toán: {booking.paymentBreakdown?.totalPaid?.toLocaleString() || 0} VNĐ |
+                                                    Còn lại: {booking.paymentBreakdown?.remainingAmount?.toLocaleString() || 0} VNĐ
+                                                </div>
                                                 <hr />
                                                 <div className='action d-flex'>
-                                                    <p className="mb-0 text-dark text-dark pt-2">Status: <span style={{
-                                                        color: booking.status === 'Pending' ? 'orange' :
-                                                            (booking.status === 'Confirmed' ? 'green' :
-                                                                (booking.status === 'Cancelled' ? 'red' : 'black'))
-                                                    }} className=" font-weight-bold">{booking.status} </span>
-                                                    </p>
+                                                    <p className="mb-0 text-dark text-dark pt-2">Status: {renderStatus(booking)}</p>
                                                     <div className="float-right">
-                                                        {
-                                                            booking.status === 'Pending' ? (
-                                                                <>
-                                                                    <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning"> View Detai </Link>
-                                                                    <Link onClick={() => handleConfrimBooking(booking.idBooking)} className="btn btn-sm btn-success"> Confirm </Link>
-                                                                    <Link onClick={() => handleCancelBooking(booking.idBooking)} className="btn btn-sm btn-danger"> Cancel</Link>
-                                                                </>
-                                                            )
-                                                                :
-                                                                <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning"> View Detai </Link>
-                                                        }
+                                                        {renderActions(booking)}
                                                     </div>
                                                 </div>
                                             </div>

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import { Button } from 'react-bootstrap'
 import _ from 'lodash';
+import React, { useEffect, useState } from 'react';
+import { Button } from 'react-bootstrap';
+import Modal from 'react-bootstrap/Modal';
 const ModalViewDetailBooking = (props) => {
     const { show, setIsShowModalViewBooking, bookingDetail } = props;
     const [booking, setBooking] = useState({});
@@ -35,9 +35,13 @@ const ModalViewDetailBooking = (props) => {
 
                     <h5>Rooms</h5>
                     <ul>
-                        {bookingDetail.rooms && bookingDetail.rooms.length > 0 ? (
-                            bookingDetail.rooms.map((room, index) => (
-                                <li key={index}>{room.name}</li>
+                        {bookingDetail.consultationData?.requestedRooms && bookingDetail.consultationData.requestedRooms.length > 0 ? (
+                            bookingDetail.consultationData.requestedRooms.map((room, index) => (
+                                <li key={index}>
+                                    <b>{room.roomId?.name}</b> - {room.roomId?.description} (x{room.quantity})<br />
+                                    <b>Loại phòng:</b> {room.roomId?.roomTypeId?.type} | <b>Tiện ích:</b> {room.roomId?.roomTypeId?.utility}<br />
+                                    <img src={room.roomId?.avatar} alt="" width={100} />
+                                </li>
                             ))
                         ) : (
                             <p>No rooms booked.</p>
@@ -46,10 +50,11 @@ const ModalViewDetailBooking = (props) => {
 
                     <h5>Services</h5>
                     <ul>
-                        {bookingDetail.services && bookingDetail.services.length > 0 ? (
-                            bookingDetail.services.map((service, index) => (
-                                <li key={index}> Service: {service.service} - Price: {service.price}</li>
-
+                        {bookingDetail.consultationData?.requestServices && bookingDetail.consultationData.requestServices.length > 0 ? (
+                            bookingDetail.consultationData.requestServices.map((service, index) => (
+                                <li key={index}>
+                                    {service.serviceId?.serviceName} - Price: {service.serviceId?.price?.toLocaleString()} (x{service.quantity})
+                                </li>
                             ))
                         ) : (
                             <p>No services added.</p>

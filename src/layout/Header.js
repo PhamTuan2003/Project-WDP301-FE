@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Box,
-  IconButton,
-  useMediaQuery,
-  useTheme,
-  Stack,
-  Menu,
-  MenuItem,
-  Avatar,
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import LoginIcon from "@mui/icons-material/Login";
+import MenuIcon from "@mui/icons-material/Menu";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { AiOutlineMoon, AiOutlineSun, AiFillPhone } from "react-icons/ai";
+import {
+    AppBar,
+    Avatar,
+    Box,
+    Button,
+    IconButton,
+    Menu,
+    MenuItem,
+    Stack,
+    Toolbar,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { AiFillPhone, AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { doLogout } from "../redux/actions/UserAction";
 
 const menuLinks = [
   { label: "Tìm du thuyền", href: "/find-boat" },
@@ -34,6 +36,7 @@ export default function Header({ toggleTheme, mode }) {
   const [userAnchorEl, setUserAnchorEl] = useState(null);
   const [customer, setCustomer] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const storedCustomer = localStorage.getItem("customer");
@@ -57,10 +60,10 @@ export default function Header({ toggleTheme, mode }) {
   };
 
   const handleLogout = () => {
+    dispatch(doLogout());
     localStorage.removeItem("token");
     localStorage.removeItem("customer");
     setCustomer(null);
-
     Swal.fire({
       icon: "success",
       title: "Đăng xuất thành công!",

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import Form from 'react-bootstrap/Form';
 import { FaCalendar, FaCalendarCheck, FaCalendarDay, FaCalendarTimes, FaMoneyCheckAlt } from "react-icons/fa";
 import { RiFileExcel2Fill } from "react-icons/ri";
+import { useSelector } from 'react-redux';
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
 import { exportBookingOrder, getAllBooking, getBookingByYear, getStatisticBooking, getStatisticService } from '../../services/ApiServices';
 import './Dashboard.scss';
 const Dashboard = () => {
     // const idCompany = useSelector(state => state.account.account.idCompany)
-    const idCompany = "682ab2c581f0fd7069e74058";
+    const idCompany = useSelector(state => state.account.account.idCompany);;
     const [totalBooking, setTotalBooking] = useState('');
     const [totalService, setTotalService] = useState('');
     const [allBooking, setAllBooking] = useState({});
@@ -134,14 +135,14 @@ const Dashboard = () => {
                     </div>
                     <div style={{ backgroundColor: '#F4FAF8' }} className='child'>
                         <div className='d-flex justify-content-between'>
-                            <h4 className='fw-bold'>{allBooking.Confirmed ? allBooking.Confirmed : 0}</h4>
+                            <h4 className='fw-bold'>{allBooking.confirmed ? allBooking.confirmed : 0}</h4>
                             <FaCalendarCheck />
                         </div>
                         <p>Confirmed Booking</p>
                     </div>
                     <div style={{ backgroundColor: '#FBF2F2' }} className='child'>
                         <div className='d-flex justify-content-between'>
-                            <h4 className='fw-bold'>{allBooking.Cancelled ? allBooking.Cancelled : 0}</h4>
+                            <h4 className='fw-bold'>{allBooking.cancelled ? allBooking.cancelled : 0}</h4>
                             <FaCalendarTimes />
                         </div>
                         <p>Cancel Booking</p>

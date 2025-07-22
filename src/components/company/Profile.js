@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, ButtonGroup } from 'react-bootstrap';
 import ModalUpdateProfile from './Modal/ModalUpdateProfile';
 // import { useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { getProfileCompany } from '../../services/ApiServices';
 import ModalChangePassCompany from './Modal/ModalChangePassCompany';
@@ -9,7 +10,7 @@ import ModalChangePassCompany from './Modal/ModalChangePassCompany';
 const ProfileCompany = () => {
 
     // const idCompany = useSelector(state => state.account.account.idCompany);
-    const idCompany = "682ab2c581f0fd7069e74058";
+    const idCompany = useSelector(state => state.account.account.idCompany);;
 
     const [isShowModal, setIsShowModal] = useState(false);
     const [profile, setProfile] = useState({});

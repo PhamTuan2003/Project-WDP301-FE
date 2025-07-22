@@ -38,8 +38,11 @@ export const getBookingByAmount = (idCompany, min, max) => {
 }
 
 export const getBookingOrder = (idCompany) => {
-    return axios.get(`/api/companies/bookingOrders/${idCompany}`);
-}
+  return axios.get(`/api/v1/bookings/company`, {
+    params: { idCompany }
+  });
+};
+
 
 export const getProfileCompany = (idCompany) => {
     return axios.get(`/api/v1/companies/info/${idCompany}`);
@@ -282,4 +285,23 @@ export const changePasswordCompany = (idCompany, oldPassword, newPassword, confi
     data.append('newPassword', newPassword)
     data.append('confirmPassword', confirmPassword)
     return axios.put(`/api/companies/profiles/changePassword/${idCompany}`, data)
+}
+
+export const loginApi = (username, password) => {
+    return axios.post('/api/v1/accounts/login', {
+        username,
+        password
+    });
+}
+
+export const companyCompleteBooking = (bookingId) => {
+    return axios.put(`/api/v1/bookings/company/${bookingId}/complete`);
+}
+
+export const companyCancelBooking = (bookingId) => {
+    return axios.put(`/api/v1/bookings/company/${bookingId}/cancel`);
+}
+
+export const confirmFullPaymentBooking = (bookingId) => {
+    return axios.put(`/api/v1/bookings/${bookingId}/confirm-full-payment`);
 }

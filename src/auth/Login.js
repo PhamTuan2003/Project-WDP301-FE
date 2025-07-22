@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Box, Button, TextField, Typography, Checkbox, FormControlLabel, Stack } from "@mui/material";
 import styled from "@emotion/styled";
+import { Box, Button, Checkbox, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import axios from "axios";
-import ForgotPassword from "./ForgotPassword";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from 'jwt-decode';
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { doLogin } from "../redux/actions/UserAction";
+import { loginApi } from '../services/ApiServices';
 import "./Auth.css";
+import ForgotPassword from "./ForgotPassword";
 
 const StyledButton = styled(Button)(({ theme }) => ({
   width: "100%",
@@ -30,6 +34,8 @@ export default function Login() {
   const [showTransition, setShowTransition] = useState(false);
   const [step, setStep] = useState("login");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (showTransition) {
@@ -57,25 +63,45 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setLoading(true);
     try {
-      const response = await axios.post("http://localhost:9999/api/v1/customers/login", formData);
-      const user = response.data.customer;
+      if (!formData.username || !formData.password) {
+        setLoading(false);
+        setError("Vui lòng nhập đầy đủ thông tin");
+        return;
+      }
+      const res = await loginApi(formData.username.trim(), formData.password.trim());
+      if (!res || !res.data || !res.data.token) {
+        setLoading(false);
+        setError("Tài khoản hoặc mật khẩu không đúng");
+        return;
+      }
 
-      console.log("🎯 Đăng nhập thành công, user nhận được:", user);
-      console.log("🔑 Role:", user.role);
+      console.log("Login response:", res.data);
+      
+      const { token, idAccount, idCustomer, idCompany } = res.data;
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("customer", JSON.stringify(user));
+      localStorage.setItem("token", token);
+      const decoded = jwtDecode(token);
+      const role = decoded.role;
+    
+      dispatch(doLogin(token, role, idCompany || "", idCustomer || ""));
+      localStorage.setItem("customer", JSON.stringify(decoded));
       setShowTransition(true);
       setTimeout(() => {
-        if (user.role === "COMPANY") {
+        setLoading(false);
+        if (role === "COMPANY") {
           navigate("/manage-company");
-        } else if (user.role === "CUSTOMER") {
+        } else if (role === "CUSTOMER") {
+          navigate("/");
+        } else {
+          // Nếu role không hợp lệ, về trang chủ hoặc báo lỗi
+          setError("Tài khoản không hợp lệ hoặc không có quyền truy cập.");
           navigate("/");
         }
-        window.location.reload();
       }, 1500);
     } catch (err) {
+      setLoading(false);
       setError(err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.");
     }
   };
@@ -301,7 +327,9 @@ export default function Login() {
                       Quên mật khẩu?
                     </Typography>
                   </Box>
-                  <StyledButton type="submit">Đăng nhập</StyledButton>
+                  <StyledButton type="submit" disabled={loading}>
+                    {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+                  </StyledButton>
                 </Box>
 
                 <Box className="social-login" sx={{ mt: 3 }}>

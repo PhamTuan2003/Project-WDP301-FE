@@ -1,34 +1,8 @@
-import { applyMiddleware, combineReducers, createStore } from "redux";
+import { applyMiddleware, createStore } from "redux";
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import thunk from "redux-thunk";
-
-import userReducer from "../redux/reducers/UserReducer";
-import {
-  authReducer,
-  bookingReducer,
-  filtersReducer,
-  imageReducer,
-  reviewFormReducer,
-  reviewsReducer,
-  servicerReducer,
-  uiReducer,
-  yachtReducer
-} from "./reducers";
-
-const rootReducer = combineReducers({
-  yacht: yachtReducer,
-  images: imageReducer,
-  ui: uiReducer,
-  booking: bookingReducer,
-  reviews: reviewsReducer,
-  filters: filtersReducer,
-  // consultation: consultationReducer,
-  reviewForm: reviewFormReducer,
-  auth: authReducer,
-  services: servicerReducer,
-  account: userReducer
-});
+import rootReducer from "./rootReducer";
 
 const persistConfig = {
   key: 'root',

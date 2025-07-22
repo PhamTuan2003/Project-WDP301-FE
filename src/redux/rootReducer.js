@@ -1,17 +1,18 @@
 import { combineReducers } from "redux";
 import {
-  yachtReducer,
-  servicerReducer,
-  imageReducer,
-  uiReducer,
-  bookingReducer,
-  reviewsReducer,
-  reviewFormReducer,
   authReducer,
+  bookingReducer,
   filtersReducer,
-  paymentReducer,
+  imageReducer,
   invoiceReducer,
+  paymentReducer,
+  reviewFormReducer,
+  reviewsReducer,
+  servicerReducer,
+  uiReducer,
+  yachtReducer,
 } from "./reducers";
+import userReducer from "./reducers/UserReducer";
 
 const rootReducer = combineReducers({
   yacht: yachtReducer,
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   filters: filtersReducer,
   payment: paymentReducer,
   invoice: invoiceReducer,
+  account: userReducer
 });
 
 export default rootReducer;
