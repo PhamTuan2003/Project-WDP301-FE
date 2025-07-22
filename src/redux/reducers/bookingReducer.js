@@ -41,6 +41,7 @@ const bookingInitialState = {
   hasConsultation: false,
   editingBookingId: null,
   selectedYachtServices: [],
+  selectedRoomQuantities: {},
 };
 
 const bookingReducer = (state = bookingInitialState, action) => {
@@ -52,7 +53,8 @@ const bookingReducer = (state = bookingInitialState, action) => {
       const processedRooms = rooms.map((room) => ({
         ...room,
         id: room.id || room._id,
-        quantity: 0,
+        quantity: room.quantity, // giữ nguyên quantity từ backend
+        selectedQuantity: 0, // dùng trường này để quản lý số lượng đã chọn ở FE
         max_people:
           room.max_people ||
           (room.roomTypeId && room.roomTypeId.max_people) ||
@@ -429,6 +431,11 @@ const bookingReducer = (state = bookingInitialState, action) => {
       return { ...state, loading: false, error: action.payload };
     case "CLEAR_CURRENT_BOOKING_DETAIL":
       return { ...state, currentBookingDetail: null, bookingSubmitting: false };
+    case "SET_SELECTED_ROOM_QUANTITIES":
+      return {
+        ...state,
+        selectedRoomQuantities: action.payload,
+      };
     default:
       return state;
   }

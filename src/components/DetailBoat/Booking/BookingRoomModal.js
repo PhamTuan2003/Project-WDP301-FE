@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  X,
-  ArrowRight,
-  Edit,
-  Calendar as CalendarIcon,
-  ChevronDown,
-} from "lucide-react";
+import { X, ArrowRight, Edit, Calendar as CalendarIcon } from "lucide-react";
 import { Box, TextField, Typography, Button } from "@mui/material";
 import GuestCounter from "./GuestCounter";
 import Swal from "sweetalert2";
@@ -21,6 +15,7 @@ import {
   createBookingOrConsultationRequest,
   fetchConsultationRequest,
   updateBookingOrConsultationRequest,
+  fetchRoomsOnly, // thêm dòng này
 } from "../../../redux/asyncActions/bookingAsyncActions";
 import ConsultationDetailsModal from "./ConsultationDetailModal";
 import {
@@ -87,12 +82,19 @@ const BookingRoomModal = ({
   const [showServiceModal, setShowServiceModal] = useState(false);
   const rooms = useSelector((state) => state.booking.rooms);
   const services = useSelector((state) => state.services.data);
+  const allSchedules = useSelector((state) => state.booking.schedules);
+  const scheduleList = allSchedules[yachtData?._id] || [];
+  const selectedScheduleObj = scheduleList.find(
+    (s) => s._id === propSelectedSchedule || s.id === propSelectedSchedule
+  );
+  // console.log(selectedScheduleObj?.scheduleId?.startDate);
 
   const adults = Number(guestCounter?.adults ?? 0);
   const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
   const totalGuests = adults + Math.floor(childrenAbove10 / 2);
-  const totalRoomPrice = selectedRooms.reduce(
-    (sum, room) => sum + room.price * room.quantity,
+  // Đảm bảo tính tổng tiền phòng đúng logic
+  const totalRoomPrice = (selectedRooms || []).reduce(
+    (sum, room) => sum + (room.price || 0) * (room.quantity || 0),
     0
   );
   const totalServicePrice = selectedYachtServices
@@ -169,20 +171,9 @@ const BookingRoomModal = ({
 
   useEffect(() => {
     if (show && yachtData?._id) {
-      let checkInDateParam = null;
-      if (bookingForm.checkInDate && bookingForm.checkInDate.includes("/")) {
-        try {
-          const [day, month, year] = bookingForm.checkInDate.split("/");
-          checkInDateParam = new Date(
-            `${year}-${month}-${day}T00:00:00.000Z`
-          ).toISOString();
-        } catch (e) {
-          console.error("Error parsing checkInDate:", e);
-        }
-      }
-      dispatch(fetchConsultationRequest(yachtData._id, checkInDateParam));
+      dispatch(fetchConsultationRequest(yachtData._id));
     }
-  }, [show, yachtData, bookingForm.checkInDate, dispatch]);
+  }, [show, yachtData, dispatch]);
 
   useEffect(() => {
     if (show && authCustomer) {
@@ -249,14 +240,13 @@ const BookingRoomModal = ({
       });
       return false;
     }
-    const formValidation = validateBookingForm(bookingForm);
     const roomValidation = validateRoomSelection(
       selectedRooms,
       propSelectedSchedule,
       bookingForm.guestCount
     );
 
-    const allErrors = { ...formValidation.errors, ...roomValidation.errors };
+    const allErrors = { ...roomValidation.errors };
     if (Object.keys(allErrors).length > 0) {
       dispatch(setBookingErrors(allErrors));
       const firstError = Object.values(allErrors)[0];
@@ -272,18 +262,7 @@ const BookingRoomModal = ({
   };
 
   const prepareSharedBookingData = () => {
-    let isoCheckInDate = bookingForm.checkInDate;
     const childrenUnder10 = Number(guestCounter?.childrenUnder10 ?? 0);
-
-    if (bookingForm.checkInDate && !bookingForm.checkInDate.includes("T")) {
-      try {
-        const [day, month, year] = bookingForm.checkInDate.split("/");
-        isoCheckInDate = new Date(
-          `${year}-${month}-${day}T00:00:00.000Z`
-        ).toISOString();
-      } catch (e) {}
-    }
-
     const totalPrice = totalRoomPrice + totalServicePrice;
 
     // Sử dụng selectedRooms từ props thay vì rooms từ Redux state
@@ -320,7 +299,6 @@ const BookingRoomModal = ({
       childrenUnder10,
       childrenAbove10,
       requirements: bookingForm.requirements || "",
-      checkInDate: isoCheckInDate,
       address: bookingForm.address || "",
       selectedRooms: mappedRooms,
       totalPrice,
@@ -359,19 +337,11 @@ const BookingRoomModal = ({
       dispatch({ type: "SET_SELECTED_SCHEDULE", payload: "" });
       dispatch({ type: "SET_SELECTED_MAX_PEOPLE", payload: "all" });
       if (yachtData?._id) {
-        // Chuyển đổi checkInDate từ format dd/mm/yyyy sang ISO string
-        let checkInDateParam = null;
-        if (bookingForm.checkInDate && bookingForm.checkInDate.includes("/")) {
-          try {
-            const [day, month, year] = bookingForm.checkInDate.split("/");
-            checkInDateParam = new Date(
-              `${year}-${month}-${day}T00:00:00.000Z`
-            ).toISOString();
-          } catch (e) {
-            console.error("Error parsing checkInDate:", e);
-          }
-        }
-        dispatch(fetchConsultationRequest(yachtData._id, checkInDateParam));
+        dispatch(fetchConsultationRequest(yachtData._id));
+      }
+      // Refetch lại danh sách phòng để cập nhật số lượng mới nhất
+      if (yachtData?._id && propSelectedSchedule) {
+        dispatch(fetchRoomsOnly(yachtData._id, propSelectedSchedule));
       }
       dispatch(closeBookingModal());
     }
@@ -401,12 +371,6 @@ const BookingRoomModal = ({
       if (childrenUnder10 > 0)
         guestCountValue += `, ${childrenUnder10} trẻ em dưới 10 tuổi`;
       dispatch(updateBookingForm("guestCount", guestCountValue));
-      let checkInDateValue = "";
-      if (consultation.data.checkInDate) {
-        const d = new Date(consultation.data.checkInDate);
-        checkInDateValue = d.toISOString().slice(0, 10);
-      }
-      dispatch(updateBookingForm("checkInDate", checkInDateValue));
       // Map lại rooms từ ref sang object đầy đủ
       const selectedRoomsFromConsult = (
         consultation.data.selectedRooms ||
@@ -532,6 +496,13 @@ const BookingRoomModal = ({
 
   if (!show) return null;
 
+  // Thêm hàm tính tổng sức chứa các phòng đã chọn
+  const getMaxPeopleForSelectedRooms = () => {
+    return (selectedRooms || []).reduce((total, room) => {
+      return total + (room.max_people || 0) * (room.quantity || 0);
+    }, 0);
+  };
+
   return (
     <>
       <Box
@@ -630,105 +601,67 @@ const BookingRoomModal = ({
                         fontSize: 13,
                       }}
                     >
-                      Ngày nhận phòng
+                      Ngày khởi hành
                     </Typography>
-                    <ReactDatePicker
-                      selected={(() => {
-                        if (
-                          bookingForm.checkInDate &&
-                          bookingForm.checkInDate.includes("/")
-                        ) {
-                          const [day, month, year] =
-                            bookingForm.checkInDate.split("/");
-                          return new Date(`${year}-${month}-${day}T00:00:00`);
-                        }
-                        if (bookingForm.checkInDate) {
-                          return new Date(bookingForm.checkInDate);
-                        }
-                        return null;
-                      })()}
-                      onChange={(date) => {
-                        let formatted = "";
-                        if (date instanceof Date && !isNaN(date)) {
-                          formatted = date.toLocaleDateString("vi-VN", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                          });
-                        }
-                        handleInputChange("checkInDate", formatted);
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        border: `2px solid ${
+                          bookingErrors.checkInDate
+                            ? theme.palette.error.main
+                            : theme.palette.primary.main
+                        }`,
+                        borderRadius: 24,
+                        padding: "10px 16px",
+                        background: theme.palette.background.paper,
+                        fontFamily: "Archivo, sans-serif",
+                        fontSize: 16,
+                        color: theme.palette.text.primary,
+                        boxShadow: bookingErrors.checkInDate
+                          ? `0 0 0 2px ${theme.palette.error.light}`
+                          : theme.shadows[1],
+                        transition: "border-color 0.2s, box-shadow 0.2s",
+                        width: "100%",
+                        outline: "none",
+                        position: "relative",
+                        cursor: "not-allowed",
                       }}
-                      dateFormat="dd/MM/yyyy"
-                      minDate={new Date()}
-                      locale={vi}
-                      placeholderText="Chọn ngày nhận phòng"
-                      dayClassName={(date) => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const d = new Date(date);
-                        d.setHours(0, 0, 0, 0);
-                        if (d < today) return "datepicker-day-disabled";
-                        return "datepicker-day-active";
-                      }}
-                      customInput={
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            border: `2px solid ${
-                              bookingErrors.checkInDate
-                                ? theme.palette.error.main
-                                : theme.palette.primary.main
-                            }`,
-                            borderRadius: 24,
-                            padding: "10px 16px",
-                            background: theme.palette.background.paper,
-                            fontFamily: "Archivo, sans-serif",
-                            fontSize: 16,
-                            color: theme.palette.text.primary,
-                            boxShadow: bookingErrors.checkInDate
-                              ? `0 0 0 2px ${theme.palette.error.light}`
-                              : theme.shadows[1],
-                            transition: "border-color 0.2s, box-shadow 0.2s",
-                            cursor: "pointer",
-                            width: "100%",
-                            outline: "none",
-                            position: "relative",
-                          }}
-                          tabIndex={0}
-                        >
-                          <CalendarIcon
-                            size={20}
-                            style={{
-                              marginRight: 10,
-                              color: bookingErrors.checkInDate
-                                ? theme.palette.error.main
-                                : theme.palette.primary.main,
-                            }}
-                          />
-                          <span
-                            style={{
-                              flex: 1,
-                              opacity: bookingForm.checkInDate ? 1 : 0.7,
-                              color: bookingForm.checkInDate
-                                ? theme.palette.text.primary
-                                : theme.palette.text.secondary,
-                            }}
-                          >
-                            {bookingForm.checkInDate || "Chọn ngày nhận phòng"}
-                          </span>
-                          <ChevronDown
-                            size={20}
-                            style={{
-                              marginLeft: 10,
-                              color: theme.palette.primary.main,
-                            }}
-                          />
-                        </Box>
-                      }
-                      popperClassName="custom-datepicker-popper"
-                      calendarClassName="custom-datepicker-calendar"
-                    />
+                    >
+                      <CalendarIcon
+                        size={20}
+                        style={{
+                          marginRight: 10,
+                          color: bookingErrors.checkInDate
+                            ? theme.palette.error.main
+                            : theme.palette.primary.main,
+                        }}
+                      />
+                      <span
+                        style={{
+                          flex: 1,
+                          color: theme.palette.text.primary,
+                        }}
+                      >
+                        {selectedScheduleObj?.startDate
+                          ? new Date(
+                              selectedScheduleObj.startDate
+                            ).toLocaleDateString("vi-VN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })
+                          : selectedScheduleObj?.scheduleId?.startDate
+                          ? new Date(
+                              selectedScheduleObj.scheduleId.startDate
+                            ).toLocaleDateString("vi-VN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })
+                          : "Không có lịch trình"}
+                      </span>
+                    </Box>
                   </div>
                   {bookingErrors.checkInDate && (
                     <div
@@ -742,77 +675,9 @@ const BookingRoomModal = ({
                       {bookingErrors.checkInDate}
                     </div>
                   )}
-                  <style>{`
-                    ${getDatePickerThemeVars(theme)}
-                    .react-datepicker-wrapper {
-                      width: 100% !important;
-                    }
-                    .react-datepicker__month-container {
-                      width: 100% !important;
-                    }
-                    .custom-datepicker-popper {
-                      z-index: 9999 !important;
-                    }
-                    .custom-datepicker-calendar {
-                      font-family: Archivo, sans-serif;
-                      border-radius: 18px;
-                      box-shadow: 0 8px 32px rgba(104,191,181,0.10);
-                      border: 1.5px solid var(--datepicker-border);
-                      overflow: hidden;
-                      min-width: 320px;
-                      background: var(--datepicker-bg);
-                    }
-                    .custom-datepicker-calendar .react-datepicker__header {
-                      background: var(--datepicker-header-bg);
-                      color: var(--datepicker-header-color);
-                      border-bottom: none;
-                      border-radius: 18px 18px 0 0;
-                    }
-                    .custom-datepicker-calendar .react-datepicker__current-month,
-                    .custom-datepicker-calendar .react-datepicker__day-name {
-                      color: var(--datepicker-header-color);
-                      font-weight: bold;
-                      font-size: 14px;
-                      margin-left: 6px;
-                    }
-                    .custom-datepicker-calendar .react-datepicker__day--selected,
-                    .custom-datepicker-calendar .react-datepicker__day--keyboard-selected {
-                      background: var(--datepicker-selected-bg) !important;
-                      color: var(--datepicker-selected-color) !important;
-                      border-radius: 10px;
-                      margin-left: 10px;
-                    }
-                    .custom-datepicker-calendar .react-datepicker__day:hover {
-                      background: var(--datepicker-hover-bg) !important;
-                      color: var(--datepicker-hover-color) !important;
-                      border-radius: 10px;
-                    }
-                    .custom-datepicker-calendar .react-datepicker__day--today {
-                      border-bottom: 2px solid var(--datepicker-today-border);
-                      margin-left: 6px;
-                    }
-                    .custom-datepicker-calendar .react-datepicker__navigation {
-                      top: 18px;
-                    }
-                    .custom-datepicker-calendar .react-datepicker__navigation-icon::before {
-                      border-color: var(--datepicker-header-color);
-                    }
-                    .datepicker-day-disabled {
-                      color: var(--datepicker-disabled) !important;
-                      background: none !important;
-                      opacity: 0.5;
-                      cursor: not-allowed !important;
-                      pointer-events: none;
-                    }
-                    .datepicker-day-active {
-                      color: ${theme.palette.text.primary} !important;
-                      background: none;
-                      cursor: pointer;
-                    }
-                  `}</style>
                 </div>
                 <GuestCounter
-                  maxPeople={maxPeople}
+                  maxPeople={getMaxPeopleForSelectedRooms()}
                   minAdults={selectedRooms.length}
                 />
               </Box>

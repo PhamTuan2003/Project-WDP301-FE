@@ -60,10 +60,15 @@ const RoomServicesModal = ({
   useEffect(() => {
     setQuantities((prev) => {
       const updated = { ...prev };
+      let changed = false;
       Object.keys(updated).forEach((id) => {
-        if (updated[id] > guestCount) updated[id] = guestCount;
+        if (updated[id] > guestCount) {
+          updated[id] = guestCount;
+          changed = true;
+        }
       });
-      return updated;
+      // Nếu có thay đổi, trả về object mới để trigger re-render
+      return changed ? { ...updated } : updated;
     });
   }, [guestCount]);
 
