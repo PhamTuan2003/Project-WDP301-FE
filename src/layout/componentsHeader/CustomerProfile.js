@@ -73,7 +73,9 @@ export default function CustomerProfile() {
     setSuccess("");
 
     if (!isValidPhone(formData.phoneNumber)) {
-      setError("Số điện thoại phải bắt đầu bằng 0 hoặc +84, theo sau là đầu số hợp lệ (03, 05, 07, 08, 09) và 7 chữ số, tổng cộng 10 chữ số");
+      setError(
+        "Số điện thoại phải bắt đầu bằng 0 hoặc +84, theo sau là đầu số hợp lệ (03, 05, 07, 08, 09) và 7 chữ số, tổng cộng 10 chữ số"
+      );
       return;
     }
 
@@ -186,8 +188,8 @@ export default function CustomerProfile() {
             value={formData.email}
             onChange={handleChange}
             fullWidth
-            disabled={!editMode || !customer.accountId} // ✅ Chỉ cho sửa khi đang edit và là user thường
-            error={editMode && customer.accountId && !isValidEmail(formData.email)} // ✅ Chỉ validate khi user thường
+            disabled={!editMode || !customer.accountId}
+            error={editMode && customer.accountId && !isValidEmail(formData.email)}
             helperText={
               editMode && customer.accountId && !isValidEmail(formData.email)
                 ? "Email không hợp lệ, cần Email chính xác để 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 gửi các thông tin như chọn phòng, thông tin hoá đơn, tư vấn, ... Nếu không bạn sẽ không nhận được bất cứ thông tin nào"
@@ -209,6 +211,7 @@ export default function CustomerProfile() {
                 : ""
             }
           />
+
           {editMode ? (
             <Stack direction="row" spacing={2}>
               <StyledButton type="submit">Lưu thay đổi</StyledButton>
@@ -231,7 +234,13 @@ export default function CustomerProfile() {
               </Button>
             </Stack>
           ) : (
-            <StyledButton onClick={() => setEditMode(true)}>Chỉnh sửa thông tin</StyledButton>
+            <Stack spacing={1}>
+              <StyledButton onClick={() => setEditMode(true)}>Chỉnh sửa thông tin</StyledButton>
+              <Typography variant="body2" color="error" sx={{ fontStyle: "italic", textAlign: "center" }}>
+                * Đối với người dùng đăng nhập bằng Google, bạn chỉ có thể cập nhật số điện thoại. Việc chỉnh sửa họ
+                tên, email và ảnh đại diện sẽ không được hỗ trợ để đảm bảo tính nhất quán với thông tin từ Google.
+              </Typography>
+            </Stack>
           )}
         </Stack>
       </Box>

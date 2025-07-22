@@ -59,11 +59,20 @@ export default function Login() {
     setSuccess("");
     try {
       const response = await axios.post("http://localhost:9999/api/v1/customers/login", formData);
+      const user = response.data.customer;
+
+      console.log("🎯 Đăng nhập thành công, user nhận được:", user);
+      console.log("🔑 Role:", user.role);
+
       localStorage.setItem("token", response.data.token);
-      localStorage.setItem("customer", JSON.stringify(response.data.customer));
+      localStorage.setItem("customer", JSON.stringify(user));
       setShowTransition(true);
       setTimeout(() => {
-        navigate("/");
+        if (user.role === "COMPANY") {
+          navigate("/manage-company");
+        } else if (user.role === "CUSTOMER") {
+          navigate("/");
+        }
         window.location.reload();
       }, 1500);
     } catch (err) {
@@ -300,10 +309,7 @@ export default function Login() {
                     Hoặc đăng nhập bằng
                   </Typography>
                   <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-                    <GoogleLogin
-                      onSuccess={handleGoogleLoginSuccess}
-                      onError={handleGoogleLoginFailure}
-                    />
+                    <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={handleGoogleLoginFailure} />
                   </Stack>
                 </Box>
                 <Typography
@@ -328,7 +334,7 @@ export default function Login() {
                   setSuccess("");
                 }}
                 navigate={navigate}
-              />             
+              />
             )}
           </Box>
         </Box>

@@ -3,6 +3,7 @@ import { setAuthenticated } from "../actions/authActions";
 export const initializeAuth = () => (dispatch) => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("customer");
+
   if (token && user) {
     try {
       const userData = JSON.parse(user);
@@ -10,7 +11,10 @@ export const initializeAuth = () => (dispatch) => {
     } catch (error) {
       localStorage.removeItem("token");
       localStorage.removeItem("customer");
+      dispatch({ type: "CHECK_AUTH_STATUS" });
     }
+  } else {
+    dispatch({ type: "CHECK_AUTH_STATUS" }); // Không có token vẫn cần set authChecked = true
   }
 };
 

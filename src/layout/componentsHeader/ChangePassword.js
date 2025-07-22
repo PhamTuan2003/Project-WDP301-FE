@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, Typography, TextField, Stack } from "@mui/material";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import styled from "@emotion/styled";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -80,15 +81,33 @@ export default function ChangePassword() {
     );
   }
 
-  if (!customer.accountId) {
-    return (
-      <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography variant="h6" color="primary.main">
-          Tài khoản đăng nhập bằng Google không thể đổi mật khẩu.
-        </Typography>
-      </Box>
-    );
-  }
+ if (!customer.accountId) {
+  return (
+    <Box
+      sx={{
+        p: 4,
+        m: 2,
+        borderRadius: 2,
+        backgroundColor: "#fff3cd",
+        border: "1px solid #ffeeba",
+        color: "#856404",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+        height: "450px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center", // căn giữa theo chiều dọc
+        alignItems: "center",     // căn giữa theo chiều ngang
+        gap: 2,
+      }}
+    >
+      <WarningAmberIcon sx={{ fontSize: 40, color: "#ffc107" }} />
+      <Typography variant="h6" sx={{ fontWeight: 600, textAlign: "center" }}>
+        Tài khoản đăng nhập bằng Google không thể đổi mật khẩu.
+      </Typography>
+    </Box>
+  );
+}
+
 
   return (
     <Box sx={{ p: 4, maxWidth: 600, mx: "auto" }}>

@@ -31,7 +31,7 @@ import ContactSection from "./layout/componentsFooter/ContactSection";
 import FAQ from "./layout/componentsFooter/FAQ";
 import RulesAndNotes from "./layout/componentsFooter/RulesAndNotes";
 import MainLayout from "./layout/MainLayout";
-import ProtectedRoute from "./components/routers/ProtectedRoute";
+//import ProtectedRoute from "./components/routers/ProtectedRoute";
 
 // Company
 import Dashboard from "./components/company/Dashboard";
@@ -53,12 +53,8 @@ import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal
 
 // Custom hook để lock scroll khi có modal mở
 function useBodyScrollLock() {
-  const showTransactionModal = useSelector(
-    (state) => state.ui.modals.showTransactionModal
-  );
-  const showConfirmationModal = useSelector(
-    (state) => state.ui.modals.showConfirmationModal
-  );
+  const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
+  const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
   useEffect(() => {
     if (showTransactionModal || showConfirmationModal) {
       document.body.style.overflow = "hidden";
@@ -72,19 +68,11 @@ function useBodyScrollLock() {
 }
 
 function AppWrapper() {
-  const [mode, setMode] = useState(
-    localStorage.getItem("themeMode") || "light"
-  );
+  const [mode, setMode] = useState(localStorage.getItem("themeMode") || "light");
   const dispatch = useDispatch();
-  const showTransactionModal = useSelector(
-    (state) => state.ui.modals.showTransactionModal
-  );
-  const bookingIdFortransaction = useSelector(
-    (state) => state.ui.modals.bookingIdFortransaction
-  );
-  const showConfirmationModal = useSelector(
-    (state) => state.ui.modals.showConfirmationModal
-  );
+  const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
+  const bookingIdFortransaction = useSelector((state) => state.ui.modals.bookingIdFortransaction);
+  const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
 
   useEffect(() => {
     dispatch(initializeAuth());
@@ -121,10 +109,7 @@ function AppWrapper() {
           <Route path="/register" element={<Register />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/ve-chung-toi" element={<AboutUs />} />
-          <Route
-            path="/dieu-khoan-va-dieu-kien"
-            element={<TermsAndConditions />}
-          />
+          <Route path="/dieu-khoan-va-dieu-kien" element={<TermsAndConditions />} />
           <Route path="/chinh-sach-rieng-tu" element={<PrivacyPolicy />} />
           <Route path="/huong-dan-su-dung" element={<UserGuide />} />
           <Route path="/hinh-thuc-thanh-toan" element={<PaymentMethods />} />
@@ -142,9 +127,7 @@ function AppWrapper() {
         <Route
           path="/manage-company"
           element={
-            <ProtectedRoute>
-              <ManageCompany />
-            </ProtectedRoute>
+            <ManageCompany />
           }
         >
           <Route index element={<Dashboard />} />
@@ -154,10 +137,7 @@ function AppWrapper() {
         </Route>
 
         {/* Admin Route */}
-        <Route
-          path="/admin"
-          element={<Admin toggleTheme={toggleTheme} mode={mode} />}
-        />
+        <Route path="/admin" element={<Admin toggleTheme={toggleTheme} mode={mode} />} />
       </Routes>
 
       {/* {!hideHeaderFooter && <Footer />} */}

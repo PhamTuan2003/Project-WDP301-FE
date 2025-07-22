@@ -23,6 +23,8 @@ const Sidebar = (props) => {
 
   const handleLogout = () => {
     dispatch(doLogout());
+    localStorage.removeItem("token");
+    localStorage.removeItem("customer");
   };
   return (
     <div>
@@ -94,7 +96,7 @@ const Sidebar = (props) => {
               padding: "20px 24px",
             }}
           >
-            <NavLink onClick={handleLogout} className="nav-link " to="/signin">
+            <NavLink onClick={handleLogout} className="nav-link " to="/login">
               <TbLogout2 />
               Logout
             </NavLink>
