@@ -149,3 +149,7 @@ export const setSelectedYachtServices = (services) => ({
   type: "SET_SELECTED_YACHT_SERVICES",
   payload: services,
 });
+export const setSelectedRoomQuantities = (roomQuantities) => ({
+  type: "SET_SELECTED_ROOM_QUANTITIES",
+  payload: roomQuantities,
+});

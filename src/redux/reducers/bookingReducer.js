@@ -41,6 +41,7 @@ const bookingInitialState = {
   hasConsultation: false,
   editingBookingId: null,
   selectedYachtServices: [],
+  selectedRoomQuantities: {},
 };
 
 const bookingReducer = (state = bookingInitialState, action) => {
@@ -430,6 +431,11 @@ const bookingReducer = (state = bookingInitialState, action) => {
       return { ...state, loading: false, error: action.payload };
     case "CLEAR_CURRENT_BOOKING_DETAIL":
       return { ...state, currentBookingDetail: null, bookingSubmitting: false };
+    case "SET_SELECTED_ROOM_QUANTITIES":
+      return {
+        ...state,
+        selectedRoomQuantities: action.payload,
+      };
     default:
       return state;
   }

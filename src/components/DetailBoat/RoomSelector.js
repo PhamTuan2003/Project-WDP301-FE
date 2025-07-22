@@ -6,7 +6,6 @@ import {
   Building2,
   Minus,
   Plus,
-  Type,
   User,
   X,
 } from "lucide-react";
@@ -32,6 +31,7 @@ import {
   setEditingBookingId,
   clearAllErrors,
   setSelectedYachtServices,
+  setSelectedRoomQuantities as setSelectedRoomQuantitiesAction, // đổi tên tránh trùng useState
 } from "../../redux/actions/bookingActions";
 import {
   openRoomModal,
@@ -44,8 +44,9 @@ import {
   fetchRoomsOnly,
 } from "../../redux/asyncActions/bookingAsyncActions";
 import RoomServicesModal from "./RoomServicesModal";
-import { getScheduleById } from "../../utils/scheduleHelpers";
 import { formatPrice } from "../../redux/validation";
+import Swal from "sweetalert2";
+import GuestCounter from "./Booking/GuestCounter";
 
 // Đặt hàm này ngay sau import, trước function RoomSelector
 const getRoomQuantity = (room) => {
@@ -91,7 +92,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     }
   }, [yachtId, selectedSchedule, dispatch]);
 
-  // Khi fetch rooms mới, reset selectedRoomQuantities
+  // Nếu rooms thay đổi (do chỉnh sửa tư vấn), đồng bộ lại selectedRoomQuantities
   useEffect(() => {
     if (rooms && rooms.length > 0) {
       const initialQuantities = {};
@@ -101,6 +102,28 @@ function RoomSelector({ yachtId, yachtData = {} }) {
       setSelectedRoomQuantities(initialQuantities);
     }
   }, [rooms]);
+
+  useEffect(() => {
+    // Tính tổng số phòng đã chọn
+    const totalSelectedRooms = Object.values(selectedRoomQuantities).reduce(
+      (sum, qty) => sum + qty,
+      0
+    );
+    // Nếu có dịch vụ đã chọn, kiểm tra và cập nhật lại số lượng khách cho từng dịch vụ nếu cần
+    if (selectedYachtServices && selectedYachtServices.length > 0) {
+      let changed = false;
+      const updatedServices = selectedYachtServices.map((sv) => {
+        if ((sv.quantity || 1) > totalSelectedRooms) {
+          changed = true;
+          return { ...sv, quantity: totalSelectedRooms };
+        }
+        return sv;
+      });
+      if (changed) {
+        dispatch(setSelectedYachtServices(updatedServices));
+      }
+    }
+  }, [selectedRoomQuantities]);
 
   // Hàm lấy danh sách phòng đã chọn để gửi lên BE/Redux
   const getSelectedRoomsForBooking = () => {
@@ -120,7 +143,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
 
   // Sửa handleBookNow để đồng bộ với Redux
   const handleBookNow = () => {
-    dispatch(setSelectedRoomQuantities(getSelectedRoomsForBooking()));
+    dispatch(setSelectedRoomQuantitiesAction(selectedRoomQuantities));
     dispatch(resetBookingForm());
     dispatch(clearAllErrors());
     dispatch(setEditingBookingId(null));
@@ -169,7 +192,12 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         [roomId]: selectedQuantity + 1,
       }));
     } else {
-      alert("Đã đạt số lượng phòng tối đa còn lại!");
+      Swal.fire({
+        icon: "warning",
+        title: "Đã đạt số lượng phòng tối đa!",
+        text: `Bạn không thể chọn quá số lượng phòng còn lại cho loại phòng này.`,
+        confirmButtonText: "OK",
+      });
     }
     console.log(
       `Phòng: ${room.name}, Đã chọn: ${selectedQuantity}, Số lượng còn lại: ${availableQuantity}`
@@ -196,13 +224,11 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     return rooms.filter((room) => getRoomQuantity(room) > 0);
   };
 
-  // Tính tổng sức chứa tối đa của các phòng đã chọn
+  // Thêm hàm tính tổng sức chứa các phòng đã chọn
   const getMaxPeopleForSelectedRooms = () => {
-    const selectedRooms = getSelectedRooms();
-    if (selectedRooms.length === 0) return null;
-
-    return selectedRooms.reduce((total, room) => {
-      return total + room.max_people * getRoomQuantity(room);
+    return rooms.reduce((total, room) => {
+      const qty = selectedRoomQuantities[room.id || room._id] || 0;
+      return total + (room.max_people || 0) * qty;
     }, 0);
   };
 
@@ -612,7 +638,9 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                     );
                   })}
                 </Box>
-                {rooms.some((room) => getRoomQuantity(room) > 0) && (
+                {Object.values(selectedRoomQuantities).some(
+                  (qty) => qty > 0
+                ) && (
                   <Box
                     sx={{
                       display: "flex",
@@ -648,9 +676,15 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                       }}
                     >
                       {rooms
-                        .filter((room) => getRoomQuantity(room) > 0)
+                        .filter(
+                          (room) =>
+                            (selectedRoomQuantities[room.id || room._id] || 0) >
+                            0
+                        )
                         .map((room) => {
-                          const roomTotal = room.price * getRoomQuantity(room);
+                          const selectedQty =
+                            selectedRoomQuantities[room.id || room._id] || 0;
+                          const roomTotal = room.price * selectedQty;
                           return (
                             <Box
                               key={room.id}
@@ -672,7 +706,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               >
                                 <Building2 size={20} />
                                 <p>
-                                  {room.name} x {getRoomQuantity(room)}:{" "}
+                                  {room.name} x {selectedQty}:{" "}
                                   {formatPrice(roomTotal)}(
                                   {formatPrice(room.price)}/phòng)
                                 </p>
@@ -757,9 +791,18 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                         >
                           Tổng tiền phòng:{" "}
                           {rooms
+                            .filter(
+                              (room) =>
+                                (selectedRoomQuantities[room.id || room._id] ||
+                                  0) > 0
+                            )
                             .reduce(
                               (sum, room) =>
-                                sum + room.price * getRoomQuantity(room),
+                                sum +
+                                (room.price || 0) *
+                                  (selectedRoomQuantities[
+                                    room.id || room._id
+                                  ] || 0),
                               0
                             )
                             .toLocaleString()}{" "}
@@ -894,7 +937,10 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
-        guestCount={rooms.reduce((sum, room) => sum + getRoomQuantity(room), 0)}
+        guestCount={Object.values(selectedRoomQuantities).reduce(
+          (sum, qty) => sum + qty,
+          0
+        )}
       />
     </div>
   );

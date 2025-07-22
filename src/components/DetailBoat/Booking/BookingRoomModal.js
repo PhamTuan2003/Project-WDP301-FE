@@ -15,6 +15,7 @@ import {
   createBookingOrConsultationRequest,
   fetchConsultationRequest,
   updateBookingOrConsultationRequest,
+  fetchRoomsOnly, // thêm dòng này
 } from "../../../redux/asyncActions/bookingAsyncActions";
 import ConsultationDetailsModal from "./ConsultationDetailModal";
 import {
@@ -91,8 +92,9 @@ const BookingRoomModal = ({
   const adults = Number(guestCounter?.adults ?? 0);
   const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
   const totalGuests = adults + Math.floor(childrenAbove10 / 2);
-  const totalRoomPrice = selectedRooms.reduce(
-    (sum, room) => sum + room.price * room.quantity,
+  // Đảm bảo tính tổng tiền phòng đúng logic
+  const totalRoomPrice = (selectedRooms || []).reduce(
+    (sum, room) => sum + (room.price || 0) * (room.quantity || 0),
     0
   );
   const totalServicePrice = selectedYachtServices
@@ -337,6 +339,10 @@ const BookingRoomModal = ({
       if (yachtData?._id) {
         dispatch(fetchConsultationRequest(yachtData._id));
       }
+      // Refetch lại danh sách phòng để cập nhật số lượng mới nhất
+      if (yachtData?._id && propSelectedSchedule) {
+        dispatch(fetchRoomsOnly(yachtData._id, propSelectedSchedule));
+      }
       dispatch(closeBookingModal());
     }
   };
@@ -489,6 +495,13 @@ const BookingRoomModal = ({
   };
 
   if (!show) return null;
+
+  // Thêm hàm tính tổng sức chứa các phòng đã chọn
+  const getMaxPeopleForSelectedRooms = () => {
+    return (selectedRooms || []).reduce((total, room) => {
+      return total + (room.max_people || 0) * (room.quantity || 0);
+    }, 0);
+  };
 
   return (
     <>
@@ -664,7 +677,7 @@ const BookingRoomModal = ({
                   )}
                 </div>
                 <GuestCounter
-                  maxPeople={maxPeople}
+                  maxPeople={getMaxPeopleForSelectedRooms()}
                   minAdults={selectedRooms.length}
                 />
               </Box>
