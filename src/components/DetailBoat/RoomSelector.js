@@ -38,8 +38,6 @@ import {
   closeRoomModal,
   openBookingModal,
   closeBookingModal,
-  closeConfirmationModal,
-  closeTransactionModal,
 } from "../../redux/actions/uiActions";
 import {
   fetchSchedulesOnly,
@@ -48,6 +46,14 @@ import {
 import RoomServicesModal from "./RoomServicesModal";
 import { getScheduleById } from "../../utils/scheduleHelpers";
 import { formatPrice } from "../../redux/validation";
+
+// Đặt hàm này ngay sau import, trước function RoomSelector
+const getRoomQuantity = (room) => {
+  if (typeof room.quantity === "object" && room.quantity.$numberLong) {
+    return parseInt(room.quantity.$numberLong, 10);
+  }
+  return room.quantity;
+};
 
 function RoomSelector({ yachtId, yachtData = {} }) {
   const dispatch = useDispatch();
@@ -68,6 +74,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   );
   const [editBookingData, setEditBookingData] = useState(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  // Thêm state quản lý số lượng phòng đã chọn
+  const [selectedRoomQuantities, setSelectedRoomQuantities] = useState({});
 
   useEffect(() => {
     if (yachtId) {
@@ -83,18 +91,63 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     }
   }, [yachtId, selectedSchedule, dispatch]);
 
+  // Khi fetch rooms mới, reset selectedRoomQuantities
+  useEffect(() => {
+    if (rooms && rooms.length > 0) {
+      const initialQuantities = {};
+      rooms.forEach((room) => {
+        initialQuantities[room.id || room._id] = 0;
+      });
+      setSelectedRoomQuantities(initialQuantities);
+    }
+  }, [rooms]);
+
+  // Hàm lấy danh sách phòng đã chọn để gửi lên BE/Redux
+  const getSelectedRoomsForBooking = () => {
+    return rooms
+      .filter((room) => (selectedRoomQuantities[room.id || room._id] || 0) > 0)
+      .map((room) => ({
+        roomId: room.id || room._id,
+        quantity: selectedRoomQuantities[room.id || room._id] || 0,
+        name: room.name,
+        price: room.price,
+        area: room.area,
+        max_people: room.max_people,
+        roomTypeId: room.roomTypeId,
+        yachtId: room.yachtId,
+      }));
+  };
+
+  // Sửa handleBookNow để đồng bộ với Redux
   const handleBookNow = () => {
-    // Chỉ reset form booking, không xóa dữ liệu đã chọn
+    dispatch(setSelectedRoomQuantities(getSelectedRoomsForBooking()));
     dispatch(resetBookingForm());
     dispatch(clearAllErrors());
     dispatch(setEditingBookingId(null));
     dispatch(openBookingModal());
   };
 
+  // Reset selectedRoomQuantities khi đóng modal hoặc clear selection
+  const handleCloseBookingModal = () => {
+    dispatch(closeBookingModal());
+    // Reset số lượng phòng đã chọn
+    const initialQuantities = {};
+    rooms.forEach((room) => {
+      initialQuantities[room.id || room._id] = 0;
+    });
+    setSelectedRoomQuantities(initialQuantities);
+  };
+
   const handleClearSelection = () => {
     dispatch(clearSelection());
     dispatch(setSelectedSchedule(""));
     dispatch(setSelectedMaxPeople("all"));
+    // Reset số lượng phòng đã chọn
+    const initialQuantities = {};
+    rooms.forEach((room) => {
+      initialQuantities[room.id || room._id] = 0;
+    });
+    setSelectedRoomQuantities(initialQuantities);
   };
 
   const handleOpenRoomModal = (room) => {
@@ -105,13 +158,42 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     setShowServiceModal(false);
   };
 
+  // Hàm tăng số lượng phòng đã chọn
+  const handleIncrementRoom = (roomId) => {
+    const room = rooms.find((r) => (r.id || r._id) === roomId);
+    const selectedQuantity = selectedRoomQuantities[roomId] || 0;
+    const availableQuantity = getRoomQuantity(room);
+    if (selectedQuantity < availableQuantity) {
+      setSelectedRoomQuantities((prev) => ({
+        ...prev,
+        [roomId]: selectedQuantity + 1,
+      }));
+    } else {
+      alert("Đã đạt số lượng phòng tối đa còn lại!");
+    }
+    console.log(
+      `Phòng: ${room.name}, Đã chọn: ${selectedQuantity}, Số lượng còn lại: ${availableQuantity}`
+    );
+  };
+
+  // Hàm giảm số lượng phòng đã chọn
+  const handleDecrementRoom = (roomId) => {
+    const selectedQuantity = selectedRoomQuantities[roomId] || 0;
+    if (selectedQuantity > 0) {
+      setSelectedRoomQuantities((prev) => ({
+        ...prev,
+        [roomId]: selectedQuantity - 1,
+      }));
+    }
+  };
+
   // Filter rooms theo số người tối đa (max_people)
   const filteredRooms =
     selectedMaxPeople === "all"
       ? rooms
       : rooms.filter((room) => room.max_people === parseInt(selectedMaxPeople));
   const getSelectedRooms = () => {
-    return rooms.filter((room) => room.quantity > 0);
+    return rooms.filter((room) => getRoomQuantity(room) > 0);
   };
 
   // Tính tổng sức chứa tối đa của các phòng đã chọn
@@ -120,7 +202,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     if (selectedRooms.length === 0) return null;
 
     return selectedRooms.reduce((total, room) => {
-      return total + room.max_people * room.quantity;
+      return total + room.max_people * getRoomQuantity(room);
     }, 0);
   };
 
@@ -130,7 +212,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
     0
   );
   const totalPrice =
-    rooms.reduce((sum, room) => sum + room.price * room.quantity, 0) +
+    rooms.reduce((sum, room) => sum + room.price * getRoomQuantity(room), 0) +
     totalServicePrice;
 
   return (
@@ -300,222 +382,237 @@ function RoomSelector({ yachtId, yachtData = {} }) {
             {filteredRooms.length > 0 && (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {filteredRooms.map((room) => (
-                    <Box
-                      key={room.id}
-                      sx={{
-                        bgcolor: "background.paper",
-                        p: 2,
-                        borderRadius: (theme) => theme.shape.borderRadius / 5,
-                        boxShadow: (theme) => theme.shadows[1],
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: { xs: "wrap", sm: "nowrap" },
-                        gap: 2,
-                      }}
-                    >
+                  {filteredRooms.map((room) => {
+                    const availableQuantity = getRoomQuantity(room);
+                    console.log("DEBUG ROOM:", room);
+                    console.log(
+                      `Tên phòng: ${room.name}, room.quantity raw:`,
+                      room.quantity,
+                      ", availableQuantity:",
+                      availableQuantity
+                    );
+                    return (
                       <Box
+                        key={room.id}
                         sx={{
+                          bgcolor: "background.paper",
+                          p: 2,
+                          borderRadius: (theme) => theme.shape.borderRadius / 5,
+                          boxShadow: (theme) => theme.shadows[1],
+                          border: (theme) =>
+                            `1px solid ${theme.palette.divider}`,
                           display: "flex",
+                          justifyContent: "space-between",
                           alignItems: "center",
-                          gap: 1.5,
-                          color: "text.primary",
+                          flexWrap: { xs: "wrap", sm: "nowrap" },
+                          gap: 2,
                         }}
                       >
                         <Box
-                          component="img"
-                          src={room.image}
-                          alt={room.name}
-                          sx={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: 2,
-                            objectFit: "cover",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => handleOpenRoomModal(room)}
-                        />
-                        <Box
                           sx={{
                             display: "flex",
-                            flexDirection: "column",
-                            gap: 1,
+                            alignItems: "center",
+                            gap: 1.5,
+                            color: "text.primary",
                           }}
                         >
-                          <Typography
-                            variant="h6"
+                          <Box
+                            component="img"
+                            src={room.image}
+                            alt={room.name}
                             sx={{
-                              fontWeight: "bold",
-                              fontSize: "1rem",
-                              textDecoration: "underline",
+                              width: 64,
+                              height: 64,
+                              borderRadius: 2,
+                              objectFit: "cover",
                               cursor: "pointer",
-                              color: "text.primary",
-                              "&:hover": { color: "primary.main" },
                             }}
                             onClick={() => handleOpenRoomModal(room)}
-                          >
-                            {room.name}
-                          </Typography>
+                          />
                           <Box
                             sx={{
                               display: "flex",
-                              gap: 1.5,
-                              fontWeight: "medium",
-                              fontSize: "0.875rem",
+                              flexDirection: "column",
+                              gap: 1,
                             }}
                           >
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: "bold",
+                                fontSize: "1rem",
+                                textDecoration: "underline",
+                                cursor: "pointer",
+                                color: "text.primary",
+                                "&:hover": { color: "primary.main" },
+                              }}
+                              onClick={() => handleOpenRoomModal(room)}
+                            >
+                              {room.name}
+                            </Typography>
                             <Box
                               sx={{
                                 display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
+                                gap: 1.5,
+                                fontWeight: "medium",
+                                fontSize: "0.875rem",
                               }}
                             >
-                              <BedDouble size={16} className="text-teal-600" />
-                              <p className="mb-0 ">{room.area} m²</p>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <User size={16} className="text-teal-600" />
-                              <p className="mb-0">
-                                {room.max_people || 0} người
-                              </p>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              {room.roomTypeId && (
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.5,
-                                  }}
-                                >
-                                  <Building
-                                    size={16}
-                                    className="text-teal-600"
-                                  />
-                                  <p className="mb-0">
-                                    {room.roomTypeId.type || "Phòng tiêu chuẩn"}
-                                  </p>
-                                </Box>
-                              )}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <BedDouble
+                                  size={16}
+                                  className="text-teal-600"
+                                />
+                                <p className="mb-0 ">{room.area} m²</p>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <User size={16} className="text-teal-600" />
+                                <p className="mb-0">
+                                  {room.max_people || 0} người
+                                </p>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                {room.roomTypeId && (
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 0.5,
+                                    }}
+                                  >
+                                    <Building
+                                      size={16}
+                                      className="text-teal-600"
+                                    />
+                                    <p className="mb-0">
+                                      {room.roomTypeId.type ||
+                                        "Phòng tiêu chuẩn"}
+                                    </p>
+                                  </Box>
+                                )}
+                              </Box>
                             </Box>
                           </Box>
                         </Box>
-                      </Box>
 
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 1,
-                          flexShrink: 0,
-                        }}
-                      >
                         <Box
                           sx={{
                             display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
+                            alignItems: "flex-start",
+                            gap: 1,
+                            flexShrink: 0,
                           }}
                         >
                           <Box
                             sx={{
                               display: "flex",
-                              flexDirection: "row",
+                              flexDirection: "column",
                               alignItems: "center",
                             }}
                           >
-                            <Typography
+                            <Box
                               sx={{
-                                color: "primary.main",
-                                fontSize: "1.125rem",
-                                fontWeight: "bold",
+                                display: "flex",
+                                flexDirection: "row",
+                                alignItems: "center",
                               }}
                             >
-                              {formatPrice(room.price)}
-                            </Typography>
-                            <Typography
+                              <Typography
+                                sx={{
+                                  color: "primary.main",
+                                  fontSize: "1.125rem",
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {formatPrice(room.price)}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  color: "primary.main",
+                                  fontSize: "1.125rem",
+                                  fontWeight: "medium",
+                                }}
+                              >
+                                {" "}
+                                / phòng
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              border: (theme) =>
+                                `1px solid ${theme.palette.divider}`,
+                              borderRadius: (theme) =>
+                                theme.shape.borderRadius / 2,
+                              bgcolor: "background.paper",
+                              boxShadow: (theme) => theme.shadows[1],
+                            }}
+                          >
+                            <Button
+                              onClick={() =>
+                                handleDecrementRoom(room.id || room._id)
+                              }
                               sx={{
-                                color: "primary.main",
-                                fontSize: "1.125rem",
-                                fontWeight: "medium",
+                                minWidth: 32,
+                                height: 32,
+                                borderRadius: "50%",
+                                color: "text.primary",
+                                "&:hover": { bgcolor: "background.default" },
                               }}
                             >
-                              {" "}
-                              / phòng
+                              <Minus size={16} />
+                            </Button>
+                            <Typography
+                              sx={{
+                                mx: 1,
+                                width: "auto",
+                                textAlign: "center",
+                                color: "text.primary",
+                              }}
+                            >
+                              {selectedRoomQuantities[room.id || room._id] || 0}
                             </Typography>
+                            <Button
+                              onClick={() =>
+                                handleIncrementRoom(room.id || room._id)
+                              }
+                              sx={{
+                                minWidth: 32,
+                                height: 32,
+                                borderRadius: "50%",
+                                color: "text.primary",
+                                "&:hover": { bgcolor: "background.default" },
+                              }}
+                            >
+                              <Plus size={16} />
+                            </Button>
                           </Box>
                         </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            border: (theme) =>
-                              `1px solid ${theme.palette.divider}`,
-                            borderRadius: (theme) =>
-                              theme.shape.borderRadius / 2,
-                            bgcolor: "background.paper",
-                            boxShadow: (theme) => theme.shadows[1],
-                          }}
-                        >
-                          <Button
-                            onClick={() =>
-                              dispatch(decrementRoomQuantity(room.id))
-                            }
-                            sx={{
-                              minWidth: 32,
-                              height: 32,
-                              borderRadius: "50%",
-                              color: "text.primary",
-                              "&:hover": { bgcolor: "background.default" },
-                            }}
-                          >
-                            <Minus size={16} />
-                          </Button>
-                          <Typography
-                            sx={{
-                              mx: 1,
-                              width: "auto",
-                              textAlign: "center",
-                              color: "text.primary",
-                            }}
-                          >
-                            {room.quantity}
-                          </Typography>
-                          <Button
-                            onClick={() =>
-                              dispatch(incrementRoomQuantity(room.id))
-                            }
-                            sx={{
-                              minWidth: 32,
-                              height: 32,
-                              borderRadius: "50%",
-                              color: "text.primary",
-                              "&:hover": { bgcolor: "background.default" },
-                            }}
-                          >
-                            <Plus size={16} />
-                          </Button>
-                        </Box>
                       </Box>
-                    </Box>
-                  ))}
+                    );
+                  })}
                 </Box>
-                {rooms.some((room) => room.quantity > 0) && (
+                {rooms.some((room) => getRoomQuantity(room) > 0) && (
                   <Box
                     sx={{
                       display: "flex",
@@ -551,9 +648,9 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                       }}
                     >
                       {rooms
-                        .filter((room) => room.quantity > 0)
+                        .filter((room) => getRoomQuantity(room) > 0)
                         .map((room) => {
-                          const roomTotal = room.price * room.quantity;
+                          const roomTotal = room.price * getRoomQuantity(room);
                           return (
                             <Box
                               key={room.id}
@@ -575,7 +672,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               >
                                 <Building2 size={20} />
                                 <p>
-                                  {room.name} x {room.quantity}:{" "}
+                                  {room.name} x {getRoomQuantity(room)}:{" "}
                                   {formatPrice(roomTotal)}(
                                   {formatPrice(room.price)}/phòng)
                                 </p>
@@ -606,7 +703,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                   {Math.min(
                                     sv.quantity || 1,
                                     rooms.reduce(
-                                      (sum, room) => sum + room.quantity,
+                                      (sum, room) =>
+                                        sum + getRoomQuantity(room),
                                       0
                                     )
                                   )}{" "}
@@ -616,7 +714,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                       Math.min(
                                         sv.quantity || 1,
                                         rooms.reduce(
-                                          (sum, room) => sum + room.quantity,
+                                          (sum, room) =>
+                                            sum + getRoomQuantity(room),
                                           0
                                         )
                                       )
@@ -659,7 +758,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                           Tổng tiền phòng:{" "}
                           {rooms
                             .reduce(
-                              (sum, room) => sum + room.price * room.quantity,
+                              (sum, room) =>
+                                sum + room.price * getRoomQuantity(room),
                               0
                             )
                             .toLocaleString()}{" "}
@@ -778,8 +878,8 @@ function RoomSelector({ yachtId, yachtData = {} }) {
       {/* chọn phòng */}
       <BookingRoomModal
         show={showBookingModal}
-        onClose={() => dispatch(closeBookingModal())}
-        selectedRooms={getSelectedRooms()}
+        onClose={handleCloseBookingModal}
+        selectedRooms={getSelectedRoomsForBooking()}
         selectedYachtServices={selectedYachtServices}
         yachtData={yachtData}
         onBack={null}
@@ -794,7 +894,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
         onClose={() => setShowServiceModal(false)}
         onSelectServices={handleSelectYachtServices}
         selectedServices={selectedYachtServices}
-        guestCount={rooms.reduce((sum, room) => sum + room.quantity, 0)}
+        guestCount={rooms.reduce((sum, room) => sum + getRoomQuantity(room), 0)}
       />
     </div>
   );

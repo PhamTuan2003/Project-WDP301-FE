@@ -94,7 +94,7 @@ const statusMap = {
     label: "Đã đặt cọc",
     color: "info",
     icon: <MonetizationOnIcon color="info" />,
-    desc: "Bạn đã thanh toán đặt cọc. Bạn có thể thanh toán phần còn lại trước hoặc sau chuyến đi.",
+    desc: "Bạn đã thanh toán đặt cọc.",
   },
 };
 
@@ -200,13 +200,43 @@ export default function BookingHistory() {
           ["pending_payment", "consultation_requested"].includes(booking.status)
         ) {
           target = new Date(booking.createdAt).getTime() + 60 * 60 * 1000;
-        } else if (booking.status === "cancelled" && booking.cancelledAt) {
-          target =
-            new Date(booking.cancelledAt).getTime() + 24 * 60 * 60 * 1000;
-        } else if (booking.status === "confirmed") {
-          // Hạn hủy: trước ngày check-in 1 ngày
-          target =
-            new Date(booking.checkInDate).getTime() - 24 * 60 * 60 * 1000;
+        } else if (booking.status === "cancelled") {
+          console.log(
+            "DEBUG updateCountdowns: booking",
+            booking._id,
+            "cancelledAt:",
+            booking.cancelledAt
+          );
+          if (booking.cancelledAt) {
+            target =
+              new Date(booking.cancelledAt).getTime() + 2 * 24 * 60 * 60 * 1000;
+          }
+        } else if (
+          ["confirmed", "confirmed_deposit"].includes(booking.status)
+        ) {
+          // Lấy startDate của scheduleObj thay vì checkInDate
+          const yachtKey = booking.yacht?._id || booking.yacht;
+          const schedulesForYacht = schedules[yachtKey] || [];
+          const scheduleObj = getScheduleById(
+            schedulesForYacht,
+            booking.schedule?._id || booking.scheduleId
+          );
+          const startDate =
+            scheduleObj?.startDate || scheduleObj?.scheduleId?.startDate;
+          if (startDate) {
+            console.log(
+              `[BookingHistory] bookingId: ${booking._id}, startDate lấy được:`,
+              startDate,
+              "scheduleObj:",
+              scheduleObj
+            );
+            target = new Date(startDate).getTime();
+          } else {
+            console.warn(
+              `[BookingHistory] bookingId: ${booking._id} không tìm thấy startDate trong scheduleObj`,
+              scheduleObj
+            );
+          }
         }
         if (target) {
           newCountdowns[booking._id] = getCountdown(target);
@@ -218,7 +248,7 @@ export default function BookingHistory() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(updateCountdowns, 1000);
     return () => clearInterval(intervalRef.current);
-  }, [bookings]);
+  }, [bookings, schedules]);
 
   useEffect(() => {
     setPage(1);
@@ -264,7 +294,7 @@ export default function BookingHistory() {
       text: "Hành động này không thể hoàn tác!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
+      confirmButtonColor: "#D92C54",
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Xóa",
       cancelButtonText: "Hủy",
@@ -278,12 +308,12 @@ export default function BookingHistory() {
   const handleCancelBooking = (booking) => {
     Swal.fire({
       title: "Bạn có chắc chắn muốn hủy booking này?",
-      text: "Sau khi hủy, booking sẽ không thể khôi phục!",
+      text: "Sau khi hủy, bạn sẽ mất tiền cọc. Bạn có chắc chắn muốn tiếp tục?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
+      confirmButtonColor: "#D92C54",
       cancelButtonColor: "#3085d6",
-      confirmButtonText: "Hủy booking",
+      confirmButtonText: "Đồng ý",
       cancelButtonText: "Đóng",
     }).then(async (result) => {
       if (result.isConfirmed) {
@@ -396,6 +426,12 @@ export default function BookingHistory() {
 
                     // Countdown logic
                     let countdownText = null;
+                    let scheduleStartDate = null;
+                    if (scheduleObj?.startDate) {
+                      scheduleStartDate = new Date(
+                        scheduleObj.startDate
+                      ).getTime();
+                    }
                     if (
                       ["pending_payment", "consultation_requested"].includes(
                         booking.status
@@ -408,17 +444,28 @@ export default function BookingHistory() {
                       booking.status === "cancelled" &&
                       booking.cancelledAt
                     ) {
-                      countdownText =
-                        "Tự động xoá sau: " +
-                        formatCountdown(countdowns[booking._id]);
-                    } else if (booking.status === "confirmed") {
                       const cd = countdowns[booking._id];
                       if (
                         cd &&
                         (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
                       ) {
                         countdownText =
-                          "Có thể huỷ đến trước check-in 1 ngày: " +
+                          "Tự động xoá sau: " + formatCountdown(cd);
+                      } else {
+                        countdownText = "Đã hết hạn xoá";
+                      }
+                    } else if (
+                      ["confirmed", "confirmed_deposit"].includes(
+                        booking.status
+                      )
+                    ) {
+                      const cd = countdowns[booking._id];
+                      if (
+                        cd &&
+                        (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
+                      ) {
+                        countdownText =
+                          "Có thể huỷ đến trước ngày bắt đầu lịch trình: " +
                           formatCountdown(cd);
                       } else {
                         countdownText = "Đã hết hạn huỷ";
@@ -426,7 +473,11 @@ export default function BookingHistory() {
                     }
                     // Disable nút huỷ nếu không còn hợp lệ
                     let canCancel = true;
-                    if (booking.status === "confirmed") {
+                    if (
+                      ["confirmed", "confirmed_deposit"].includes(
+                        booking.status
+                      )
+                    ) {
                       const cd = countdowns[booking._id];
                       if (
                         !cd ||
@@ -434,6 +485,10 @@ export default function BookingHistory() {
                       ) {
                         canCancel = false;
                       }
+                    }
+
+                    // DEBUG LOG
+                    if (booking.status === "cancelled") {
                     }
 
                     return (
@@ -778,15 +833,14 @@ export default function BookingHistory() {
                             </Box>
                             {countdownText && (
                               <Typography
-                                variant="caption"
                                 color="secondary"
-                                fontWeight={600}
+                                sx={{ fontSize: 12, fontWeight: 600 }}
                               >
                                 {countdownText}
                               </Typography>
                             )}
                             <Box
-                              mt={2}
+                              mt={1.3}
                               display="flex"
                               justifyContent="space-between"
                               alignItems="flex-end"
@@ -847,7 +901,9 @@ export default function BookingHistory() {
                                       </Button>
                                     </>
                                   )}
-                                {booking.status === "confirmed" && (
+                                {["confirmed", "confirmed_deposit"].includes(
+                                  booking.status
+                                ) && (
                                   <Button
                                     size="small"
                                     color="error"
@@ -1279,6 +1335,7 @@ export default function BookingHistory() {
                 )}
                 {(() => {
                   let countdownText = null;
+                  // pending_payment, consultation_requested
                   if (
                     ["pending_payment", "consultation_requested"].includes(
                       selectedBooking.status
@@ -1287,35 +1344,48 @@ export default function BookingHistory() {
                     countdownText =
                       "Tự động huỷ sau: " +
                       formatCountdown(countdowns[selectedBooking._id]);
-                  } else if (
+                  }
+                  // cancelled
+                  else if (
                     selectedBooking.status === "cancelled" &&
                     selectedBooking.cancelledAt
                   ) {
-                    countdownText =
-                      "Tự động xoá sau: " +
-                      formatCountdown(countdowns[selectedBooking._id]);
-                  } else if (selectedBooking.status === "confirmed") {
+                    const cd = countdowns[selectedBooking._id];
+                    if (
+                      cd &&
+                      (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
+                    ) {
+                      countdownText = "Tự động xoá sau: " + formatCountdown(cd);
+                    } else {
+                      countdownText = "Đã hết hạn xoá";
+                    }
+                  }
+                  // confirmed, confirmed_deposit
+                  else if (
+                    ["confirmed", "confirmed_deposit"].includes(
+                      selectedBooking.status
+                    )
+                  ) {
                     const cd = countdowns[selectedBooking._id];
                     if (
                       cd &&
                       (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
                     ) {
                       countdownText =
-                        "Có thể huỷ đến trước check-in 1 ngày: " +
+                        "Có thể huỷ đến trước ngày bắt đầu lịch trình: " +
                         formatCountdown(cd);
                     } else {
                       countdownText = "Đã hết hạn huỷ";
                     }
                   }
-                  return countdownText ? (
+                  return (
                     <Typography
-                      variant="caption"
+                      sx={{ fontSize: 12, fontWeight: 600 }}
                       color="secondary"
-                      fontWeight={600}
                     >
                       {countdownText}
                     </Typography>
-                  ) : null;
+                  );
                 })()}
               </Box>
             )}

@@ -115,7 +115,7 @@ const ConsultationDetailsModal = ({
       servicePrice: detail?.price ?? sv.servicePrice ?? sv.price,
     };
   });
-  console.log("Consultation data in modal:", consultation);
+
   return (
     <Modal
       open={open}
@@ -195,9 +195,11 @@ const ConsultationDetailsModal = ({
             {
               icon: <Calendar size={18} />,
               label: "Ngày nhận phòng",
-              value: new Date(consultation.checkInDate).toLocaleDateString(
-                "vi-VN"
-              ),
+              value: consultation.schedule?.scheduleId?.startDate
+                ? new Date(
+                    consultation.schedule.scheduleId.startDate
+                  ).toLocaleDateString("vi-VN")
+                : "-",
             },
             {
               icon: <Users size={18} />,

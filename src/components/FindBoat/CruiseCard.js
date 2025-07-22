@@ -119,6 +119,7 @@ const CruiseCard = ({ cruise }) => {
     price,
     launch,
     hullBody,
+    maxRoom,
     yachtTypeId,
     services = [],
   } = cruise;
@@ -263,9 +264,9 @@ const CruiseCard = ({ cruise }) => {
                   variant="body2"
                   color="text.secondary"
                 >
-                  Hạ thuỷ {launch || "Không xác định"} - Thân vỏ{" "}
-                  {hullBody || "Không xác định"} -{" "}
-                  {yachtTypeId?.name || "Không xác định"}
+                  Hạ thuỷ: {launch || "Không xác định"} - Thân vỏ:{" "}
+                  {hullBody || "Không xác định"} -{maxRoom || "Không xác định"}{" "}
+                  phòng
                 </Typography>
               </Box>
             </Stack>

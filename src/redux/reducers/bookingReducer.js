@@ -52,7 +52,8 @@ const bookingReducer = (state = bookingInitialState, action) => {
       const processedRooms = rooms.map((room) => ({
         ...room,
         id: room.id || room._id,
-        quantity: 0,
+        quantity: room.quantity, // giữ nguyên quantity từ backend
+        selectedQuantity: 0, // dùng trường này để quản lý số lượng đã chọn ở FE
         max_people:
           room.max_people ||
           (room.roomTypeId && room.roomTypeId.max_people) ||
