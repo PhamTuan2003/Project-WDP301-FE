@@ -290,6 +290,29 @@ const BookingRoomModal = ({
       quantity: sv.quantity !== undefined ? sv.quantity : 1,
     }));
 
+    // Lấy startDate từ schedule nếu có
+    let checkInDate = bookingForm.checkInDate;
+    if (!checkInDate && selectedScheduleObj) {
+      checkInDate =
+        selectedScheduleObj.startDate ||
+        selectedScheduleObj.scheduleId?.startDate ||
+        "";
+    }
+    // Nếu checkInDate là dd/MM/yyyy thì convert sang ISO string
+    if (
+      checkInDate &&
+      typeof checkInDate === "string" &&
+      checkInDate.match(/^\d{2}\/\d{2}\/\d{4}$/)
+    ) {
+      const [day, month, year] = checkInDate.split("/");
+      checkInDate = new Date(
+        `${year}-${month}-${day}T00:00:00.000Z`
+      ).toISOString();
+    }
+    // Nếu checkInDate là ISO string hợp lệ thì giữ nguyên
+    // Thêm log kiểm tra giá trị
+    console.log("[Booking] checkInDate gửi lên:", checkInDate);
+    console.log("[Booking] selectedScheduleObj:", selectedScheduleObj);
     return {
       fullName: bookingForm.fullName,
       phoneNumber: bookingForm.phoneNumber,
@@ -306,6 +329,7 @@ const BookingRoomModal = ({
       scheduleId: propSelectedSchedule || null,
       bookingId: consultation?.data?.bookingId || null,
       selectedServices: mappedServices,
+      checkInDate, // Thêm checkInDate vào payload
     };
   };
 

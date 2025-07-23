@@ -8,7 +8,6 @@ export * from "./authActions";
 export * from "./paymentActions";
 export * from "./invoiceActions";
 //export * from "./userAction";
-export * from "./UserAction";
-
+export * from "./userAction";
 
 //nó bảo không tìm thấy doLogout ở đây, nhưng thực ra nó đã được export từ userAction.js

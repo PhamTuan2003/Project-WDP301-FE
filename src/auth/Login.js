@@ -1,15 +1,24 @@
 import styled from "@emotion/styled";
-import { Box, Button, Checkbox, FormControlLabel, Stack, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import axios from "axios";
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { doLogin } from "../redux/actions/UserAction";
-import { loginApi } from '../services/ApiServices';
+
+import { loginApi } from "../services/ApiServices";
 import "./Auth.css";
 import ForgotPassword from "./ForgotPassword";
+import { doLogin } from "../redux/actions/userAction";
 
 const StyledButton = styled(Button)(({ theme }) => ({
   width: "100%",
@@ -70,7 +79,10 @@ export default function Login() {
         setError("Vui lòng nhập đầy đủ thông tin");
         return;
       }
-      const res = await loginApi(formData.username.trim(), formData.password.trim());
+      const res = await loginApi(
+        formData.username.trim(),
+        formData.password.trim()
+      );
       if (!res || !res.data || !res.data.token) {
         setLoading(false);
         setError("Tài khoản hoặc mật khẩu không đúng");
@@ -78,13 +90,13 @@ export default function Login() {
       }
 
       console.log("Login response:", res.data);
-      
+
       const { token, idAccount, idCustomer, idCompany } = res.data;
 
       localStorage.setItem("token", token);
       const decoded = jwtDecode(token);
       const role = decoded.role;
-    
+
       dispatch(doLogin(token, role, idCompany || "", idCustomer || ""));
       localStorage.setItem("customer", JSON.stringify(decoded));
       setShowTransition(true);
@@ -102,7 +114,9 @@ export default function Login() {
       }, 1500);
     } catch (err) {
       setLoading(false);
-      setError(err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.");
+      setError(
+        err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại."
+      );
     }
   };
 
@@ -110,9 +124,12 @@ export default function Login() {
     setError("");
     setSuccess("");
     try {
-      const response = await axios.post("http://localhost:9999/api/v1/customers/google-login", {
-        token: credentialResponse.credential,
-      });
+      const response = await axios.post(
+        "http://localhost:9999/api/v1/customers/google-login",
+        {
+          token: credentialResponse.credential,
+        }
+      );
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("customer", JSON.stringify(response.data.customer));
       setSuccess("Đăng nhập bằng Google thành công!");
@@ -122,7 +139,10 @@ export default function Login() {
         window.location.reload();
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Đăng nhập bằng Google thất bại, vui lòng thử lại.");
+      setError(
+        err.response?.data?.message ||
+          "Đăng nhập bằng Google thất bại, vui lòng thử lại."
+      );
     }
   };
 
@@ -206,8 +226,11 @@ export default function Login() {
             className="auth-form"
             sx={{
               bgcolor: (theme) =>
-                theme.palette.mode === "light" ? "rgba(255, 255, 255, 0.1)" : "rgba(27, 36, 42, 0.7)",
-              backdropFilter: (theme) => (theme.palette.mode === "light" ? "blur(60px)" : "blur(5px)"),
+                theme.palette.mode === "light"
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(27, 36, 42, 0.7)",
+              backdropFilter: (theme) =>
+                theme.palette.mode === "light" ? "blur(60px)" : "blur(5px)",
               borderRadius: 3,
               p: 3,
               width: 500,
@@ -216,7 +239,11 @@ export default function Login() {
               transition: "box-shadow 0.3s",
               "&:hover": {
                 boxShadow: (theme) =>
-                  `0 12px 48px ${theme.palette.mode === "light" ? "rgba(129, 127, 127, 0.5)" : "rgba(0, 0, 0, 0.7)"}`,
+                  `0 12px 48px ${
+                    theme.palette.mode === "light"
+                      ? "rgba(129, 127, 127, 0.5)"
+                      : "rgba(0, 0, 0, 0.7)"
+                  }`,
               },
             }}
           >
@@ -238,7 +265,11 @@ export default function Login() {
                   </Typography>
                 )}
                 {success && (
-                  <Typography color="success.main" align="center" sx={{ mb: 2 }}>
+                  <Typography
+                    color="success.main"
+                    align="center"
+                    sx={{ mb: 2 }}
+                  >
                     {success}
                   </Typography>
                 )}
@@ -267,9 +298,13 @@ export default function Login() {
                         "& .MuiOutlinedInput-root": {
                           background: "rgba(255, 255, 255, 0.2)",
                           "& input": { color: "white" },
-                          "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255, 255, 255, 0.3)" },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "rgba(255, 255, 255, 0.3)",
+                          },
                         },
-                        "& .MuiInputBase-input::placeholder": { color: "rgba(255, 255, 255, 0.7)" },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "rgba(255, 255, 255, 0.7)",
+                        },
                       }}
                     />
                   </Box>
@@ -296,20 +331,32 @@ export default function Login() {
                         "& .MuiOutlinedInput-root": {
                           background: "rgba(255, 255, 255, 0.2)",
                           "& input": { color: "white" },
-                          "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255, 255, 255, 0.3)" },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "rgba(255, 255, 255, 0.3)",
+                          },
                         },
-                        "& .MuiInputBase-input::placeholder": { color: "rgba(255, 255, 255, 0.7)" },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "rgba(255, 255, 255, 0.7)",
+                        },
                       }}
                     />
                   </Box>
                   <Box
                     className="form-options"
-                    sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", my: 2 }}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      my: 2,
+                    }}
                   >
                     <FormControlLabel
                       control={<Checkbox color="primary" />}
                       label="Ghi nhớ đăng nhập"
-                      sx={{ color: "text.secondary", "& .MuiTypography-root": { fontSize: "0.9rem" } }}
+                      sx={{
+                        color: "text.secondary",
+                        "& .MuiTypography-root": { fontSize: "0.9rem" },
+                      }}
                     />
                     <Typography
                       color="primary"
@@ -333,11 +380,23 @@ export default function Login() {
                 </Box>
 
                 <Box className="social-login" sx={{ mt: 3 }}>
-                  <Typography align="center" color="text.secondary" sx={{ mb: 2, fontSize: "0.9rem" }}>
+                  <Typography
+                    align="center"
+                    color="text.secondary"
+                    sx={{ mb: 2, fontSize: "0.9rem" }}
+                  >
                     Hoặc đăng nhập bằng
                   </Typography>
-                  <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-                    <GoogleLogin onSuccess={handleGoogleLoginSuccess} onError={handleGoogleLoginFailure} />
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    justifyContent="center"
+                    mt={2}
+                  >
+                    <GoogleLogin
+                      onSuccess={handleGoogleLoginSuccess}
+                      onError={handleGoogleLoginFailure}
+                    />
                   </Stack>
                 </Box>
                 <Typography
@@ -348,7 +407,10 @@ export default function Login() {
                   sx={{ fontSize: "0.9rem" }}
                 >
                   Bạn chưa có tài khoản?{" "}
-                  <Link to="/register" style={{ color: "#68bfb5", textDecoration: "none" }}>
+                  <Link
+                    to="/register"
+                    style={{ color: "#68bfb5", textDecoration: "none" }}
+                  >
                     Đăng ký
                   </Link>
                 </Typography>
