@@ -49,6 +49,7 @@ import MainLayout from "./layout/MainLayout";
 import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal";
 import InvoiceModal from "./components/DetailBoat/Booking/InvoiceModal";
 import TransactionModal from "./components/DetailBoat/Booking/TransactionModal";
+import AdminLoginForm from "./components/Admin/AdminLoginForm";
 
 function useBodyScrollLock() {
   const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
@@ -117,6 +118,7 @@ function AppWrapper() {
           <Route path="/booking-history" element={<BookingHistory />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/admin-login" element={<AdminLoginForm />} />
         </Route>
 
         <Route path="/manage-company" element={

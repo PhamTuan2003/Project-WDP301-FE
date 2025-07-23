@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Avatar,
-  Stack,
-  IconButton,
-} from "@mui/material";
+import { Box, Typography, TextField, Button, Avatar, Stack, IconButton } from "@mui/material";
 import styled from "@emotion/styled";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -95,16 +87,9 @@ export default function CustomerProfile() {
         updateData.email = formData.email;
       }
 
-      const updateResponse = await axios.put(
-        `http://localhost:9999/api/v1/customers/${customer._id}`,
-        updateData
-      );
+      const updateResponse = await axios.put(`http://localhost:9999/api/v1/customers/${customer._id}`, updateData);
 
-      if (
-        customer.accountId &&
-        formData.avatar &&
-        formData.avatar instanceof File
-      ) {
+      if (customer.accountId && formData.avatar && formData.avatar instanceof File) {
         const avatarFormData = new FormData();
         avatarFormData.append("avatar", formData.avatar);
         const avatarResponse = await axios.put(
@@ -114,8 +99,7 @@ export default function CustomerProfile() {
             headers: { "Content-Type": "multipart/form-data" },
           }
         );
-        updateResponse.data.customer.avatar =
-          avatarResponse.data.customer.avatar;
+        updateResponse.data.customer.avatar = avatarResponse.data.customer.avatar;
       }
 
       const updatedCustomer = {
@@ -141,10 +125,7 @@ export default function CustomerProfile() {
         showConfirmButton: false,
       });
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Cập nhật thông tin thất bại, vui lòng thử lại."
-      );
+      setError(err.response?.data?.message || "Cập nhật thông tin thất bại, vui lòng thử lại.");
     }
   };
 
@@ -175,25 +156,17 @@ export default function CustomerProfile() {
         </Typography>
       )}
 
+      {/* Avatar + Upload */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
         <Stack direction="column" alignItems="center" spacing={1}>
           <Avatar
-            src={
-              formData.avatar instanceof File
-                ? URL.createObjectURL(formData.avatar)
-                : formData.avatar || ""
-            }
+            src={formData.avatar instanceof File ? URL.createObjectURL(formData.avatar) : formData.avatar || ""}
             alt="Avatar"
             sx={{ width: 120, height: 120 }}
           />
           {editMode && customer.accountId && (
             <label htmlFor="avatar-upload">
-              <Input
-                accept="image/*"
-                id="avatar-upload"
-                type="file"
-                onChange={handleAvatarChange}
-              />
+              <Input accept="image/*" id="avatar-upload" type="file" onChange={handleAvatarChange} />
               <IconButton color="primary" component="span">
                 <PhotoCamera />
               </IconButton>
@@ -202,73 +175,54 @@ export default function CustomerProfile() {
         </Stack>
       </Box>
 
-      {/* Nút Chỉnh sửa nằm ngoài form */}
-      {!editMode && (
-        <Stack spacing={1} sx={{ mb: 2 }}>
-          <StyledButton onClick={() => setEditMode(true)}>
-            Chỉnh sửa thông tin
-          </StyledButton>
-          <Typography
-            variant="body2"
-            color="error"
-            sx={{ fontStyle: "italic", textAlign: "center" }}
-          >
-            * Đối với người dùng đăng nhập bằng Google, bạn chỉ có thể cập nhật
-            số điện thoại. Việc chỉnh sửa họ tên, email và ảnh đại diện sẽ không
-            được hỗ trợ để đảm bảo tính nhất quán với thông tin từ Google.
-          </Typography>
-        </Stack>
-      )}
+      {/* 📝 Luôn hiển thị form, chỉ khác nhau ở trạng thái editable hay không */}
+      <Box component="form" onSubmit={handleSubmit}>
+        <Stack spacing={2}>
+          <TextField
+            label="Họ và tên"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleChange}
+            fullWidth
+            disabled={!editMode || !customer.accountId}
+          />
+          <TextField
+            label="Email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            fullWidth
+            disabled={!editMode || !customer.accountId}
+            error={editMode && customer.accountId && !isValidEmail(formData.email)}
+            helperText={
+              editMode && customer.accountId && !isValidEmail(formData.email)
+                ? "Email không hợp lệ, cần Email chính xác để 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 gửi các thông tin như chọn phòng, gửi hoá đơn,..."
+                : ""
+            }
+          />
 
-      {/* Form chỉ hiện khi editMode */}
-      {editMode && (
-        <Box component="form" onSubmit={handleSubmit}>
-          <Stack spacing={2}>
-            <TextField
-              label="Họ và tên"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              fullWidth
-              disabled={!editMode || !customer.accountId}
-            />
-            <TextField
-              label="Email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              fullWidth
-              disabled={!editMode || !customer.accountId}
-              error={
-                editMode && customer.accountId && !isValidEmail(formData.email)
-              }
-              helperText={
-                editMode && customer.accountId && !isValidEmail(formData.email)
-                  ? "Email không hợp lệ, cần Email chính xác để 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 gửi các thông tin như chọn phòng, thông tin hoá đơn, tư vấn, ... Nếu không bạn sẽ không nhận được bất cứ thông tin nào"
-                  : ""
-              }
-            />
+          <TextField
+            label="Số điện thoại"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            fullWidth
+            disabled={!editMode}
+            error={editMode && !isValidPhone(formData.phoneNumber)}
+            helperText={
+              editMode && !isValidPhone(formData.phoneNumber)
+                ? "Số điện thoại không hợp lệ, nếu sai sẽ không nhận được mã OTP"
+                : ""
+            }
+          />
 
-            <TextField
-              label="Số điện thoại"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              fullWidth
-              disabled={!editMode}
-              error={editMode && !isValidPhone(formData.phoneNumber)}
-              helperText={
-                editMode && !isValidPhone(formData.phoneNumber)
-                  ? "Số điện thoại không hợp lệ, nếu sai số điện thoại sẽ không nhận được mã OTP"
-                  : ""
-              }
-            />
-
+          {editMode ? (
             <Stack direction="row" spacing={2}>
               <StyledButton type="submit">Lưu thay đổi</StyledButton>
               <Button
                 variant="outlined"
                 color="secondary"
+                style={{height: "52px"}}
                 onClick={() => {
                   setEditMode(false);
                   setFormData({
@@ -284,8 +238,18 @@ export default function CustomerProfile() {
                 Hủy
               </Button>
             </Stack>
-          </Stack>
-        </Box>
+          ) : (
+            <StyledButton onClick={() => setEditMode(true)}>Chỉnh sửa thông tin</StyledButton>
+          )}
+        </Stack>
+      </Box>
+
+      {/* Thông báo lưu ý nếu là Google account */}
+      {!editMode && !customer.accountId && (
+        <Typography variant="body2" color="error" sx={{ fontStyle: "italic", textAlign: "center", mt: 2 }}>
+          * Đối với người dùng đăng nhập bằng Google, bạn chỉ có thể cập nhật số điện thoại. Việc chỉnh sửa họ tên,
+          email và ảnh đại diện sẽ không được hỗ trợ để đảm bảo tính nhất quán với thông tin từ Google.
+        </Typography>
       )}
     </Box>
   );
