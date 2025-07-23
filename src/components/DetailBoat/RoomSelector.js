@@ -233,13 +233,27 @@ function RoomSelector({ yachtId, yachtData = {} }) {
   };
 
   // Tính tổng tiền dịch vụ theo du thuyền
-  const totalServicePrice = selectedYachtServices.reduce(
-    (sum, sv) => sum + sv.price * (sv.quantity || 1),
+  const guestCount = Object.values(selectedRoomQuantities).reduce(
+    (sum, qty) => sum + qty,
     0
   );
-  const totalPrice =
-    rooms.reduce((sum, room) => sum + room.price * getRoomQuantity(room), 0) +
-    totalServicePrice;
+  const totalRoomPrice = rooms.reduce(
+    (sum, room) =>
+      sum +
+      (selectedRoomQuantities[room.id || room._id] || 0) * (room.price || 0),
+    0
+  );
+  const totalServicePrice = selectedYachtServices.reduce(
+    (sum, sv) =>
+      sum +
+      sv.price *
+        Math.min(
+          sv.quantity || 1,
+          guestCount // hoặc tổng số khách thực tế
+        ),
+    0
+  );
+  const totalPrice = totalRoomPrice + totalServicePrice;
 
   return (
     <div>
@@ -476,6 +490,7 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                             >
                               {room.name}
                             </Typography>
+
                             <Box
                               sx={{
                                 display: "flex",
@@ -557,8 +572,15 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                             <Box
                               sx={{
                                 display: "flex",
-                                flexDirection: "row",
+                                flexDirection: "column",
                                 alignItems: "center",
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  alignContent: "center",
                               }}
                             >
                               <Typography
@@ -579,6 +601,22 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                               >
                                 {" "}
                                 / phòng
+                                </Typography>
+                              </Box>
+
+                              <Typography
+                                sx={{
+                                  fontSize: "0.7rem",
+                                  color: "text.secondary",
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                Còn lại:{" "}
+                                {getRoomQuantity(room) -
+                                  (selectedRoomQuantities[
+                                    room.id || room._id
+                                  ] || 0)}{" "}
+                                phòng
                               </Typography>
                             </Box>
                           </Box>
