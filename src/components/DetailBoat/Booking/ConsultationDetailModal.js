@@ -67,13 +67,16 @@ const ConsultationDetailsModal = ({
 
   // Helper lấy chi tiết phòng/dịch vụ
   const getRoomDetail = (roomId) => {
-    const idStr = roomId?.toString?.() || roomId;
-    return rooms.find(
-      (r) =>
-        (r._id?.toString?.() || r._id) === idStr ||
-        (r.id?.toString?.() || r.id) === idStr
-    );
+    if (!roomId) return null;
+    const idStr = roomId?.toString?.() || `${roomId}`;
+    return rooms.find((r) => {
+      const rid =
+        r._id?.toString?.() || r.id?.toString?.() || `${r._id || r.id}`;
+      return rid === idStr;
+    });
   };
+  console.log(consultation);
+
   const getServiceDetail = (serviceId) =>
     services.find((s) => s._id === (serviceId?.toString?.() || serviceId));
 
@@ -83,7 +86,12 @@ const ConsultationDetailsModal = ({
     consultation.consultationData?.requestedRooms ||
     []
   ).map((room) => {
-    const detail = getRoomDetail(room.roomId || room.id);
+    // Nếu roomId là object (đã chứa đủ thông tin phòng)
+    const detail =
+      typeof room.roomId === "object" && room.roomId !== null
+        ? room.roomId
+        : getRoomDetail(room.roomId || room.id);
+
     if (!detail) {
       console.warn(
         "Không tìm thấy room detail cho",
@@ -94,7 +102,11 @@ const ConsultationDetailsModal = ({
     return {
       ...room,
       roomName: detail?.name || room.roomName || room.name,
-      roomPrice: detail?.price ?? room.roomPrice ?? room.price,
+      roomPrice:
+        detail?.price ??
+        detail?.roomTypeId?.price ??
+        room.roomPrice ??
+        room.price,
       roomArea: detail?.area || room.roomArea,
       roomDescription: detail?.description || room.roomDescription,
       roomAvatar: detail?.avatar || room.roomAvatar,
@@ -195,9 +207,9 @@ const ConsultationDetailsModal = ({
             {
               icon: <Calendar size={18} />,
               label: "Ngày nhận phòng",
-              value: consultation.schedule?.scheduleId?.startDate
+              value: consultation.scheduleId?.scheduleId?.startDate
                 ? new Date(
-                    consultation.schedule.scheduleId.startDate
+                    consultation.scheduleId.scheduleId.startDate
                   ).toLocaleDateString("vi-VN")
                 : "-",
             },
@@ -209,7 +221,10 @@ const ConsultationDetailsModal = ({
             {
               icon: <FileText size={18} />,
               label: "Yêu cầu",
-              value: consultation.requirements || "N/A",
+              value:
+                consultation.consultationData?.requirements ||
+                consultation.requirements ||
+                "N/A",
             },
           ].map((row, i) => (
             <Stack
@@ -257,38 +272,52 @@ const ConsultationDetailsModal = ({
           Phòng đã chọn
         </Typography>
         <Stack spacing={1}>
-          {selectedRooms.map((room, i) => (
-            <MotionCard
-              key={i}
-              component="div"
-              variants={itemVariants}
-              custom={i + 7}
-              initial="hidden"
-              animate="visible"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                p: 2,
-                boxShadow: theme.shadows[4],
-              }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Building size={18} />
-                <Typography fontFamily="Archivo, sans-serif">
-                  {room.roomName}
+          {selectedRooms.length > 0 ? (
+            selectedRooms.map((room, i) => (
+              <MotionCard
+                key={i}
+                component="div"
+                variants={itemVariants}
+                custom={i + 7}
+                initial="hidden"
+                animate="visible"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  p: 2,
+                  boxShadow: theme.shadows[4],
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Building size={18} />
+                  <Typography fontFamily="Archivo, sans-serif">
+                    {room.roomName || (
+                      <span style={{ color: "red" }}>
+                        Không tìm thấy thông tin phòng
+                      </span>
+                    )}
+                  </Typography>
+                  <Chip
+                    label={`x${room.roomQuantity || room.quantity}`}
+                    size="small"
+                    color="info"
+                  />
+                </Stack>
+                <Typography fontFamily="Archivo, sans-serif" fontWeight={500}>
+                  {room.roomPrice !== undefined ? (
+                    formatPrice(room.roomPrice)
+                  ) : (
+                    <span style={{ color: "red" }}>N/A</span>
+                  )}
                 </Typography>
-                <Chip
-                  label={`x${room.roomQuantity || room.quantity}`}
-                  size="small"
-                  color="info"
-                />
-              </Stack>
-              <Typography fontFamily="Archivo, sans-serif" fontWeight={500}>
-                {formatPrice(room.roomPrice || room.price)}
-              </Typography>
-            </MotionCard>
-          ))}
+              </MotionCard>
+            ))
+          ) : (
+            <Typography fontFamily="Archivo, sans-serif" color="text.secondary">
+              Không có phòng nào được chọn
+            </Typography>
+          )}
         </Stack>
 
         {/* Selected services */}

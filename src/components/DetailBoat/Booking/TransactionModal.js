@@ -775,9 +775,7 @@ const TransactionModal = ({ onBack }) => {
             Ngày đặt
           </span>
           <span className="font-semibold text-gray-900">
-            {booking.checkInDate
-              ? new Date(booking.checkInDate).toLocaleDateString("vi-VN")
-              : booking.createdAt
+            {booking.createdAt
               ? new Date(booking.createdAt).toLocaleDateString("vi-VN")
               : "-"}
           </span>
@@ -2114,11 +2112,7 @@ const TransactionModal = ({ onBack }) => {
                       fontWeight="semibold"
                       color="textPrimary"
                     >
-                      {booking.checkInDate
-                        ? new Date(booking.checkInDate).toLocaleDateString(
-                            "vi-VN"
-                          )
-                        : booking.createdAt
+                      {booking.createdAt
                         ? new Date(booking.createdAt).toLocaleDateString(
                             "vi-VN"
                           )

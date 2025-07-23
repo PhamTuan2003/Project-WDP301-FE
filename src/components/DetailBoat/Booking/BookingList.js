@@ -119,9 +119,12 @@ const BookingList = () => {
                   <strong>Tổng tiền:</strong> {formatPrice(booking.amount)}
                 </p>
 
-                {booking.requirements && (
+                {(booking.consultationData?.requirements ||
+                  booking.requirements) && (
                   <p>
-                    <strong>Yêu cầu:</strong> {booking.requirements}
+                    <strong>Yêu cầu:</strong>{" "}
+                    {booking.consultationData?.requirements ||
+                      booking.requirements}
                   </p>
                 )}
 

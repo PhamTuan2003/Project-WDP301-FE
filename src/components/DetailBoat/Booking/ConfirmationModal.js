@@ -540,7 +540,8 @@ const ConfirmationModal = ({ scheduleObj }) => {
             </Stack>
           </Grid>
         </Grid>
-        {confirmationData.requirements && (
+        {(confirmationData.consultationData?.requirements ||
+          confirmationData.requirements) && (
           <Paper
             variant="outlined"
             sx={{
@@ -569,7 +570,10 @@ const ConfirmationModal = ({ scheduleObj }) => {
             </Box>
             <Box pl={2}>
               <Typography color={theme.palette.text.primary}>
-                <li>{confirmationData.requirements}</li>
+                <li>
+                  {confirmationData.consultationData?.requirements ||
+                    confirmationData.requirements}
+                </li>
               </Typography>
             </Box>
           </Paper>

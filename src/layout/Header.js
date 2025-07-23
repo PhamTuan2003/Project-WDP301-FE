@@ -42,6 +42,8 @@ export default function Header({ toggleTheme, mode }) {
     const storedCustomer = localStorage.getItem("customer");
     if (storedCustomer) {
       setCustomer(JSON.parse(storedCustomer));
+    } else {
+      setCustomer(null);
     }
   }, []);
 

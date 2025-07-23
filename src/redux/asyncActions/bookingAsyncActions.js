@@ -102,10 +102,7 @@ export const updateBookingOrConsultationRequest =
         scheduleId: selectedSchedule || bookingData.scheduleId || null,
         requestType: requestType,
       };
-      console.log(
-        "[updateBookingOrConsultationRequest] Payload gửi lên:",
-        requestPayload
-      );
+
       const response = await axios.put(
         `http://localhost:9999/api/v1/bookings/request/${bookingId}`,
         requestPayload,
@@ -116,10 +113,7 @@ export const updateBookingOrConsultationRequest =
           },
         }
       );
-      console.log(
-        "[updateBookingOrConsultationRequest] Response trả về:",
-        response.data
-      );
+
       if (response.data.success) {
         const updatedBookingOrder = response.data.data;
         // Merge thông tin phòng/dịch vụ vào consultationData nếu là tư vấn (chưa xác nhận booking)
@@ -260,6 +254,7 @@ export const createBookingOrConsultationRequest =
               requestedRooms: bookingData.selectedRooms || [],
               requestServices: selectedYachtServices || [],
               estimatedPrice: bookingData.totalPrice || 0,
+              requirements: bookingData.requirements,
             },
           };
         }

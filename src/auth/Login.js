@@ -91,14 +91,14 @@ export default function Login() {
 
       console.log("Login response:", res.data);
 
-      const { token, idAccount, idCustomer, idCompany } = res.data;
+      const { token, idAccount, customer, idCompany } = res.data;
 
       localStorage.setItem("token", token);
       const decoded = jwtDecode(token);
       const role = decoded.role;
 
-      dispatch(doLogin(token, role, idCompany || "", idCustomer || ""));
-      localStorage.setItem("customer", JSON.stringify(decoded));
+      dispatch(doLogin(token, role, idCompany || "", customer || ""));
+      localStorage.setItem("customer", JSON.stringify(customer));
       setShowTransition(true);
       setTimeout(() => {
         setLoading(false);

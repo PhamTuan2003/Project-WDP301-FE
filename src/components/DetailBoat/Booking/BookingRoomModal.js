@@ -64,6 +64,7 @@ const BookingRoomModal = ({
   onClose,
   maxPeople,
   selectedSchedule: propSelectedSchedule,
+  onUpdateSelectedRooms,
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -88,6 +89,7 @@ const BookingRoomModal = ({
     (s) => s._id === propSelectedSchedule || s.id === propSelectedSchedule
   );
   // console.log(selectedScheduleObj?.scheduleId?.startDate);
+  console.log(consultation);
 
   const adults = Number(guestCounter?.adults ?? 0);
   const childrenAbove10 = Number(guestCounter?.childrenAbove10 ?? 0);
@@ -290,29 +292,12 @@ const BookingRoomModal = ({
       quantity: sv.quantity !== undefined ? sv.quantity : 1,
     }));
 
-    // Lấy startDate từ schedule nếu có
-    let checkInDate = bookingForm.checkInDate;
-    if (!checkInDate && selectedScheduleObj) {
-      checkInDate =
-        selectedScheduleObj.startDate ||
-        selectedScheduleObj.scheduleId?.startDate ||
-        "";
-    }
-    // Nếu checkInDate là dd/MM/yyyy thì convert sang ISO string
-    if (
-      checkInDate &&
-      typeof checkInDate === "string" &&
-      checkInDate.match(/^\d{2}\/\d{2}\/\d{4}$/)
-    ) {
-      const [day, month, year] = checkInDate.split("/");
-      checkInDate = new Date(
-        `${year}-${month}-${day}T00:00:00.000Z`
-      ).toISOString();
-    }
-    // Nếu checkInDate là ISO string hợp lệ thì giữ nguyên
-    // Thêm log kiểm tra giá trị
-    console.log("[Booking] checkInDate gửi lên:", checkInDate);
-    console.log("[Booking] selectedScheduleObj:", selectedScheduleObj);
+    const checkInDate = selectedScheduleObj?.startDate
+      ? new Date(selectedScheduleObj.startDate).toISOString()
+      : selectedScheduleObj?.scheduleId?.startDate
+      ? new Date(selectedScheduleObj.scheduleId.startDate).toISOString()
+      : undefined;
+
     return {
       fullName: bookingForm.fullName,
       phoneNumber: bookingForm.phoneNumber,
@@ -401,15 +386,22 @@ const BookingRoomModal = ({
         consultation.data.consultationData?.requestedRooms ||
         []
       ).map((room) => {
-        const detail = rooms.find(
-          (r) =>
-            (r._id?.toString?.() || r._id || r.id) ===
-            (room.roomId?.toString?.() || room.roomId || room.id)
-        );
+        const detail =
+          typeof room.roomId === "object" && room.roomId !== null
+            ? room.roomId
+            : rooms.find(
+                (r) =>
+                  (r._id?.toString?.() || r._id || r.id) ===
+                  (room.roomId?.toString?.() || room.roomId || room.id)
+              );
         return {
-          id: room.roomId || room.id,
+          id: detail?._id || room.roomId || room.id,
           name: detail?.name || room.roomName || room.name,
-          price: detail?.price ?? room.roomPrice ?? room.price,
+          price:
+            detail?.price ??
+            detail?.roomTypeId?.price ??
+            room.roomPrice ??
+            room.price,
           quantity: room.roomQuantity ?? room.quantity,
           description:
             detail?.description || room.roomDescription || room.description,
@@ -421,7 +413,9 @@ const BookingRoomModal = ({
             (room.roomImage ? [room.roomImage] : room.images || []),
         };
       });
-      dispatch(updateRooms(selectedRoomsFromConsult));
+      if (onUpdateSelectedRooms) {
+        onUpdateSelectedRooms(selectedRoomsFromConsult);
+      }
       // Map lại services từ ref sang object đầy đủ
       const selectedServicesFromConsult = (
         consultation.data.selectedServices ||

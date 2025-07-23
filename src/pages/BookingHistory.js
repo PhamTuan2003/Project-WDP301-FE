@@ -1183,7 +1183,9 @@ export default function BookingHistory() {
                   <Grid item xs={12} sm={6}>
                     <Typography>
                       <b>Yêu cầu thêm:</b>{" "}
-                      {selectedBooking.requirements || "Không có"}
+                      {selectedBooking.consultationData?.requirements ||
+                        selectedBooking.requirements ||
+                        "Không có"}
                     </Typography>
                   </Grid>
                   <Grid item xs={12} sm={6}>

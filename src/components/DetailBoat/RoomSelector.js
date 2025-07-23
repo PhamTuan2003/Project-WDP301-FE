@@ -581,26 +581,26 @@ function RoomSelector({ yachtId, yachtData = {} }) {
                                   display: "flex",
                                   flexDirection: "row",
                                   alignContent: "center",
-                              }}
-                            >
-                              <Typography
-                                sx={{
-                                  color: "primary.main",
-                                  fontSize: "1.125rem",
-                                  fontWeight: "bold",
                                 }}
                               >
-                                {formatPrice(room.price)}
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  color: "primary.main",
-                                  fontSize: "1.125rem",
-                                  fontWeight: "medium",
-                                }}
-                              >
-                                {" "}
-                                / phòng
+                                <Typography
+                                  sx={{
+                                    color: "primary.main",
+                                    fontSize: "1.125rem",
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {formatPrice(room.price)}
+                                </Typography>
+                                <Typography
+                                  sx={{
+                                    color: "primary.main",
+                                    fontSize: "1.125rem",
+                                    fontWeight: "medium",
+                                  }}
+                                >
+                                  {" "}
+                                  / phòng
                                 </Typography>
                               </Box>
 

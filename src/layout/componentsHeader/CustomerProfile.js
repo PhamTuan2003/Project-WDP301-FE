@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, TextField, Button, Avatar, Stack, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Avatar,
+  Stack,
+  IconButton,
+} from "@mui/material";
 import styled from "@emotion/styled";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -39,7 +47,8 @@ export default function CustomerProfile() {
     const storedCustomer = localStorage.getItem("customer");
     if (storedCustomer) {
       const parsedCustomer = JSON.parse(storedCustomer);
-      setCustomer(parsedCustomer);
+      const customerWithId = { ...parsedCustomer, id: parsedCustomer._id };
+      setCustomer(customerWithId);
       setFormData({
         fullName: parsedCustomer.fullName || "",
         email: parsedCustomer.email || "",
@@ -86,19 +95,27 @@ export default function CustomerProfile() {
         updateData.email = formData.email;
       }
 
-      const updateResponse = await axios.put(`http://localhost:9999/api/v1/customers/${customer.id}`, updateData);
+      const updateResponse = await axios.put(
+        `http://localhost:9999/api/v1/customers/${customer._id}`,
+        updateData
+      );
 
-      if (customer.accountId && formData.avatar && formData.avatar instanceof File) {
+      if (
+        customer.accountId &&
+        formData.avatar &&
+        formData.avatar instanceof File
+      ) {
         const avatarFormData = new FormData();
         avatarFormData.append("avatar", formData.avatar);
         const avatarResponse = await axios.put(
-          `http://localhost:9999/api/v1/customers/${customer.id}/avatar`,
+          `http://localhost:9999/api/v1/customers/${customer._id}/avatar`,
           avatarFormData,
           {
             headers: { "Content-Type": "multipart/form-data" },
           }
         );
-        updateResponse.data.customer.avatar = avatarResponse.data.customer.avatar;
+        updateResponse.data.customer.avatar =
+          avatarResponse.data.customer.avatar;
       }
 
       const updatedCustomer = {
@@ -107,6 +124,7 @@ export default function CustomerProfile() {
         phoneNumber: formData.phoneNumber,
         email: updateResponse.data.customer.email,
         avatar: updateResponse.data.customer.avatar || customer.avatar,
+        id: customer._id, // thêm dòng này nếu muốn dùng id
       };
       localStorage.setItem("customer", JSON.stringify(updatedCustomer));
       setCustomer(updatedCustomer);
@@ -123,7 +141,10 @@ export default function CustomerProfile() {
         showConfirmButton: false,
       });
     } catch (err) {
-      setError(err.response?.data?.message || "Cập nhật thông tin thất bại, vui lòng thử lại.");
+      setError(
+        err.response?.data?.message ||
+          "Cập nhật thông tin thất bại, vui lòng thử lại."
+      );
     }
   };
 
@@ -157,13 +178,22 @@ export default function CustomerProfile() {
       <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
         <Stack direction="column" alignItems="center" spacing={1}>
           <Avatar
-            src={formData.avatar instanceof File ? URL.createObjectURL(formData.avatar) : formData.avatar || ""}
+            src={
+              formData.avatar instanceof File
+                ? URL.createObjectURL(formData.avatar)
+                : formData.avatar || ""
+            }
             alt="Avatar"
             sx={{ width: 120, height: 120 }}
           />
           {editMode && customer.accountId && (
             <label htmlFor="avatar-upload">
-              <Input accept="image/*" id="avatar-upload" type="file" onChange={handleAvatarChange} />
+              <Input
+                accept="image/*"
+                id="avatar-upload"
+                type="file"
+                onChange={handleAvatarChange}
+              />
               <IconButton color="primary" component="span">
                 <PhotoCamera />
               </IconButton>
@@ -172,47 +202,68 @@ export default function CustomerProfile() {
         </Stack>
       </Box>
 
-      <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <TextField
-            label="Họ và tên"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            fullWidth
-            disabled={!editMode || !customer.accountId}
-          />
-          <TextField
-            label="Email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            fullWidth
-            disabled={!editMode || !customer.accountId}
-            error={editMode && customer.accountId && !isValidEmail(formData.email)}
-            helperText={
-              editMode && customer.accountId && !isValidEmail(formData.email)
-                ? "Email không hợp lệ, cần Email chính xác để 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 gửi các thông tin như chọn phòng, thông tin hoá đơn, tư vấn, ... Nếu không bạn sẽ không nhận được bất cứ thông tin nào"
-                : ""
-            }
-          />
+      {/* Nút Chỉnh sửa nằm ngoài form */}
+      {!editMode && (
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          <StyledButton onClick={() => setEditMode(true)}>
+            Chỉnh sửa thông tin
+          </StyledButton>
+          <Typography
+            variant="body2"
+            color="error"
+            sx={{ fontStyle: "italic", textAlign: "center" }}
+          >
+            * Đối với người dùng đăng nhập bằng Google, bạn chỉ có thể cập nhật
+            số điện thoại. Việc chỉnh sửa họ tên, email và ảnh đại diện sẽ không
+            được hỗ trợ để đảm bảo tính nhất quán với thông tin từ Google.
+          </Typography>
+        </Stack>
+      )}
 
-          <TextField
-            label="Số điện thoại"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            fullWidth
-            disabled={!editMode}
-            error={editMode && !isValidPhone(formData.phoneNumber)}
-            helperText={
-              editMode && !isValidPhone(formData.phoneNumber)
-                ? "Số điện thoại không hợp lệ, nếu sai số điện thoại sẽ không nhận được mã OTP"
-                : ""
-            }
-          />
+      {/* Form chỉ hiện khi editMode */}
+      {editMode && (
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              label="Họ và tên"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              fullWidth
+              disabled={!editMode || !customer.accountId}
+            />
+            <TextField
+              label="Email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              fullWidth
+              disabled={!editMode || !customer.accountId}
+              error={
+                editMode && customer.accountId && !isValidEmail(formData.email)
+              }
+              helperText={
+                editMode && customer.accountId && !isValidEmail(formData.email)
+                  ? "Email không hợp lệ, cần Email chính xác để 𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮 gửi các thông tin như chọn phòng, thông tin hoá đơn, tư vấn, ... Nếu không bạn sẽ không nhận được bất cứ thông tin nào"
+                  : ""
+              }
+            />
 
-          {editMode ? (
+            <TextField
+              label="Số điện thoại"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              fullWidth
+              disabled={!editMode}
+              error={editMode && !isValidPhone(formData.phoneNumber)}
+              helperText={
+                editMode && !isValidPhone(formData.phoneNumber)
+                  ? "Số điện thoại không hợp lệ, nếu sai số điện thoại sẽ không nhận được mã OTP"
+                  : ""
+              }
+            />
+
             <Stack direction="row" spacing={2}>
               <StyledButton type="submit">Lưu thay đổi</StyledButton>
               <Button
@@ -233,17 +284,9 @@ export default function CustomerProfile() {
                 Hủy
               </Button>
             </Stack>
-          ) : (
-            <Stack spacing={1}>
-              <StyledButton onClick={() => setEditMode(true)}>Chỉnh sửa thông tin</StyledButton>
-              <Typography variant="body2" color="error" sx={{ fontStyle: "italic", textAlign: "center" }}>
-                * Đối với người dùng đăng nhập bằng Google, bạn chỉ có thể cập nhật số điện thoại. Việc chỉnh sửa họ
-                tên, email và ảnh đại diện sẽ không được hỗ trợ để đảm bảo tính nhất quán với thông tin từ Google.
-              </Typography>
-            </Stack>
-          )}
-        </Stack>
-      </Box>
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 }

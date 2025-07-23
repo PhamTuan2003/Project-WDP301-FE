@@ -47,12 +47,21 @@ export default function ChangePassword() {
     setSuccess("");
 
     try {
-      const response = await axios.post("http://localhost:9999/api/v1/customers/change-password", {
-        username: customer.username,
-        oldPassword: formData.oldPassword,
-        newPassword: formData.newPassword,
-        confirmPassword: formData.confirmPassword,
-      });
+      const token = localStorage.getItem("token"); // hoặc nơi bạn lưu token
+
+      const response = await axios.post(
+        "http://localhost:9999/api/v1/customers/change-password",
+        {
+          oldPassword: formData.oldPassword,
+          newPassword: formData.newPassword,
+          confirmPassword: formData.confirmPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setSuccess(response.data.message);
       Swal.fire({
@@ -67,7 +76,10 @@ export default function ChangePassword() {
         },
       });
     } catch (err) {
-      setError(err.response?.data?.message || "Đổi mật khẩu thất bại, vui lòng thử lại.");
+      setError(
+        err.response?.data?.message ||
+          "Đổi mật khẩu thất bại, vui lòng thử lại."
+      );
     }
   };
 
@@ -81,33 +93,32 @@ export default function ChangePassword() {
     );
   }
 
- if (!customer.accountId) {
-  return (
-    <Box
-      sx={{
-        p: 4,
-        m: 2,
-        borderRadius: 2,
-        backgroundColor: "#fff3cd",
-        border: "1px solid #ffeeba",
-        color: "#856404",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-        height: "450px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center", // căn giữa theo chiều dọc
-        alignItems: "center",     // căn giữa theo chiều ngang
-        gap: 2,
-      }}
-    >
-      <WarningAmberIcon sx={{ fontSize: 40, color: "#ffc107" }} />
-      <Typography variant="h6" sx={{ fontWeight: 600, textAlign: "center" }}>
-        Tài khoản đăng nhập bằng Google không thể đổi mật khẩu.
-      </Typography>
-    </Box>
-  );
-}
-
+  if (!customer.accountId) {
+    return (
+      <Box
+        sx={{
+          p: 4,
+          m: 2,
+          borderRadius: 2,
+          backgroundColor: "#fff3cd",
+          border: "1px solid #ffeeba",
+          color: "#856404",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+          height: "450px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center", // căn giữa theo chiều dọc
+          alignItems: "center", // căn giữa theo chiều ngang
+          gap: 2,
+        }}
+      >
+        <WarningAmberIcon sx={{ fontSize: 40, color: "#ffc107" }} />
+        <Typography variant="h6" sx={{ fontWeight: 600, textAlign: "center" }}>
+          Tài khoản đăng nhập bằng Google không thể đổi mật khẩu.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 4, maxWidth: 600, mx: "auto" }}>
