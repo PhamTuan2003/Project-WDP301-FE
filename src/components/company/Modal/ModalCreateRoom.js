@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { createRoom } from '../../../services/ApiServices';
 
 const ModalCreateRoom = (props) => {
-    const { show, setIsShowModalCreateRoom, idYacht, listRoomType, fetchRoomType, getAllRoom } = props;
+    const { show, setIsShowModalCreateRoom, idYacht, listRoomType, fetchRoomType, getAllRoom, maxRoom, listRoom } = props;
     const [image, setImage] = useState("");
     const [previewImage, setPreviewImage] = useState("");
     const [roomName, setRoomName] = useState('');
@@ -26,10 +26,6 @@ const ModalCreateRoom = (props) => {
             }
         }
     }, [show]);
-
-    console.log('d', listRoomType)
-    console.log('d2', roomType)
-
 
     const handleClose = () => {
         setIsShowModalCreateRoom(false);
@@ -54,6 +50,9 @@ const ModalCreateRoom = (props) => {
         }
     };
 
+    const totalCurrentRoom = Array.isArray(listRoom) ? listRoom.reduce((sum, room) => sum + (room.quantity || 1), 0) : 0;
+
+
     const handleCreateRoom = async () => {
         if (!roomName || !area || !description || !roomType || !image || !quantity) {
             toast.error('Please fill in all fields');
@@ -61,6 +60,8 @@ const ModalCreateRoom = (props) => {
             toast.error('Area cannot be a negative number');
         } else if (quantity < 1) {
             toast.error('Quantity must be at least 1');
+        } else if (maxRoom && totalCurrentRoom + quantity > maxRoom) {
+            toast.error(`Tổng số phòng sau khi tạo vượt quá số lượng tối đa (${maxRoom}). Hiện tại đã có ${totalCurrentRoom} phòng.`);
         } else {
             setLoading(true);
             try {
@@ -133,9 +134,13 @@ const ModalCreateRoom = (props) => {
                             <Form.Control
                                 type="number"
                                 min="1"
+                                max={maxRoom ? maxRoom - totalCurrentRoom : undefined}
                                 value={quantity}
                                 onChange={e => setQuantity(parseInt(e.target.value))}
                             />
+                            {maxRoom && (
+                                <Form.Text muted>Số lượng tối đa còn lại có thể tạo: {maxRoom - totalCurrentRoom}</Form.Text>
+                            )}
                         </Form.Group>
                     </Row>
 

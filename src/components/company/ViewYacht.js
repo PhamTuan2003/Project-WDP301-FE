@@ -57,7 +57,7 @@ const ViewYacht = () => {
         }
         if (confirm) {
             let res = await deleteYacht(id);
-            if (res.data.data === true) {
+            if (res.data) {
                 toast.success('Successfully');
                 listYacht();
                 setCurrentPage(prevPage => {

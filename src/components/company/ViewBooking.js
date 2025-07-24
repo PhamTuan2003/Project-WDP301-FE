@@ -143,22 +143,22 @@ const ViewBooking = () => {
         // Đã thanh toán đủ, chờ xác nhận hoàn thành
         if (booking.status === 'confirmed' && booking.paymentStatus === 'fully_paid') {
             // Nếu quá 1 ngày hoặc có quyền, hiển thị nút xác nhận hoàn thành
-            if (isOverOneDay(booking.updatedAt)) {
+            // if (isOverOneDay(booking.updatedAt)) {
                 return <>
                     <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
                     <Link onClick={() => handleConfirmCompleted(booking._id)} className="btn btn-sm btn-primary">Xác nhận hoàn thành</Link>
                 </>;
-            }
+            // }
             return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
         }
-        // Chờ xác nhận
-        if (booking.status === 'pending') {
-            return <>
-                <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
-                <Link onClick={() => handleConfrimBooking(booking._id)} className="btn btn-sm btn-success">Confirm</Link>
-                <Link onClick={() => handleCancelBooking(booking._id)} className="btn btn-sm btn-danger">Cancel</Link>
-            </>;
-        }
+        // // Chờ xác nhận
+        // if (booking.status === 'pending') {
+        //     return <>
+        //         <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
+        //         <Link onClick={() => handleConfrimBooking(booking._id)} className="btn btn-sm btn-success">Confirm</Link>
+        //         <Link onClick={() => handleCancelBooking(booking._id)} className="btn btn-sm btn-danger">Cancel</Link>
+        //     </>;
+        // }
         // Trường hợp khác
         return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
     };

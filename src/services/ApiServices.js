@@ -53,7 +53,7 @@ export const deleteYachtImage = (idImage) => {
 }
 
 export const getYachtImage = (idYacht) => {
-    return axios.get(`/api/v1/yachts/image/${idYacht}`);
+    return axios.get(`/api/v1/yachtImage/image/${idYacht}`);
 }
 
 export const createServiceYacht = (yachtId, serviceName, price) => {

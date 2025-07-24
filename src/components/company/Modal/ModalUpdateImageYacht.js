@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Button } from 'react-bootstrap';
 import Modal from 'react-bootstrap/Modal';
-import { Button } from 'react-bootstrap'
 import { FcPlus } from "react-icons/fc";
 import { toast } from 'react-toastify';
 import { updateYachtImage } from '../../../services/ApiServices';
@@ -23,7 +23,7 @@ const ModalUpdateImageYacht = (props) => {
     }
     const handleUpdateYachtImage = async () => {
         let res = await updateYachtImage(dataUpdate.idYachtImage, image);
-        if (res && res.data.data === true) {
+        if (res && res.data === true) {
             toast.success("Update Image Successfully");
             handleClose();
             await props.getAllImagesYacht();

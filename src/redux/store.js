@@ -7,7 +7,7 @@ import rootReducer from "./rootReducer";
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth'], // chọn reducer muốn lưu (tuỳ bạn)
+  whitelist: ['account'], // chỉ lưu trạng thái đăng nhập
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
