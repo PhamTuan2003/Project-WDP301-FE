@@ -1,3 +1,4 @@
+// AdminDashboard.js (chỉ thêm import useNavigate, và sửa MenuItem Profile để navigate)
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -37,20 +38,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Logout,
+  Home,
 } from "@mui/icons-material";
+import Swal from "sweetalert2";
 import { AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
 import CompanyManagement from "./CompanyManagement";
 import RevenueSummary from "./RevenueSummary";
-import {
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useTheme } from "@mui/material";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom"; // Import mới
+import { doAdminLogout } from "../../redux/actions/adminActions";
 
 export default function Dashboard({ toggleTheme, mode }) {
   const [open, setOpen] = useState(true);
@@ -69,6 +67,8 @@ export default function Dashboard({ toggleTheme, mode }) {
   const [loadingCompany, setLoadingCompany] = useState(true);
   const [loadingRevenue, setLoadingRevenue] = useState(true);
   const [notificationCount, setNotificationCount] = useState(3); // demo
+  const dispatch = useDispatch();
+  const navigate = useNavigate(); // Thêm mới
 
   // Thêm biến tính vị trí left cho button
   const buttonLeft = (open ? drawerWidthOpen : drawerWidthClosed) - 15;
@@ -101,21 +101,14 @@ export default function Dashboard({ toggleTheme, mode }) {
 
   useEffect(() => {
     if (earningsByMonth.length > 0) {
-      const years = Array.from(
-        new Set(earningsByMonth.map((row) => row.year))
-      ).sort((a, b) => b - a);
+      const years = Array.from(new Set(earningsByMonth.map((row) => row.year))).sort((a, b) => b - a);
       setYearOptions(years);
       if (!years.includes(selectedYear)) setSelectedYear(years[0]);
     }
   }, [earningsByMonth]);
 
-  const filteredData = earningsByMonth.filter(
-    (row) => row.year === selectedYear
-  );
-  const totalCommission = filteredData.reduce(
-    (sum, row) => sum + row.earnings * 0.05,
-    0
-  );
+  const filteredData = earningsByMonth.filter((row) => row.year === selectedYear);
+  const totalCommission = filteredData.reduce((sum, row) => sum + row.earnings * 0.05, 0);
 
   // Avatar menu
   const handleAvatarClick = (event) => {
@@ -125,13 +118,35 @@ export default function Dashboard({ toggleTheme, mode }) {
     setAnchorEl(null);
   };
 
+  // hàm xử lý nút đăng xuất
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Bạn chắc chắn muốn đăng xuất?",
+      text: "Hành động này sẽ kết thúc phiên làm việc.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Đăng xuất",
+      cancelButtonText: "Hủy",
+    });
+
+    if (result.isConfirmed) {
+      dispatch(doAdminLogout());
+      navigate("/admin-login");
+      await Swal.fire({
+        title: "Đã đăng xuất",
+        text: "Hẹn gặp lại bạn sau!",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    }
+  };
+
   return (
-    <Box
-      display="flex"
-      minHeight="100vh"
-      bgcolor={theme.palette.background.default}
-      fontFamily="'Inter', sans-serif"
-    >
+    <Box display="flex" minHeight="100vh" bgcolor={theme.palette.background.default} fontFamily="'Inter', sans-serif">
+
       {/* Sidebar */}
       <Drawer
         variant="permanent"
@@ -165,17 +180,11 @@ export default function Dashboard({ toggleTheme, mode }) {
               minHeight: 64,
             }}
           >
-            {!open && (
-              <Avatar src="/icons/logo192.png" sx={{ width: 36, height: 36 }} />
-            )}
+            {!open && <Avatar src="/icons/logo192.png" sx={{ width: 36, height: 36 }} />}
             {open && (
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography
-                  variant="h6"
-                  color={theme.palette.primary.main}
-                  fontWeight={700}
-                >
-                  LongWave Admin
+                <Typography variant="h6" color={theme.palette.primary.main} fontWeight={700}>
+                  Quản Trị Viên
                 </Typography>
               </Box>
             )}
@@ -191,12 +200,7 @@ export default function Dashboard({ toggleTheme, mode }) {
           <List>
             {/* Dashboard */}
             <ListItem disablePadding>
-              <Tooltip
-                title="Dashboard"
-                placement="right"
-                arrow
-                disableHoverListener={open ? true : false}
-              >
+              <Tooltip title="Dashboard" placement="right" arrow disableHoverListener={open ? true : false}>
                 <ListItemButton
                   selected={selectedMenu === "dashboard"}
                   onClick={() => setSelectedMenu("dashboard")}
@@ -217,24 +221,16 @@ export default function Dashboard({ toggleTheme, mode }) {
                   }}
                 >
                   <ListItemIcon>
-                    <DashboardIcon
-                      color={
-                        selectedMenu === "dashboard" ? "primary" : "action"
-                      }
-                    />
+                    <DashboardIcon color={selectedMenu === "dashboard" ? "primary" : "action"} />
                   </ListItemIcon>
                   {open && <ListItemText primary="Dashboard" />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
+
             {/* Company */}
             <ListItem disablePadding>
-              <Tooltip
-                title="Quản lý công ty"
-                placement="right"
-                arrow
-                disableHoverListener={open ? true : false}
-              >
+              <Tooltip title="Quản lý công ty" placement="right" arrow disableHoverListener={open ? true : false}>
                 <ListItemButton
                   selected={selectedMenu === "company"}
                   onClick={() => setSelectedMenu("company")}
@@ -255,22 +251,16 @@ export default function Dashboard({ toggleTheme, mode }) {
                   }}
                 >
                   <ListItemIcon>
-                    <AccountCircle
-                      color={selectedMenu === "company" ? "primary" : "action"}
-                    />
+                    <AccountCircle color={selectedMenu === "company" ? "primary" : "action"} />
                   </ListItemIcon>
                   {open && <ListItemText primary="Company" />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
+            
             {/* Revenue */}
             <ListItem disablePadding>
-              <Tooltip
-                title="Doanh thu"
-                placement="right"
-                arrow
-                disableHoverListener={open ? true : false}
-              >
+              <Tooltip title="Doanh thu" placement="right" arrow disableHoverListener={open ? true : false}>
                 <ListItemButton
                   selected={selectedMenu === "revenue"}
                   onClick={() => setSelectedMenu("revenue")}
@@ -291,26 +281,53 @@ export default function Dashboard({ toggleTheme, mode }) {
                   }}
                 >
                   <ListItemIcon>
-                    <AttachMoney
-                      color={selectedMenu === "revenue" ? "primary" : "action"}
-                    />
+                    <AttachMoney color={selectedMenu === "revenue" ? "primary" : "action"} />
                   </ListItemIcon>
                   {open && <ListItemText primary="Doanh thu" />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
+
+            {/* Giao diện Khách hàng */}
+            <ListItem disablePadding>
+              <Tooltip title="Giao diện Khách Hàng" placement="right" arrow disableHoverListener={open ? true : false}>
+                <ListItemButton
+                  selected={selectedMenu === "home"}
+                  onClick={() => {
+                    setSelectedMenu("home");
+                    window.open("/", "_blank");
+                  }}
+                  sx={{
+                    borderRadius: 2,
+                    mx: 1,
+                    my: 0.5,
+                    transition: "background 0.2s, color 0.2s",
+                    "&.Mui-selected": {
+                      bgcolor: theme.palette.primary.light,
+                      color: theme.palette.text.primary,
+                      boxShadow: theme.shadows[2],
+                    },
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.lighter,
+                      boxShadow: theme.shadows[2],
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <Home color={selectedMenu === "home" ? "primary" : "action"} />
+                  </ListItemIcon>
+                  {open && <ListItemText primary="Giao diện Khách Hàng" />}
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
           </List>
         </Box>
+
         {/* Logout at bottom */}
         <Box mb={2}>
           <Divider sx={{ my: 1 }} />
-          <Tooltip
-            title="Đăng xuất"
-            placement="right"
-            arrow
-            disableHoverListener={open ? true : false}
-          >
-            <ListItemButton sx={{ borderRadius: 2, mx: 1 }}>
+          <Tooltip title="Đăng xuất" placement="right" arrow disableHoverListener={open ? true : false}>
+            <ListItemButton sx={{ borderRadius: 2, mx: 1 }} onClick={handleLogout}>
               <ListItemIcon>
                 <Logout color="action" />
               </ListItemIcon>
@@ -338,6 +355,7 @@ export default function Dashboard({ toggleTheme, mode }) {
       >
         {open ? <ChevronLeft /> : <ChevronRight />}
       </IconButton>
+
       {/* Main content + Header */}
       <Box flexGrow={1} minHeight="100vh" display="flex" flexDirection="column">
         {/* Header */}
@@ -351,9 +369,7 @@ export default function Dashboard({ toggleTheme, mode }) {
             zIndex: 20,
           }}
         >
-          <Toolbar
-            sx={{ justifyContent: "space-between", minHeight: 64, px: 3 }}
-          >
+          <Toolbar sx={{ justifyContent: "space-between", minHeight: 64, px: 3 }}>
             <Box display="flex" alignItems="center" gap={2}>
               <Typography
                 variant="h6"
@@ -362,7 +378,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                 letterSpacing={1}
                 sx={{ display: { xs: "none", sm: "block" } }}
               >
-                LongWave Admin
+                𝓛𝓸𝓷𝓰𝓦𝓪𝓿𝓮
               </Typography>
             </Box>
             <Box display="flex" alignItems="center" gap={2}>
@@ -379,9 +395,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                 }}
               >
                 <Tooltip title="Tìm kiếm">
-                  <SearchIcon
-                    sx={{ color: theme.palette.primary.main, mr: 1 }}
-                  />
+                  <SearchIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
                 </Tooltip>
                 <InputBase
                   placeholder="Tìm kiếm..."
@@ -393,22 +407,9 @@ export default function Dashboard({ toggleTheme, mode }) {
                   inputProps={{ "aria-label": "search" }}
                 />
               </Paper>
-              <Tooltip
-                title={
-                  mode === "light"
-                    ? "Chuyển sang dark mode"
-                    : "Chuyển sang light mode"
-                }
-              >
-                <IconButton
-                  onClick={toggleTheme}
-                  sx={{ color: theme.palette.text.primary, p: 1 }}
-                >
-                  {mode === "light" ? (
-                    <AiOutlineMoon size={24} />
-                  ) : (
-                    <AiOutlineSun size={24} />
-                  )}
+              <Tooltip title={mode === "light" ? "Chuyển sang dark mode" : "Chuyển sang light mode"}>
+                <IconButton onClick={toggleTheme} sx={{ color: theme.palette.text.primary, p: 1 }}>
+                  {mode === "light" ? <AiOutlineMoon size={24} /> : <AiOutlineSun size={24} />}
                 </IconButton>
               </Tooltip>
               <Tooltip title="Thông báo">
@@ -432,24 +433,23 @@ export default function Dashboard({ toggleTheme, mode }) {
                   </Avatar>
                 </IconButton>
               </Tooltip>
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-              >
-                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-                <MenuItem onClick={handleMenuClose}>Logout</MenuItem>
+              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                <MenuItem onClick={() => { handleMenuClose(); navigate('/admin/profile'); }}>Profile</MenuItem> {/* Sửa ở đây */}
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    handleLogout();
+                  }}
+                >
+                  Logout
+                </MenuItem>
               </Menu>
             </Box>
           </Toolbar>
         </AppBar>
+
         {/* Main content */}
-        <Box
-          flexGrow={1}
-          p={4}
-          overflow="auto"
-          sx={{ backgroundColor: theme.palette.background.default }}
-        >
+        <Box flexGrow={1} p={4} overflow="auto" sx={{ backgroundColor: theme.palette.background.default }}>
           {selectedMenu === "dashboard" && (
             <>
               <Grid container spacing={4} justifyContent="center">
@@ -471,23 +471,12 @@ export default function Dashboard({ toggleTheme, mode }) {
                     }}
                   >
                     <CardContent sx={{ width: "100%" }}>
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography
-                            variant="subtitle2"
-                            color={theme.palette.text.secondary}
-                          >
+                          <Typography variant="subtitle2" color={theme.palette.text.secondary}>
                             Khách hàng
                           </Typography>
-                          <Typography
-                            variant="h4"
-                            color={theme.palette.error.main}
-                            fontWeight={700}
-                          >
+                          <Typography variant="h4" color={theme.palette.error.main} fontWeight={700}>
                             {loadingStats ? (
                               <CircularProgress size={28} color="inherit" />
                             ) : stats ? (
@@ -496,10 +485,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                               "..."
                             )}
                           </Typography>
-                          <Typography
-                            variant="body2"
-                            color={theme.palette.text.secondary}
-                          >
+                          <Typography variant="body2" color={theme.palette.text.secondary}>
                             Cập nhật:{" "}
                             {new Date().toLocaleString("vi-VN", {
                               day: "2-digit",
@@ -542,33 +528,15 @@ export default function Dashboard({ toggleTheme, mode }) {
                     }}
                   >
                     <CardContent sx={{ width: "100%" }}>
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography
-                            variant="subtitle2"
-                            color={theme.palette.text.secondary}
-                          >
+                          <Typography variant="subtitle2" color={theme.palette.text.secondary}>
                             Tất cả công ty
                           </Typography>
-                          <Typography
-                            variant="h4"
-                            color={theme.palette.primary.main}
-                            fontWeight={700}
-                          >
-                            {loadingCompany ? (
-                              <CircularProgress size={28} color="inherit" />
-                            ) : (
-                              companyCount
-                            )}
+                          <Typography variant="h4" color={theme.palette.primary.main} fontWeight={700}>
+                            {loadingCompany ? <CircularProgress size={28} color="inherit" /> : companyCount}
                           </Typography>
-                          <Typography
-                            variant="body2"
-                            color={theme.palette.text.secondary}
-                          >
+                          <Typography variant="body2" color={theme.palette.text.secondary}>
                             Cập nhật:{" "}
                             {new Date().toLocaleString("vi-VN", {
                               day: "2-digit",
@@ -611,23 +579,12 @@ export default function Dashboard({ toggleTheme, mode }) {
                     }}
                   >
                     <CardContent sx={{ width: "100%" }}>
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography
-                            variant="subtitle2"
-                            color={theme.palette.text.secondary}
-                          >
+                          <Typography variant="subtitle2" color={theme.palette.text.secondary}>
                             Thu nhập (Hoa hồng)
                           </Typography>
-                          <Typography
-                            variant="h4"
-                            color={theme.palette.primary.main}
-                            fontWeight={700}
-                          >
+                          <Typography variant="h4" color={theme.palette.primary.main} fontWeight={700}>
                             {loadingRevenue ? (
                               <CircularProgress size={28} color="inherit" />
                             ) : (
@@ -635,10 +592,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                             )}{" "}
                             đ
                           </Typography>
-                          <Typography
-                            variant="body2"
-                            color={theme.palette.text.secondary}
-                          >
+                          <Typography variant="body2" color={theme.palette.text.secondary}>
                             Cập nhật:{" "}
                             {new Date().toLocaleString("vi-VN", {
                               day: "2-digit",
@@ -679,12 +633,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                 }}
               >
                 <Box width="100%" maxWidth={1400}>
-                  <Typography
-                    variant="h6"
-                    fontWeight={600}
-                    mb={2}
-                    color={theme.palette.text.primary}
-                  >
+                  <Typography variant="h6" fontWeight={600} mb={2} color={theme.palette.text.primary}>
                     Thu nhập và hoa hồng theo tháng
                   </Typography>
                   <Box
@@ -695,20 +644,12 @@ export default function Dashboard({ toggleTheme, mode }) {
                     sx={{ backgroundColor: theme.palette.background.paper }}
                   >
                     <FormControl size="small">
-                      <InputLabel sx={{ color: theme.palette.text.primary }}>
-                        Năm
-                      </InputLabel>
+                      <InputLabel sx={{ color: theme.palette.text.primary }}>Năm</InputLabel>
                       {yearOptions.length > 0 ? (
                         <Select
-                          value={
-                            yearOptions.includes(selectedYear)
-                              ? selectedYear
-                              : yearOptions[0]
-                          }
+                          value={yearOptions.includes(selectedYear) ? selectedYear : yearOptions[0]}
                           label="Năm"
-                          onChange={(e) =>
-                            setSelectedYear(Number(e.target.value))
-                          }
+                          onChange={(e) => setSelectedYear(Number(e.target.value))}
                           sx={{
                             minWidth: 100,
                             "& .MuiOutlinedInput-root": {
@@ -717,32 +658,18 @@ export default function Dashboard({ toggleTheme, mode }) {
                           }}
                         >
                           {yearOptions.map((y) => (
-                            <MenuItem
-                              key={y}
-                              value={y}
-                              sx={{ color: theme.palette.text.primary }}
-                            >
+                            <MenuItem key={y} value={y} sx={{ color: theme.palette.text.primary }}>
                               {y}
                             </MenuItem>
                           ))}
                         </Select>
                       ) : (
-                        <Select
-                          value=""
-                          label="Năm"
-                          disabled
-                          sx={{ minWidth: 100 }}
-                        />
+                        <Select value="" label="Năm" disabled sx={{ minWidth: 100 }} />
                       )}
                     </FormControl>
                   </Box>
                   {loadingRevenue ? (
-                    <Box
-                      display="flex"
-                      justifyContent="center"
-                      alignItems="center"
-                      minHeight={300}
-                    >
+                    <Box display="flex" justifyContent="center" alignItems="center" minHeight={300}>
                       <CircularProgress size={48} />
                     </Box>
                   ) : filteredData.length > 0 ? (
@@ -754,14 +681,8 @@ export default function Dashboard({ toggleTheme, mode }) {
                         }))}
                         margin={{ left: 80, right: 80, top: 20, bottom: 20 }}
                       >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke={theme.palette.divider}
-                        />
-                        <XAxis
-                          dataKey="month"
-                          stroke={theme.palette.text.primary}
-                        />
+                        <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                        <XAxis dataKey="month" stroke={theme.palette.text.primary} />
                         <YAxis
                           yAxisId="left"
                           label={{
@@ -811,9 +732,7 @@ export default function Dashboard({ toggleTheme, mode }) {
                           type="monotone"
                           dataKey="commission"
                           stroke={
-                            theme.palette.purple
-                              ? theme.palette.purple.main
-                              : theme.palette.secondary.main || "#9c27b0"
+                            theme.palette.purple ? theme.palette.purple.main : theme.palette.secondary.main || "#9c27b0"
                           }
                           strokeWidth={3}
                           dot
@@ -832,8 +751,20 @@ export default function Dashboard({ toggleTheme, mode }) {
           )}
 
           {selectedMenu === "company" && <CompanyManagement />}
-          {selectedMenu === "revenue" && (
-            <RevenueSummary data={earningsByMonth} />
+          {selectedMenu === "revenue" && <RevenueSummary data={earningsByMonth} />}
+          {selectedMenu === "home" && (
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              height="100%"
+              minHeight={400}
+              color={theme.palette.text.secondary}
+              fontStyle="italic"
+              fontSize={50}
+            >
+              Đã mở giao diện khách hàng ở trong Tab mới.
+            </Box>
           )}
         </Box>
       </Box>

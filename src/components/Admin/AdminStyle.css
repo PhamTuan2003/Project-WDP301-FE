@@ -9,7 +9,8 @@
 }
 
 .admin-login-wrapper {
-  width: 400px;
+  width: 500px;
+  height: 500px;
   border-radius: 15px;
   padding: 40px;
   text-align: center;
