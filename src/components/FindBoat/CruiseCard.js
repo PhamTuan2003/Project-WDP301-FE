@@ -161,7 +161,7 @@ const CruiseCard = ({ cruise }) => {
           <CardMedia
             component="img"
             height={200}
-            image={firstImage} // Use the fetched first image
+            image={cruise.image} // Use the fetched first image
             alt={name}
             sx={{
               width: "352px",

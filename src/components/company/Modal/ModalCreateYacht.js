@@ -5,16 +5,15 @@ import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
 import { FcPlus } from "react-icons/fc";
+import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { createYacht, getYachtType } from '../../../services/ApiServices';
-
 const ModalCreateYacht = (props) => {
     const { show, setShow, location } = props;
     const [image, setImage] = useState("");
     const [previewImage, setPreviewImage] = useState("");
     const [yachtType, setYachtType] = useState([]);
-    // const idCompany = useSelector(state => state.account.account.idCompany)
-    const idCompany = '682ab2c581f0fd7069e74058'
+    const idCompany = useSelector(state => state.account.account.idCompany)
     const [loading, setLoading] = useState(false);
 
     const initInforYacht = {
