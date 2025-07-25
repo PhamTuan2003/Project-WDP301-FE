@@ -42,14 +42,30 @@ const ManageInforYacht = (props) => {
 
     useEffect(() => {
         if (!_.isEmpty(inforYacht)) {
-            setDataUpdate(inforYacht)
-            setIdLocation(inforYacht.locationId && inforYacht.locationId._id ? inforYacht.locationId._id : '');
-            setIdYachtType(inforYacht.yachtTypeId && inforYacht.yachtTypeId._id ? inforYacht.yachtTypeId._id : '');
+            setDataUpdate(inforYacht);
+            // Xử lý locationId
+            let loc = '';
+            if (inforYacht.locationId) {
+                if (inforYacht.locationId._id) loc = inforYacht.locationId._id;
+                else if (inforYacht.locationId.id) loc = inforYacht.locationId.id;
+                else if (inforYacht.locationId.name) loc = inforYacht.locationId.name;
+            }
+            if (!loc && Array.isArray(listLocation) && listLocation.length > 0) loc = listLocation[0]._id || listLocation[0].name || '';
+            setIdLocation(loc);
+            // Xử lý yachtTypeId
+            let type = '';
+            if (inforYacht.yachtTypeId) {
+                if (inforYacht.yachtTypeId._id) type = inforYacht.yachtTypeId._id;
+                else if (inforYacht.yachtTypeId.id) type = inforYacht.yachtTypeId.id;
+                else if (inforYacht.yachtTypeId.name) type = inforYacht.yachtTypeId.name;
+            }
+            if (!type && Array.isArray(listYachtType) && listYachtType.length > 0) type = listYachtType[0]._id || listYachtType[0].name || '';
+            setIdYachtType(type);
             if (inforYacht.image) {
                 setPreviewImage(inforYacht.image)
             }
         }
-    }, [inforYacht]);
+    }, [inforYacht, listLocation, listYachtType]);
 
 
 
@@ -89,7 +105,17 @@ const ManageInforYacht = (props) => {
 
     const validateInput = () => {
         const { name, hullBody, itinerary, rule, description, maxRoom } = dataUpdate;
-        if (!name || !hullBody || !itinerary || !rule || !description || !idLocation || !idYachtType || !maxRoom) {
+        console.log(dataUpdate)
+        if (
+            !name ||
+            !hullBody ||
+            !itinerary ||
+            !rule ||
+            !description ||
+            idLocation === '' ||
+            idYachtType === '' ||
+            maxRoom === '' || maxRoom === null || maxRoom === undefined
+        ) {
             toast.error('Please fill in all fields');
             return false;
         }
@@ -100,14 +126,38 @@ const ManageInforYacht = (props) => {
         return true;
     };
 
+    // So sánh dữ liệu hiện tại với dữ liệu gốc
+    const isChanged = () => {
+        if (!inforYacht) return true;
+        // So sánh từng trường, image chỉ so sánh nếu user chọn ảnh mới
+        if (
+            dataUpdate.name !== inforYacht.name ||
+            dataUpdate.hullBody !== inforYacht.hullBody ||
+            dataUpdate.itinerary !== inforYacht.itinerary ||
+            dataUpdate.rule !== inforYacht.rule ||
+            dataUpdate.description !== inforYacht.description ||
+            Number(dataUpdate.maxRoom) !== Number(inforYacht.maxRoom) ||
+            idLocation !== (inforYacht.locationId && inforYacht.locationId._id ? inforYacht.locationId._id : '') ||
+            idYachtType !== (inforYacht.yachtTypeId && inforYacht.yachtTypeId._id ? inforYacht.yachtTypeId._id : '') ||
+            image
+        ) {
+            return true;
+        }
+        return false;
+    }
+
     const handleUpdateYacht = async () => {
         if (validateInput() === false) return;
+        if (!isChanged()) {
+            toast.info('Không có thay đổi nào để cập nhật');
+            return;
+        }
         let res = await updateYacht(idYacht, dataUpdate.name.trim(), image,
             dataUpdate.hullBody.trim(), dataUpdate.description.trim(),
             dataUpdate.rule.trim(), dataUpdate.itinerary.trim(),
             idYachtType, idLocation, dataUpdate.maxRoom);
 
-        if (res && res.data) {
+        if (res || res.data) {
             toast.success('Update Success');
             getYacht();
         } else {

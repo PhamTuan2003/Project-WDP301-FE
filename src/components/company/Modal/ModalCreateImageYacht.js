@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import { Button } from 'react-bootstrap'
-import { FcPlus } from "react-icons/fc";
-import { createYachtImage } from '../../../services/ApiServices';
-import { toast } from 'react-toastify';
 import _ from 'lodash';
+import { useState } from 'react';
+import { Button } from 'react-bootstrap';
+import Modal from 'react-bootstrap/Modal';
+import { FcPlus } from "react-icons/fc";
+import { toast } from 'react-toastify';
+import { createYachtImage } from '../../../services/ApiServices';
 
 const ModalCreateImageYacht = (props) => {
     const { show, setShow, idYacht } = props
@@ -30,7 +30,7 @@ const ModalCreateImageYacht = (props) => {
             return;
         } else {
             const res = await createYachtImage(idYacht, image);
-            if (res && res.data.data === true) {
+            if (res && res.data) {
                 toast.success("Create Image Successfully")
                 handleClose();
                 setPreviewImage('');

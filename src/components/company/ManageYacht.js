@@ -43,7 +43,7 @@ const ManageYacht = () => {
     const handleDeleteImage = async (idImage) => {
         if (window.confirm(`Do you want to delete Image`)) {
             let res = await deleteYachtImage(idImage);
-            if (res && res.data.data === true) {
+            if (res || res.data) {
                 toast.success('Delete Successfully');
                 getAllImagesYacht();
                 setCurrentPage(prevPage => {
@@ -101,11 +101,11 @@ const ManageYacht = () => {
                                 displayedImageYacht && displayedImageYacht.length > 0 && displayedImageYacht.map((image) =>
 
                                     <tr
-                                        key={image.idYachtImage}
+                                        key={image._id}
                                         className="table-primary"
                                     >
                                         <td>
-                                            <img src={image.url} width={200} alt='' />
+                                            <img src={image.imageUrl} width={200} alt='' />
                                         </td>
                                         <td width={300}>
                                             <Row>
@@ -113,7 +113,7 @@ const ManageYacht = () => {
                                                     <label onClick={() => handleUpdateYachtImage(image)} className='btn btn-primary' >Update</label>
                                                 </Col>
                                                 <Col md={4}>
-                                                    <Button onClick={() => handleDeleteImage(image.idYachtImage)} className='btn btn-danger'>Delete</Button>
+                                                    <Button onClick={() => handleDeleteImage(image._id)} className='btn btn-danger'>Delete</Button>
                                                 </Col>
                                             </Row>
 

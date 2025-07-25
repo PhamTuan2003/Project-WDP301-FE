@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 
-import { doLogin } from "../redux/actions/userAction";
+import { doLogin } from "../redux/actions/UserAction";
 import { loginApi } from "../services/ApiServices";
 import "./Auth.css";
 import ForgotPassword from "./ForgotPassword";

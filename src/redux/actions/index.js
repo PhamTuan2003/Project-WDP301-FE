@@ -6,5 +6,6 @@ export * from "./invoiceActions";
 export * from "./paymentActions";
 export * from "./reviewActions";
 export * from "./uiActions";
+export * from "./UserAction";
 export * from "./yachtActions";
-export * from "./userAction";
+

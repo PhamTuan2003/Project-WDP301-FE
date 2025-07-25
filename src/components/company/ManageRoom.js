@@ -139,7 +139,7 @@ const ManageRoom = () => {
 
                                 <div className='col-md-4'>
                                     <div className='ok'>
-                                        <Button onClick={() => handlManageImageRoom(room._id)} className='btn btn-warning mx-3'>Manage Room Image </Button>
+                                        {/* <Button onClick={() => handlManageImageRoom(room._id)} className='btn btn-warning mx-3'>Manage Room Image </Button> */}
                                         <Button onClick={() => handleUpdateRoom(room)} className='btn btn-primary'>Update</Button>
                                     </div>
                                 </div>

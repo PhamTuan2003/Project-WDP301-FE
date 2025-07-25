@@ -49,7 +49,7 @@ export const getProfileCompany = (idCompany) => {
 }
 
 export const deleteYachtImage = (idImage) => {
-    return axios.delete(`/api/v1/yachts/deleteImage/${idImage}`);
+    return axios.delete(`/api/v1/yachtImage/deleteImage/${idImage}`);
 }
 
 export const getYachtImage = (idYacht) => {
@@ -203,7 +203,7 @@ export const updateProfileCompany = (idCompany, name, address, logo) => {
 export const updateYachtImage = (idImage, image) => {
     const data = new FormData();
     data.append('image', image)
-    return axios.put(`/api/v1/yachts/updateImage/${idImage}`, data);
+    return axios.put(`/api/v1/yachtImage/updateImage/${idImage}`, data);
 }
 
 export const updateImageRoom = (idImage, image) => {
@@ -273,10 +273,10 @@ export const createRoom = (roomName, area, description, roomType, avatar, idYach
     return axios.post(`/api/v1/rooms/room/create`, data);
 }
 
-export const createYachtImage = (idYacht, image) => {
+export const createYachtImage = (idYacht, images) => {
     const data = new FormData();
-    data.append('image', image);
-    return axios.post(`/api/v1/yachts/addImage/${idYacht}`, data);
+    data.append('image', images);
+    return axios.post(`/api/v1/yachtImage/addImage/${idYacht}`, data);
 }
 
 export const changePasswordCompany = (idCompany, oldPassword, newPassword, confirmPassword) => {

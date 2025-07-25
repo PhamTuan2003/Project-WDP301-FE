@@ -22,8 +22,8 @@ const ModalUpdateImageYacht = (props) => {
         }
     }
     const handleUpdateYachtImage = async () => {
-        let res = await updateYachtImage(dataUpdate.idYachtImage, image);
-        if (res && res.data === true) {
+        let res = await updateYachtImage(dataUpdate._id, image);
+        if (res && res.data) {
             toast.success("Update Image Successfully");
             handleClose();
             await props.getAllImagesYacht();
