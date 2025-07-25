@@ -42,6 +42,11 @@ function ImageCarousel({ yachtId }) {
   const rightIndex = (currentIndex + 1) % images.length;
 
   const getThumbnailIndexes = () => {
+    if (images.length <= 5) {
+      // Nếu số ảnh <= 5, chỉ hiện đúng số lượng ảnh
+      return images.map((_, idx) => idx);
+    }
+    // Nếu nhiều hơn 5 ảnh, lấy 5 thumbnail xung quanh currentIndex
     const thumbIndexes = [];
     thumbIndexes.push((currentIndex - 2 + images.length) % images.length);
     thumbIndexes.push((currentIndex - 1 + images.length) % images.length);

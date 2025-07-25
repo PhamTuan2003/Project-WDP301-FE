@@ -1062,10 +1062,7 @@ export default function BookingHistory() {
                     justifyContent="center"
                   >
                     <Avatar
-                      src={
-                        bookingImages[selectedBooking._id] ||
-                        "/images/yacht-8.jpg"
-                      }
+                      src={selectedBooking?.yacht?.image}
                       alt={selectedBooking?.yacht?.name || ""}
                       sx={{
                         width: 100,

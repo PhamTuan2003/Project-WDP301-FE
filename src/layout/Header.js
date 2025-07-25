@@ -34,16 +34,24 @@ export default function Header({ toggleTheme, mode }) {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState(null);
   const [userAnchorEl, setUserAnchorEl] = useState(null);
-  const customer = useSelector(state => {
+  const customer = useSelector((state) => {
     try {
       // Nếu bạn lưu token JWT ở account.data, decode để lấy user info
-      if (state.account && state.account.account && state.account.account.data) {
+      if (
+        state.account &&
+        state.account.account &&
+        state.account.account.data
+      ) {
         const token = state.account.account.data;
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = JSON.parse(atob(token.split(".")[1]));
         return payload;
       }
       // Nếu bạn lưu customer vào localStorage, có thể lấy từ state.account.account.customer
-      if (state.account && state.account.account && state.account.account.customer) {
+      if (
+        state.account &&
+        state.account.account &&
+        state.account.account.customer
+      ) {
         return state.account.account.customer;
       }
       return null;

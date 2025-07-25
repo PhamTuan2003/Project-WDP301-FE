@@ -115,22 +115,11 @@ const CruiseCard = ({ cruise }) => {
   const {
     _id: id,
     name = "Unknown Cruise",
-    cheapestPrice,
-    price,
     launch,
     hullBody,
     maxRoom,
-    yachtTypeId,
     services = [],
   } = cruise;
-
-  // Price display logic: prefer cheapestPrice, fallback to price, then "Liên hệ"
-  const priceDisplay =
-    cheapestPrice !== undefined && cheapestPrice !== null
-      ? `${cheapestPrice.toLocaleString("vi-VN")}đ`
-      : price !== undefined && price !== null
-      ? `${price.toLocaleString("vi-VN")}đ`
-      : "Liên hệ";
 
   return (
     <Link to={`/boat-detail/${yachtId}`} style={{ textDecoration: "none" }}>
@@ -312,7 +301,7 @@ const CruiseCard = ({ cruise }) => {
                 }}
                 fontFamily="Archivo, sans-serif"
               >
-                {priceDisplay} / khách
+                Liên hệ
               </Typography>
               <Button
                 variant="contained"

@@ -81,11 +81,6 @@ function DetailBoat() {
     return <div className="text-red-500">{error}</div>;
   }
 
-  const formatPrice = currentYacht.price
-    ? currentYacht.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
-      "đ / khách"
-    : "Chưa có giá";
-
   return (
     <div className="font-archivo">
       <div className="border-b my-4 pb-2">
@@ -151,7 +146,7 @@ function DetailBoat() {
           </div>
           <div className="md:w-4/12 flex flex-col">
             <p className="text-4xl font-bold light:text-teal-800 dark:text-teal-400">
-              {formatPrice}
+              Liên hệ
             </p>
           </div>
         </div>
@@ -186,9 +181,13 @@ function DetailBoat() {
                       key={service._id || idx}
                       className="flex items-center gap-1"
                     >
-                      <CircleCheckBig size={20} color="#04efef" />
+                      <CircleCheckBig
+                        size={20}
+                        color="#04efef"
+                        className="mt-3"
+                      />
                       <p
-                        className="text-base pt-3"
+                        className="text-base mt-3 pt-1"
                         style={{ fontSize: "18px", color: "text.primary" }}
                       >
                         {service.serviceId?.serviceName ||

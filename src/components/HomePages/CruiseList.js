@@ -23,6 +23,7 @@ export default function CruiseList() {
   useEffect(() => {
     const fetchCruises = async () => {
       try {
+        // Lấy danh sách yacht cơ bản (lấy id)
         const resBasic = await axios.get(
           "http://localhost:9999/api/v1/yachts",
           {
@@ -33,40 +34,28 @@ export default function CruiseList() {
           ? resBasic.data.data
           : [];
 
-        const resWithPrice = await axios.get(
-          "http://localhost:9999/api/v1/yachts/findboat"
-        );
-        const yachtsWithPrice = Array.isArray(resWithPrice.data.data)
-          ? resWithPrice.data.data
-          : [];
-
+        // Lấy chi tiết từng yacht theo id
         const combinedYachts = await Promise.all(
           yachtsBasic.map(async (yacht) => {
-            const match = yachtsWithPrice.find((y) => y._id === yacht._id);
-            let imageUrl = "/images/placeholder.jpg";
             try {
-              const imageRes = await axios.get(
-                `http://localhost:9999/api/v1/yachtImages/yacht/${yacht._id}`
+              const detailRes = await axios.get(
+                `http://localhost:9999/api/v1/yachts/findboat/${yacht._id}`
               );
-              if (
-                imageRes.data.success &&
-                Array.isArray(imageRes.data.data) &&
-                imageRes.data.data.length > 0
-              ) {
-                imageUrl = imageRes.data.data[0];
-              }
-            } catch (imageErr) {
-              console.error(
-                `Error fetching image for yacht ${yacht._id}:`,
-                imageErr
-              );
+              const yachtDetail = detailRes.data.data;
+              // Nếu API trả về trường image là url, dùng luôn
+              let imageUrl = yachtDetail.image || "/images/placeholder.jpg";
+              // Nếu image là mảng hoặc object, xử lý tương tự như hướng dẫn trước
+              return {
+                ...yachtDetail,
+                image: imageUrl,
+              };
+            } catch (err) {
+              // Nếu lỗi, trả về yacht cơ bản với ảnh placeholder
+              return {
+                ...yacht,
+                image: "/images/placeholder.jpg",
+              };
             }
-
-            return {
-              ...yacht,
-              cheapestPrice: match?.cheapestPrice || null,
-              image: imageUrl,
-            };
           })
         );
 
@@ -78,18 +67,12 @@ export default function CruiseList() {
 
     fetchCruises();
   }, []);
-
   const handleClick = () => {
     navigate("/find-boat");
     window.scrollTo({ top: 0 });
     setTimeout(() => {
       window.location.reload();
     }, 20);
-  };
-
-  const formatPrice = (price) => {
-    if (!price && price !== 0) return "chưa có giá";
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "đ / khách";
   };
 
   return (
@@ -136,7 +119,7 @@ export default function CruiseList() {
               >
                 <CardMedia
                   component="img"
-                  image={cruise.image}
+                  image={cruise.image || "/images/placeholder.jpg"}
                   alt={cruise.name}
                   sx={{ objectFit: "cover", borderRadius: 2, maxHeight: 200 }}
                 />
@@ -149,7 +132,11 @@ export default function CruiseList() {
                     mb={2}
                     width="fit-content"
                   >
-                    <LocationOnIcon color="primary" sx={{backgroundColor:"#f3f4f6", borderRadius:1}} fontSize="small" />
+                    <LocationOnIcon
+                      color="primary"
+                      sx={{ backgroundColor: "#f3f4f6", borderRadius: 1 }}
+                      fontSize="small"
+                    />
                     <Typography
                       variant="subtitle2"
                       fontFamily={"Archivo, sans-serif"}
@@ -168,49 +155,65 @@ export default function CruiseList() {
                     variant="h6"
                     fontWeight={600}
                     fontFamily={"Archivo, sans-serif"}
-                    sx={{ minHeight: 36, mb: 1, color: "text.primary" }}
+                    sx={{
+                      minHeight: 36,
+                      mb: 1,
+                      color: "text.primary",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                    }}
                   >
                     {cruise.name}
                   </Typography>
 
                   <Stack direction="row" alignItems="center" mb={2}>
-                    <DirectionsBoatIcon color="action" mx={1} fontSize="small" />
+                    <DirectionsBoatIcon
+                      color="action"
+                      mx={1}
+                      fontSize="small"
+                    />
                     <Typography
                       variant="caption"
                       fontFamily={"Archivo, sans-serif"}
                       color="text.primary"
                       sx={{ fontWeight: 500 }}
+                      px={1}
                     >
                       Hạ thuỷ {cruise.launch} - Thân vỏ {cruise.hullBody} -{" "}
                       {cruise.rule || "Không xác định"} phòng
                     </Typography>
                   </Stack>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Typography
-                      variant="h6"
-                      fontFamily={"Archivo, sans-serif"}
-                      color="text.primary"
-                      fontWeight={700}
-                      justifyContent={"start"}
-                    >
-                      {formatPrice(cruise.price)}
-                    </Typography>
-                  </Stack>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    justifyContent={"end"}
+                  <Box
                     sx={{
-                      borderRadius: 2,
-                     
-                      width: "fit-content",
-                      fontFamily: "Archivo, sans-serif",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
                     }}
                   >
-                    Đặt ngay
-                  </Button>
-                   </Box>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Typography
+                        variant="h6"
+                        fontFamily={"Archivo, sans-serif"}
+                        color="text.primary"
+                        fontWeight={700}
+                        justifyContent={"start"}
+                      >
+                        Liên hệ
+                      </Typography>
+                    </Stack>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      justifyContent={"end"}
+                      sx={{
+                        borderRadius: 2,
+                        width: "fit-content",
+                        fontFamily: "Archivo, sans-serif",
+                      }}
+                    >
+                      Đặt ngay
+                    </Button>
+                  </Box>
                 </CardContent>
               </Card>
             </Link>
