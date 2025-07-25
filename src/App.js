@@ -28,7 +28,7 @@ import DetailBoat from "./pages/DetailBoat";
 import FindBoat from "./pages/FindBoat";
 import HomePage from "./pages/HomePage";
 
-import Calender from './components/calender/Calender';
+import Calender from './components/company/Calender';
 import Dashboard from './components/company/Dashboard';
 import ManageCompany from './components/company/ManageCompany';
 import ManageRoom from './components/company/ManageRoom';
