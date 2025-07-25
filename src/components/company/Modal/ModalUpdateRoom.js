@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
@@ -12,7 +12,7 @@ import { updateRoom } from '../../../services/ApiServices';
 
 
 const ModalUpdateRoom = (props) => {
-    const { show, setIsShowModalUpdateRoom, dataUpdateRoom } = props;
+    const { show, setIsShowModalUpdateRoom, dataUpdateRoom, maxRoom, listRoom } = props;
     const [name, setName] = useState('');
     const [description, setDescription] = useState('')
     const [quantity, setQuantity] = useState(1);
@@ -46,9 +46,19 @@ const ModalUpdateRoom = (props) => {
             toast.error("Please fill in all fields")
         } else if (quantity < 1) {
             toast.error("Quantity must be at least 1")
+        } else if (maxRoom && listRoom) {
+            // Tính tổng số phòng nếu update quantity mới
+            const totalOtherRooms = listRoom
+                .filter(room => room._id !== dataUpdateRoom._id)
+                .reduce((sum, room) => sum + (room.quantity || 1), 0);
+            if (totalOtherRooms + quantity > maxRoom) {
+                toast.error(`Tổng số phòng sau khi cập nhật vượt quá số lượng tối đa (${maxRoom}). Hiện tại các phòng khác đã có ${totalOtherRooms} phòng.`);
+                return;
+            }
         } else {
-            let res = await updateRoom(dataUpdateRoom.idRoom, description.trim(), name.trim(), image, quantity)
-            if (res && res.data.data === true) {
+            let avatarToSend = image ? image : dataUpdateRoom.avatar;
+            let res = await updateRoom(dataUpdateRoom._id, description.trim(), name.trim(), avatarToSend, quantity)
+            if (res || res.data) {
                 toast.success("Update Successfully")
                 handleClose();
                 await props.getAllRoom();

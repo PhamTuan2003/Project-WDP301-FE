@@ -161,6 +161,8 @@ const ManageRoom = () => {
                     idRoom={idRoom}
                     dataUpdateRoom={dataUpdateRoom}
                     getAllRoom={getAllRoom}
+                    maxRoom={maxRoom}
+                    listRoom={listRoom}
                 />
                 <ModalCreateRoom
                     show={isShowModalCreateRoom}

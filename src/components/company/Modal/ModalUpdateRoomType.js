@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import Modal from 'react-bootstrap/Modal';
+import _ from 'lodash';
+import { useEffect, useState } from 'react';
+import { Button } from 'react-bootstrap';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
+import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
-import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import _ from 'lodash';
 import { updateRoomType } from '../../../services/ApiServices';
 const ModalUpdateRoomType = (props) => {
     const { show, setIsShowModalUpdateRoomType, dataUpdate } = props;
@@ -20,7 +20,7 @@ const ModalUpdateRoomType = (props) => {
         if (!_.isEmpty(dataUpdate)) {
             setPrice(dataUpdate.price);
             setType(dataUpdate.type);
-            setUtilities(dataUpdate.utilities);
+            setUtilities(dataUpdate.utility);
 
         }
     }, [dataUpdate])
@@ -29,8 +29,8 @@ const ModalUpdateRoomType = (props) => {
         if (!price || !type || !utilities) {
             toast.error("Please fill in all fields")
         } else {
-            let res = await updateRoomType(dataUpdate.idRoomType, price, type, utilities.trim());
-            if (res && res.data.data === true) {
+            let res = await updateRoomType(dataUpdate._id, price, type, utilities.trim());
+            if (res || res.data) {
                 toast.success('Update Successfully')
                 handleClose();
                 await props.getRoomType();

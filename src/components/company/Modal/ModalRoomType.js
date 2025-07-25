@@ -74,8 +74,8 @@ const ModalRoomType = (props) => {
 
     const handleDeleteRoomType = async (type) => {
         if (window.confirm(`You Want To Delete Room Type ${type.utilities}`)) {
-            let res = await deleteRoomType(type.idRoomType);
-            if (res && res.data && res.data.data === true) {
+            let res = await deleteRoomType(type._id);
+            if (res || res.data) {
                 toast.success('Delete Successfully');
                 getRoomType();
                 setCurrentPage(prevPage => {

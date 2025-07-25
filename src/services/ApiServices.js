@@ -185,21 +185,21 @@ export const updateScheduleYacht = (yachtId, scheduleId, startDate, endDate) => 
 };
 
 export const updateRoomType = (roomTypeId, price, type, utilities) => {
-  const data = new FormData();
-  data.append("price", price);
-  data.append("type", type);
-  data.append("utilities", utilities);
-  return axios.put(`/api/companies/roomType/updateRoomType/${roomTypeId}`, data);
-};
+    const data = new FormData();
+    data.append('price', price);
+    data.append('type', type);
+    data.append('utilities', utilities);
+    return axios.put(`/api/v1/rooms/roomtype/update/${roomTypeId}`, data);
+}
 
 export const updateRoom = (roomId, description, roomName, avatar, quantity) => {
-  const data = new FormData();
-  data.append("description", description);
-  data.append("roomName", roomName);
-  data.append("avatar", avatar);
-  data.append("quantity", quantity);
-  return axios.put(`/api/companies/room/updateRoom/${roomId}`, data);
-};
+    const data = new FormData();
+    data.append('description', description);
+    data.append('roomName', roomName);
+    data.append('avatar', avatar);
+    data.append('quantity', quantity);
+    return axios.put(`/api/v1/rooms/updateRoom/${roomId}`, data)
+}
 
 export const updateProfileCompany = (idCompany, name, address, email, logo) => {
   const data = new FormData();
@@ -240,8 +240,8 @@ export const createRoomType = (price, type, utilities, yachtId) => {
 };
 
 export const deleteRoomType = (roomTypeId) => {
-  return axios.delete(`/api/companies/roomType/deleteRoomType/${roomTypeId}`);
-};
+    return axios.delete(`/api/v1/rooms/roomtype/delete/${roomTypeId}`);
+}
 
 export const canelBooking = (idCompany, idBookingOrder, reason) => {
   const data = new FormData();
