@@ -34,8 +34,6 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import axios from "axios";
 import Pagination from "@mui/material/Pagination";
 import { openTransactionModal } from "../redux/actions";
-// import TransactionModal from "../components/DetailBoat/Booking/TransactionModal";
-// import InvoiceModal from "../components/DetailBoat/Booking/InvoiceModal";
 import { openInvoiceModal } from "../redux/actions/uiActions";
 import { fetchInvoiceByBookingId } from "../redux/asyncActions/invoiceAsyncActions";
 import {
@@ -140,6 +138,7 @@ export default function BookingHistory() {
     (page - 1) * bookingsPerPage,
     page * bookingsPerPage
   );
+
   const [countdowns, setCountdowns] = useState({});
   const intervalRef = useRef();
 
@@ -413,7 +412,7 @@ export default function BookingHistory() {
                     const services =
                       booking.consultationData?.requestServices || [];
                     const yachtImage =
-                      bookingImages[booking._id] || "/images/yacht-8.jpg";
+                      booking.yacht?.image || bookingImages[booking._id];
                     const isRoomsExpanded = expandedRooms[booking._id];
                     const isServicesExpanded = expandedServices[booking._id];
 
