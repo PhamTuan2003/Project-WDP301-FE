@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 import axios from "axios";
 import Swal from "sweetalert2";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
+import { useSelector } from "react-redux"; // Thêm useSelector
 import { isValidPhone, isValidEmail } from "../../redux/validation"; // Import hàm validate
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -35,20 +36,21 @@ export default function CustomerProfile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Lấy customer và token từ Redux ở cấp component
+  const reduxCustomer = useSelector((state) => state.account.account.customer);
+  const token = useSelector((state) => state.account.account.data);
+
   useEffect(() => {
-    const storedCustomer = localStorage.getItem("customer");
-    if (storedCustomer) {
-      const parsedCustomer = JSON.parse(storedCustomer);
-      const customerWithId = { ...parsedCustomer, id: parsedCustomer._id };
-      setCustomer(customerWithId);
+    if (reduxCustomer) {
+      setCustomer(reduxCustomer);
       setFormData({
-        fullName: parsedCustomer.fullName || "",
-        email: parsedCustomer.email || "",
-        phoneNumber: parsedCustomer.phoneNumber || "",
-        avatar: parsedCustomer.avatar || null,
+        fullName: reduxCustomer.fullName || "",
+        email: reduxCustomer.email || "",
+        phoneNumber: reduxCustomer.phoneNumber || "",
+        avatar: reduxCustomer.avatar || null,
       });
     }
-  }, []);
+  }, [reduxCustomer]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,10 +63,7 @@ export default function CustomerProfile() {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        avatar: file,
-      }));
+      setFormData((prev) => ({ ...prev, avatar: file }));
     }
   };
 
@@ -80,6 +79,11 @@ export default function CustomerProfile() {
       return;
     }
 
+    if (!customer) {
+      setError("Vui lòng đăng nhập để cập nhật thông tin.");
+      return;
+    }
+
     try {
       const updateData = { phoneNumber: formData.phoneNumber };
       if (customer.accountId) {
@@ -87,7 +91,13 @@ export default function CustomerProfile() {
         updateData.email = formData.email;
       }
 
-      const updateResponse = await axios.put(`http://localhost:9999/api/v1/customers/${customer._id}`, updateData);
+      const updateResponse = await axios.put(
+        `http://localhost:9999/api/v1/customers/${customer._id}`,
+        updateData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (customer.accountId && formData.avatar && formData.avatar instanceof File) {
         const avatarFormData = new FormData();
@@ -96,7 +106,10 @@ export default function CustomerProfile() {
           `http://localhost:9999/api/v1/customers/${customer._id}/avatar`,
           avatarFormData,
           {
-            headers: { "Content-Type": "multipart/form-data" },
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
         updateResponse.data.customer.avatar = avatarResponse.data.customer.avatar;
@@ -108,9 +121,8 @@ export default function CustomerProfile() {
         phoneNumber: formData.phoneNumber,
         email: updateResponse.data.customer.email,
         avatar: updateResponse.data.customer.avatar || customer.avatar,
-        id: customer._id, // thêm dòng này nếu muốn dùng id
+        id: customer._id,
       };
-      localStorage.setItem("customer", JSON.stringify(updatedCustomer));
       setCustomer(updatedCustomer);
 
       setSuccess("Cập nhật thông tin thành công!");
@@ -222,7 +234,7 @@ export default function CustomerProfile() {
               <Button
                 variant="outlined"
                 color="secondary"
-                style={{height: "52px"}}
+                style={{ height: "52px" }}
                 onClick={() => {
                   setEditMode(false);
                   setFormData({

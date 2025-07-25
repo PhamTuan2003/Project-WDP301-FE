@@ -25,7 +25,8 @@ export default function ReviewSection({ yachtId }) {
     loading,
     error,
   } = useSelector((state) => state.reviews);
-  const { isAuthenticated, customer } = useSelector((state) => state.auth);
+  const customer = useSelector((state) => state.account.account.customer); // Thay state.auth.customer
+  const isAuthenticated = !!customer; // Kiểm tra isAuthenticated dựa trên customer từ state.account
 
   useEffect(() => {
     if (yachtId) {

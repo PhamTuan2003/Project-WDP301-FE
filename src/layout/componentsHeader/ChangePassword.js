@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Box, Typography, TextField, Stack } from "@mui/material";
+import { Box, Typography, TextField, Stack, Button } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import styled from "@emotion/styled";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux"; // Thêm useSelector
 
 const StyledButton = styled("button")(({ theme }) => ({
   width: "100%",
@@ -31,7 +32,9 @@ export default function ChangePassword() {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
-  const customer = JSON.parse(localStorage.getItem("customer"));
+  // Lấy customer và token từ Redux
+  const customer = useSelector((state) => state.account.account.customer);
+  const token = useSelector((state) => state.account.account.data);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,9 +49,24 @@ export default function ChangePassword() {
     setError("");
     setSuccess("");
 
-    try {
-      const token = localStorage.getItem("token"); // hoặc nơi bạn lưu token
+    // Validation: Kiểm tra mật khẩu mới không được giống mật khẩu cũ
+    if (formData.newPassword === formData.oldPassword) {
+      setError("Đây là mật khẩu cũ, bạn hãy chọn mật khẩu khác nhé.");
+      return;
+    }
 
+    // Validation: Kiểm tra mật khẩu mới và xác nhận khớp
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError("Mật khẩu mới và xác nhận mật khẩu không khớp.");
+      return;
+    }
+
+    if (!customer) {
+      setError("Vui lòng đăng nhập để đổi mật khẩu.");
+      return;
+    }
+
+    try {
       const response = await axios.post(
         "http://localhost:9999/api/v1/customers/change-password",
         {
@@ -77,10 +95,21 @@ export default function ChangePassword() {
       });
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          "Đổi mật khẩu thất bại, vui lòng thử lại."
+        err.response?.data?.message || "Đổi mật khẩu thất bại, vui lòng thử lại."
       );
     }
+  };
+
+  const handleCancel = () => {
+    // Reset form và quay về trang trước (hoặc trang chủ)
+    setFormData({
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setError("");
+    setSuccess("");
+    navigate(-1); // Quay lại trang trước đó
   };
 
   if (!customer) {
@@ -107,8 +136,8 @@ export default function ChangePassword() {
           height: "450px",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center", // căn giữa theo chiều dọc
-          alignItems: "center", // căn giữa theo chiều ngang
+          justifyContent: "center",
+          alignItems: "center",
           gap: 2,
         }}
       >
@@ -166,7 +195,17 @@ export default function ChangePassword() {
             fullWidth
             required
           />
-          <StyledButton type="submit">Đổi mật khẩu</StyledButton>
+          <Stack direction="row" spacing={2}>
+            <StyledButton type="submit">Đổi mật khẩu</StyledButton>
+            <Button
+              variant="outlined"
+              color="secondary"
+              style={{ height: "48px" }}
+              onClick={handleCancel}
+            >
+              Hủy
+            </Button>
+          </Stack>
         </Stack>
       </Box>
     </Box>

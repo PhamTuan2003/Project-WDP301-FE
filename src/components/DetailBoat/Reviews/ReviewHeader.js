@@ -4,47 +4,21 @@ import { Link } from "react-router-dom";
 import { Box, Input } from "@mui/material";
 import { setReviewSearchTerm } from "../../../redux/actions";
 import { useEffect } from "react";
-import { fetchCustomerIdFromStorage } from "../../../redux/asyncActions";
 
 const ReviewHeader = ({ totalReviews, isAuthenticated }) => {
   const dispatch = useDispatch();
   const searchTerm = useSelector((state) => state.reviews.searchTerm);
-  const customer = useSelector((state) => state.auth.customer);
+  const customer = useSelector((state) => state.account.account.customer); // Lấy từ state.account
+
+  // Debug để kiểm tra customer
+  useEffect(() => {
+    console.log("Customer in ReviewHeader:", customer);
+  }, [customer]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     dispatch(setReviewSearchTerm(value));
   };
-
-  // Function để lấy thông tin customer từ localStorage
-  const getCustomerFromStorage = () => {
-    try {
-      const customerData = localStorage.getItem("customer");
-      if (customerData) {
-        const parsedCustomer = JSON.parse(customerData);
-        return {
-          accountId: parsedCustomer.accountId || parsedCustomer._id,
-          customerId: parsedCustomer.id, // ID của customer để đánh giá
-          fullName: parsedCustomer.fullName,
-          username: parsedCustomer.username,
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error("Error retrieving customer from localStorage:", error);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    // Dispatch để đảm bảo customer data được load vào Redux
-    if (!customer) {
-      dispatch(fetchCustomerIdFromStorage());
-    }
-  }, [dispatch, customer]);
-
-  // Lấy customer info từ Redux hoặc fallback về localStorage
-  const currentCustomer = customer || getCustomerFromStorage();
 
   return (
     <div className="flex items-center justify-between mb-4">
@@ -69,9 +43,12 @@ const ReviewHeader = ({ totalReviews, isAuthenticated }) => {
         </div>
 
         {isAuthenticated ? (
-          <button className="bg-teal-500 hover:bg-[#0e4f4f] border-2 hover:border-teal-500 text-white px-4 py-2 rounded-full text-sm flex items-center">
+          <Link
+            to={`/yachts/review/${customer?.id}`} // Điều hướng đến form review với customerId
+            className="bg-teal-500 hover:bg-[#0e4f4f] border-2 hover:border-teal-500 text-white px-4 py-2 rounded-full text-sm flex items-center"
+          >
             <Star fill="white" size={16} className="mr-1" /> Gửi đánh giá
-          </button>
+          </Link>
         ) : (
           <Link
             to="/login"

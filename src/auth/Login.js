@@ -68,83 +68,90 @@ export default function Login() {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-    try {
-      if (!formData.username || !formData.password) {
-        setLoading(false);
-        setError("Vui lòng nhập đầy đủ thông tin");
-        return;
-      }
-      const res = await loginApi(
-        formData.username.trim(),
-        formData.password.trim()
-      );
-      if (!res || !res.data || !res.data.token) {
-        setLoading(false);
-        setError("Tài khoản hoặc mật khẩu không đúng");
-        return;
-      }
-
-      console.log("Login response:", res.data);
-
-      const { token, idAccount, customer, idCompany } = res.data;
-
-      localStorage.setItem("token", token);
-      const decoded = jwtDecode(token);
-      const role = decoded.role;
-
-      dispatch(doLogin(token, role, idCompany || "", customer || ""));
-      localStorage.setItem("customer", JSON.stringify(customer));
-      setShowTransition(true);
-      setTimeout(() => {
-        setLoading(false);
-        if (role === "COMPANY") {
-          navigate("/manage-company");
-        } else if (role === "CUSTOMER") {
-          navigate("/");
-        } else {
-          // Nếu role không hợp lệ, về trang chủ hoặc báo lỗi
-          setError("Tài khoản không hợp lệ hoặc không có quyền truy cập.");
-          navigate("/");
-        }
-      }, 1500);
-    } catch (err) {
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+  setLoading(true);
+  try {
+    if (!formData.username || !formData.password) {
       setLoading(false);
-      setError(
-        err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại."
-      );
+      setError("Vui lòng nhập đầy đủ thông tin");
+      return;
     }
-  };
+    const res = await loginApi(formData.username.trim(), formData.password.trim());
+    console.log("Login API response:", res); // Debug full response
 
-  const handleGoogleLoginSuccess = async (credentialResponse) => {
-    setError("");
-    setSuccess("");
-    try {
-      const response = await axios.post(
-        "http://localhost:9999/api/v1/customers/google-login",
-        {
-          token: credentialResponse.credential,
-        }
-      );
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("customer", JSON.stringify(response.data.customer));
-      setSuccess("Đăng nhập bằng Google thành công!");
-      setShowTransition(true);
-      setTimeout(() => {
-        navigate("/");
-        window.location.reload();
-      }, 1500);
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Đăng nhập bằng Google thất bại, vui lòng thử lại."
-      );
+    // Kiểm tra response từ /api/v1/accounts/login
+    if (!res.success || !res.data || !res.data.token) {
+      setLoading(false);
+      setError("Tài khoản hoặc mật khẩu không đúng");
+      return;
     }
-  };
+
+    const { token, customer, idCompany } = res.data; // Lấy trực tiếp từ res.data
+    localStorage.setItem("token", token);
+    const decoded = jwtDecode(token);
+    const role = decoded.role;
+
+    // Dispatch với customer object
+    dispatch(doLogin(token, role, idCompany || "", customer?._id || "", customer));
+    console.log("Dispatch doLogin with:", { token, role, idCompany, customer }); // Debug
+
+    setShowTransition(true);
+    setTimeout(() => {
+      setLoading(false);
+      if (role === "COMPANY") {
+        navigate("/manage-company");
+      } else if (role === "CUSTOMER") {
+        navigate("/");
+      } else {
+        setError("Tài khoản không hợp lệ hoặc không có quyền truy cập.");
+        navigate("/");
+      }
+    }, 1500);
+  } catch (err) {
+    setLoading(false);
+    setError(
+      err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại."
+    );
+    console.error("Login error:", err); // Debug lỗi
+  }
+};
+
+const handleGoogleLoginSuccess = async (credentialResponse) => {
+  setError("");
+  setSuccess("");
+  try {
+    const response = await axios.post(
+      "http://localhost:9999/api/v1/customers/google-login",
+      {
+        token: credentialResponse.credential,
+      }
+    );
+    localStorage.setItem("token", response.data.token);
+    // Không cần setItem("customer") vì dùng Redux
+    const token = response.data.token;
+    const customer = response.data.customer;
+    const decoded = jwtDecode(token);
+    const role = decoded.role || "CUSTOMER";  // Default cho Google
+
+    // Dispatch với customer object (idCustomer = customer._id)
+    dispatch(doLogin(token, role, "", customer._id, customer));
+
+    setSuccess("Đăng nhập bằng Google thành công!");
+    setShowTransition(true);
+    setTimeout(() => {
+      navigate("/");
+      window.location.reload();
+    }, 1500);
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
+        "Đăng nhập bằng Google thất bại, vui lòng thử lại."
+    );
+  }
+};
 
   const handleGoogleLoginFailure = () => {
     setError("Đăng nhập bằng Google thất bại, vui lòng thử lại.");

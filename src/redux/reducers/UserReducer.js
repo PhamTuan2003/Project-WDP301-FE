@@ -6,7 +6,8 @@ const INITIAL_STATE = {
         data: '',
         role: '',
         idCompany: '',
-        idCustomer: ''
+        idCustomer: '',
+        customer: null
     },
     isAuthenticated: false,
 };
@@ -20,7 +21,8 @@ const userReducer = (state = INITIAL_STATE, action) => {
                     data: action.payload.data,
                     role: action.payload.role,
                     idCompany: action.payload.idCompany ? action.payload.idCompany : "",
-                    idCustomer: action.payload.idCustomer ? action.payload.idCustomer : ""
+                    idCustomer: action.payload.idCustomer ? action.payload.idCustomer : "",
+                    customer: action.payload.customer || null
                 },
                 isAuthenticated: true
             };

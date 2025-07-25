@@ -6,30 +6,19 @@ import { Box, TextField } from "@mui/material";
 import { setUserRating, setReviewDescription } from "../../../redux/actions";
 import { validateReviewForm } from "../../../redux/validation";
 import { submitReview } from "../../../redux/asyncActions";
+import { Link } from "react-router-dom";
 
 const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
   const dispatch = useDispatch();
-  const { userRating, description, isSubmitting, error } = useSelector(
-    (state) => state.reviewForm
-  );
-  const customer = useSelector((state) => state.auth.customer);
+  const { userRating, description, isSubmitting, error } = useSelector((state) => state.reviewForm);
+  const customer = useSelector((state) => state.account.account.customer); // Lấy từ state.account
 
-  const getCustomerFromStorage = () => {
-    try {
-      const customerData = localStorage.getItem("customer");
-      if (customerData) {
-        const parsed = JSON.parse(customerData);
-        return parsed;
-      }
-    } catch (error) {
-      console.error("Error getting customer from storage:", error);
-    }
-    return null;
-  };
+  // Debug để kiểm tra dữ liệu customer
+  console.log("Customer from Redux:", customer);
 
-  const currentCustomer = customer || getCustomerFromStorage();
-  const fullName = currentCustomer?.fullName || "";
-  const customerId = currentCustomer?.id;
+  // Lấy customerId từ _id (hoặc kiểm tra các trường khác như customerId nếu có)
+  const fullName = customer?.fullName || "";
+  const customerId = customer?._id || customer?.customerId || customer?.id; // Thử các trường có thể có
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,7 +103,13 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
   if (!customerId) {
     return (
       <div className="review-form-disabled">
-        <p>Vui lòng đăng nhập để viết đánh giá.</p>
+        <p>
+          Vui lòng{" "}
+          <Link to="/login" className="text-teal-500 underline">
+            đăng nhập
+          </Link>{" "}
+          để gửi đánh giá.
+        </p>
 
         {/* Debug info */}
         <div
@@ -130,9 +125,13 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
           <br />
           Customer: {customer ? "Redux có data" : "Redux null"}
           <br />
-          LocalStorage: {getCustomerFromStorage() ? "Có data" : "Null"}
-          <br />
           CustomerID: {customerId || "null"}
+          <br />
+          Customer._id: {customer?._id || "null"}
+          <br />
+          Customer.customerId: {customer?.customerId || "null"}
+          <br />
+          Customer.id: {customer?.id || "null"}
         </div>
       </div>
     );
@@ -156,11 +155,7 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
           }}
         >
           <div className="mr-2">Chất lượng:</div>
-          <StarRating
-            rating={userRating}
-            size="lg"
-            onClick={(rating) => dispatch(setUserRating(rating))}
-          />
+          <StarRating rating={userRating} size="lg" onClick={(rating) => dispatch(setUserRating(rating))} />
         </Box>
         <TextField
           label="Họ và tên *"
@@ -199,13 +194,7 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
           rows={5}
           required
           error={description === "" || !!error}
-          helperText={
-            error
-              ? error
-              : description === ""
-              ? "Vui lòng nhập nhận xét"
-              : "Bạn phải nhập đánh giá"
-          }
+          helperText={error ? error : description === "" ? "Vui lòng nhập nhận xét" : "Bạn phải nhập đánh giá"}
           sx={{
             borderRadius: "32px",
             "& label": { color: "#000" },
@@ -231,8 +220,7 @@ const ReviewForm = ({ yachtId, onSubmitSuccess }) => {
           disabled={isSubmitting}
           className="bg-[#77dada] text-gray-100 hover:bg-[#0e4f4f] hover:text-white px-6 rounded-3xl py-2 text-base font-semibold flex items-center"
         >
-          {isSubmitting ? "Đang gửi..." : "Gửi"}{" "}
-          <Send size={16} className="ml-2" />
+          {isSubmitting ? "Đang gửi..." : "Gửi"} <Send size={16} className="ml-2" />
         </button>
       </div>
     </form>

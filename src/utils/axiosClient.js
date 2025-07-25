@@ -2,7 +2,7 @@ import axios from "axios";
 import { store } from "../redux/store"; // import store
 
 const axiosClient = axios.create({
-  baseURL: "http://localhost:9999", 
+  baseURL: "http://localhost:9999",
   headers: {
     "Content-Type": "application/json",
   },
@@ -21,12 +21,12 @@ axiosClient.interceptors.request.use(
 );
 
 axiosClient.interceptors.response.use(
-  response => {
-    console.log('Response:', response.status, response.data);
+  (response) => {
+    console.log("Response status:", response.status, "Data:", response.data);
     return response.data;
   },
-  error => {
-    console.error('Response error:', error.response ? error.response.data : error.message);
+  (error) => {
+    console.error("Response error:", error.response ? error.response.data : error.message);
     return Promise.reject(error);
   }
 );

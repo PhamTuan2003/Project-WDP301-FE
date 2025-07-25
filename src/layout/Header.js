@@ -35,30 +35,9 @@ export default function Header({ toggleTheme, mode }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [userAnchorEl, setUserAnchorEl] = useState(null);
   const customer = useSelector((state) => {
-    try {
-      // Nếu bạn lưu token JWT ở account.data, decode để lấy user info
-      if (
-        state.account &&
-        state.account.account &&
-        state.account.account.data
-      ) {
-        const token = state.account.account.data;
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        return payload;
-      }
-      // Nếu bạn lưu customer vào localStorage, có thể lấy từ state.account.account.customer
-      if (
-        state.account &&
-        state.account.account &&
-        state.account.account.customer
-      ) {
-        return state.account.account.customer;
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  });
+    console.log("Redux state.account:", state.account);
+    return state.account.account.customer;
+  }); // Lấy trực tiếp customer từ Redux
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -78,8 +57,8 @@ export default function Header({ toggleTheme, mode }) {
 
   const handleLogout = () => {
     dispatch(doLogout());
-    localStorage.removeItem("token");
-    localStorage.removeItem("customer");
+    localStorage.removeItem("token"); // Xóa token
+    // Không cần remove "customer" vì Redux persist sẽ xử lý
     Swal.fire({
       icon: "success",
       title: "Đăng xuất thành công!",
@@ -94,25 +73,11 @@ export default function Header({ toggleTheme, mode }) {
   };
 
   return (
-    <AppBar
-      position="sticky"
-      color="inherit"
-      elevation={0}
-      sx={{ borderBottom: 0, py: 1 }}
-    >
+    <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 0, py: 1 }}>
       <Toolbar sx={{ justifyContent: "space-between" }}>
         {/* Logo */}
-        <Box
-          component={Link}
-          to="/"
-          sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}
-        >
-          <Box
-            component="img"
-            src="/images/logo.png"
-            alt="LongWave Logo"
-            sx={{ height: 80, mr: 2 }}
-          />
+        <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <Box component="img" src="/images/logo.png" alt="LongWave Logo" sx={{ height: 80, mr: 2 }} />
           <Typography
             variant="h6"
             color="primary.main"
@@ -185,12 +150,7 @@ export default function Header({ toggleTheme, mode }) {
           </Stack>
         ) : (
           <>
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="menu"
-              onClick={handleMenuOpen}
-            >
+            <IconButton size="large" edge="end" aria-label="menu" onClick={handleMenuOpen}>
               <MenuIcon />
             </IconButton>
             <Menu
@@ -201,12 +161,7 @@ export default function Header({ toggleTheme, mode }) {
               transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
               {menuLinks.map((link) => (
-                <MenuItem
-                  key={link.label}
-                  onClick={handleMenuClose}
-                  component={Link}
-                  to={link.href}
-                >
+                <MenuItem key={link.label} onClick={handleMenuClose} component={Link} to={link.href}>
                   {link.label}
                 </MenuItem>
               ))}
@@ -244,12 +199,8 @@ export default function Header({ toggleTheme, mode }) {
         <Stack direction="row" spacing={1} ml={3} alignItems="center">
           {customer ? (
             <>
-              <Typography
-                variant="body1"
-                color="text.primary"
-                sx={{ fontWeight: 500 }}
-              >
-                Xin chào, {customer.fullName || customer.username}
+              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 500 }}>
+                Xin chào, {customer.fullName || customer.username} {/* Ưu tiên fullName nếu có, fallback username */}
               </Typography>
               <IconButton onClick={handleUserMenuOpen}>
                 <Avatar
@@ -266,18 +217,10 @@ export default function Header({ toggleTheme, mode }) {
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 transformOrigin={{ vertical: "top", horizontal: "right" }}
               >
-                <MenuItem
-                  onClick={handleUserMenuClose}
-                  component={Link}
-                  to="/view-profile"
-                >
+                <MenuItem onClick={handleUserMenuClose} component={Link} to="/view-profile">
                   Xem trang cá nhân
                 </MenuItem>
-                <MenuItem
-                  onClick={handleUserMenuClose}
-                  component={Link}
-                  to="/booking-history"
-                >
+                <MenuItem onClick={handleUserMenuClose} component={Link} to="/booking-history">
                   Lịch sử booking
                 </MenuItem>
                 <MenuItem
@@ -288,11 +231,7 @@ export default function Header({ toggleTheme, mode }) {
                 >
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Typography>Đổi chế độ</Typography>
-                    {mode === "light" ? (
-                      <AiOutlineMoon size={20} />
-                    ) : (
-                      <AiOutlineSun size={20} />
-                    )}
+                    {mode === "light" ? <AiOutlineMoon size={20} /> : <AiOutlineSun size={20} />}
                   </Stack>
                 </MenuItem>
                 <MenuItem
@@ -301,9 +240,7 @@ export default function Header({ toggleTheme, mode }) {
                   to="/change-password"
                   disabled={!customer.accountId}
                   sx={{
-                    color: !customer.accountId
-                      ? "text.disabled"
-                      : "text.primary",
+                    color: !customer.accountId ? "text.disabled" : "text.primary",
                     "&.Mui-disabled": { color: "text.disabled" },
                   }}
                 >
@@ -344,11 +281,7 @@ export default function Header({ toggleTheme, mode }) {
                 Đăng ký
               </Button>
               <IconButton onClick={toggleTheme} color="inherit" sx={{ p: 1 }}>
-                {mode === "light" ? (
-                  <AiOutlineMoon size={24} />
-                ) : (
-                  <AiOutlineSun size={24} />
-                )}
+                {mode === "light" ? <AiOutlineMoon size={24} /> : <AiOutlineSun size={24} />}
               </IconButton>
             </>
           )}
