@@ -223,13 +223,9 @@ export default function BookingHistory() {
           const startDate =
             scheduleObj?.startDate || scheduleObj?.scheduleId?.startDate;
           if (startDate) {
-            console.log(
-              `[BookingHistory] bookingId: ${booking._id}, startDate lấy được:`,
-              startDate,
-              "scheduleObj:",
-              scheduleObj
-            );
-            target = new Date(startDate).getTime();
+            // Đếm ngược đến 24h trước startDate
+            const startTime = new Date(startDate).getTime();
+            target = startTime - 24 * 60 * 60 * 1000;
           } else {
             console.warn(
               `[BookingHistory] bookingId: ${booking._id} không tìm thấy startDate trong scheduleObj`,
@@ -464,7 +460,7 @@ export default function BookingHistory() {
                         (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
                       ) {
                         countdownText =
-                          "Có thể huỷ đến trước ngày bắt đầu lịch trình: " +
+                          "Có thể huỷ đến 24h trước khi bắt đầu lịch trình: " +
                           formatCountdown(cd);
                       } else {
                         countdownText = "Đã hết hạn huỷ";
@@ -1370,7 +1366,7 @@ export default function BookingHistory() {
                       (cd.hours > 0 || cd.minutes > 0 || cd.seconds > 0)
                     ) {
                       countdownText =
-                        "Có thể huỷ đến trước ngày bắt đầu lịch trình: " +
+                        "Có thể huỷ đến 24h trước khi bắt đầu lịch trình: " +
                         formatCountdown(cd);
                     } else {
                       countdownText = "Đã hết hạn huỷ";
