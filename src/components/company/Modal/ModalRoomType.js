@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Accordion, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
@@ -120,46 +120,37 @@ const ModalRoomType = (props) => {
                     <Modal.Title>Manage Room Type</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Accordion defaultActiveKey="0">
-                        <Accordion.Item eventKey="0">
-                            <Accordion.Header>Create Roomtype</Accordion.Header>
-                            <Accordion.Body>
-                                <Form>
+                <div className="create-roomtype-form mb-4 p-3 bg-white rounded shadow-sm">
+                        <Form>
+                            <Row className="mb-3">
+                                <Form.Group as={Col} >
+                                    <Form.Label>Price</Form.Label>
+                                    <Form.Control
+                                        type="number"
+                                        onChange={event => setPrice(event.target.value)}
+                                    />
+                                </Form.Group>
+                            </Row>
+                            <Row className="mb-3">
+                                <Form.Group as={Col} >
+                                    <Form.Label>Type</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        onChange={event => setType(event.target.value)}
+                                    />
+                                </Form.Group>
 
-                                    <Row className="mb-3">
-                                        <Form.Group as={Col} >
-                                            <Form.Label>Price</Form.Label>
-                                            <Form.Control
-                                                type="number"
-                                                onChange={event => setPrice(event.target.value)}
-                                            />
-                                        </Form.Group>
-                                    </Row>
-                                    <Row className="mb-3">
-                                        <Form.Group as={Col} >
-                                            <Form.Label>Type</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                onChange={event => setType(event.target.value)}
-                                            />
-                                        </Form.Group>
-
-                                        <Form.Group as={Col} >
-                                            <Form.Label>Utilities</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                onChange={event => setUtilities(event.target.value)}
-                                            />
-                                        </Form.Group>
-                                    </Row>
-
-                                </Form>
-                                <Button onClick={() => handleCreateRoomType()}>Create</Button>
-
-                            </Accordion.Body>
-                        </Accordion.Item>
-
-                    </Accordion>
+                                <Form.Group as={Col} >
+                                    <Form.Label>Utilities</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        onChange={event => setUtilities(event.target.value)}
+                                    />
+                                </Form.Group>
+                            </Row>
+                            <Button onClick={() => handleCreateRoomType()}>Create</Button>
+                        </Form>
+                    </div>
 
                     <div className='container'>
                         <div className='my-4'>

@@ -32,7 +32,8 @@ const ManageYacht = () => {
 
     const getAllImagesYacht = async () => {
         let res = await getYachtImage(idYacht);
-        if (res && res.data.length > 0) {
+        console.log('jdfjdfhjdhf', res.data)
+        if (res && res.data) {
             setListYachtImage(res.data);
         } else {
             toast.info('Not Found Image Yacht');
@@ -104,7 +105,7 @@ const ManageYacht = () => {
                                         className="table-primary"
                                     >
                                         <td>
-                                            <img src={image.imageYacht} width={200} alt='' />
+                                            <img src={image.url} width={200} alt='' />
                                         </td>
                                         <td width={300}>
                                             <Row>

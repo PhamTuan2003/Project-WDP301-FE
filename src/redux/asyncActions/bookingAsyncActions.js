@@ -1,14 +1,14 @@
 import axios from "axios";
-import * as bookingActions from "../actions/bookingActions";
-import {
-  setSubmitting,
-  closeBookingModal,
-  openTransactionModal,
-  openConfirmationModal,
-  closeConfirmationModal,
-} from "../actions/uiActions";
 import Swal from "sweetalert2";
+import * as bookingActions from "../actions/bookingActions";
 import { resetBookingForm } from "../actions/bookingActions";
+import {
+  closeBookingModal,
+  closeConfirmationModal,
+  openConfirmationModal,
+  openTransactionModal,
+  setSubmitting,
+} from "../actions/uiActions";
 
 export const fetchRoomsAndSchedules =
   (yachtId, scheduleId) => async (dispatch) => {
@@ -190,6 +190,15 @@ export const createBookingOrConsultationRequest =
         throw new Error("Không tìm thấy token xác thực.");
       }
       const { selectedSchedule, selectedYachtServices } = getState().booking;
+      // Lấy startDate của lịch trình
+      let checkInDate = null;
+      if (selectedSchedule && typeof selectedSchedule === 'object' && selectedSchedule.scheduleId?.startDate) {
+        checkInDate = selectedSchedule.scheduleId.startDate;
+      } else if (bookingData.scheduleObj?.scheduleId?.startDate) {
+        checkInDate = bookingData.scheduleObj.scheduleId.startDate;
+      } else if (bookingData.checkInDate) {
+        checkInDate = bookingData.checkInDate;
+      }
       const requiredFields = [
         "yachtId",
         "fullName",
@@ -232,6 +241,7 @@ export const createBookingOrConsultationRequest =
         selectedRooms: roomsForApi,
         selectedServices: servicesForApi,
         scheduleId: selectedSchedule || bookingData.scheduleId || null,
+        checkInDate, // luôn truyền checkInDate
         requestType: requestType,
       };
       const response = await axios.post(

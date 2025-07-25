@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { FormControl } from 'react-bootstrap';
-import Accordion from 'react-bootstrap/Accordion';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
@@ -203,62 +202,56 @@ const ManageServiceYacht = () => {
             </NavLink>
             
             <div className='container'>
-                <Accordion defaultActiveKey="0">
-                    <Accordion.Item eventKey="0">
-                        <Accordion.Header>➕ Tạo dịch vụ mới</Accordion.Header>
-                        <Accordion.Body>
-                            <Form>
-                                <Row className="mb-3">
-                                    <Form.Group as={Col} controlId="formGridCity">
-                                        <Form.Label>Giá dịch vụ *</Form.Label>
-                                        <Form.Control
-                                            type='number'
-                                            placeholder='Nhập giá dịch vụ (VNĐ)'
-                                            value={price}
-                                            onChange={e => setPrice(e.target.value)}
-                                            min="0"
-                                            step="1000"
-                                            isInvalid={price && price <= 0}
-                                        />
-                                        <Form.Control.Feedback type="invalid">
-                                            Giá dịch vụ phải lớn hơn 0
-                                        </Form.Control.Feedback>
-                                    </Form.Group>
-                                    <Form.Group as={Col} controlId="formGridCity">
-                                        <Form.Label>Tên dịch vụ *</Form.Label>
-                                        <Form.Control
-                                            type='text'
-                                            placeholder='Nhập tên dịch vụ'
-                                            value={service}
-                                            onChange={e => setService(e.target.value)}
-                                            isInvalid={service && service.trim().length < 3}
-                                        />
-                                        <Form.Control.Feedback type="invalid">
-                                            Tên dịch vụ phải có ít nhất 3 ký tự
-                                        </Form.Control.Feedback>
-                                    </Form.Group>
-                                </Row>
-                                <Button 
-                                    onClick={handleCreateYachtSurvice} 
-                                    variant="success"
-                                    disabled={isCreating}
-                                    className="me-2"
-                                >
-                                    {isCreating ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            Đang tạo...
-                                        </>
-                                    ) : (
-                                        'Tạo dịch vụ'
-                                    )}
-                                </Button>
-                                
-
-                            </Form>
-                        </Accordion.Body>
-                    </Accordion.Item>
-                </Accordion>
+                {/* LUÔN HIỂN THỊ FORM TẠO DỊCH VỤ */}
+                <div className="create-service-form mb-4 p-3 bg-white rounded shadow-sm">
+                    <Form>
+                        <Row className="mb-3">
+                            <Form.Group as={Col} controlId="formGridServiceName">
+                                <Form.Label>Tên dịch vụ *</Form.Label>
+                                <Form.Control
+                                    type='text'
+                                    placeholder='Nhập tên dịch vụ'
+                                    value={service}
+                                    onChange={e => setService(e.target.value)}
+                                    isInvalid={service && service.trim().length > 0 && service.trim().length < 3}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    Tên dịch vụ phải có ít nhất 3 ký tự
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                            <Form.Group as={Col} controlId="formGridServicePrice">
+                                <Form.Label>Giá dịch vụ *</Form.Label>
+                                <Form.Control
+                                    type='number'
+                                    placeholder='Nhập giá dịch vụ (VNĐ)'
+                                    value={price}
+                                    onChange={e => setPrice(e.target.value)}
+                                    min="0"
+                                    step="1000"
+                                    isInvalid={price && price <= 0}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    Giá dịch vụ phải lớn hơn 0
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        </Row>
+                        <Button 
+                            onClick={handleCreateYachtSurvice} 
+                            variant="success"
+                            disabled={isCreating}
+                            className="me-2"
+                        >
+                            {isCreating ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Đang tạo...
+                                </>
+                            ) : (
+                                'Tạo dịch vụ'
+                            )}
+                        </Button>
+                    </Form>
+                </div>
 
                 <div className="service-table-container">
                     <div className="search-container">

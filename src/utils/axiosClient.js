@@ -1,4 +1,5 @@
 import axios from "axios";
+import { store } from "../redux/store"; // import store
 
 const axiosClient = axios.create({
   baseURL: "http://localhost:9999", 
@@ -9,7 +10,8 @@ const axiosClient = axios.create({
 
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    // Lấy token từ redux store
+    const token = store.getState().account?.account?.data;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

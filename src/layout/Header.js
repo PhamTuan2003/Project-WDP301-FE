@@ -3,22 +3,22 @@ import LoginIcon from "@mui/icons-material/Login";
 import MenuIcon from "@mui/icons-material/Menu";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import {
-  AppBar,
-  Avatar,
-  Box,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Stack,
-  Toolbar,
-  Typography,
-  useMediaQuery,
-  useTheme,
+    AppBar,
+    Avatar,
+    Box,
+    Button,
+    IconButton,
+    Menu,
+    MenuItem,
+    Stack,
+    Toolbar,
+    Typography,
+    useMediaQuery,
+    useTheme,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { AiFillPhone, AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { doLogout } from "../redux/actions/userAction";
@@ -34,18 +34,25 @@ export default function Header({ toggleTheme, mode }) {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState(null);
   const [userAnchorEl, setUserAnchorEl] = useState(null);
-  const [customer, setCustomer] = useState(null);
+  const customer = useSelector(state => {
+    try {
+      // Nếu bạn lưu token JWT ở account.data, decode để lấy user info
+      if (state.account && state.account.account && state.account.account.data) {
+        const token = state.account.account.data;
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload;
+      }
+      // Nếu bạn lưu customer vào localStorage, có thể lấy từ state.account.account.customer
+      if (state.account && state.account.account && state.account.account.customer) {
+        return state.account.account.customer;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  });
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    const storedCustomer = localStorage.getItem("customer");
-    if (storedCustomer) {
-      setCustomer(JSON.parse(storedCustomer));
-    } else {
-      setCustomer(null);
-    }
-  }, []);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -65,7 +72,6 @@ export default function Header({ toggleTheme, mode }) {
     dispatch(doLogout());
     localStorage.removeItem("token");
     localStorage.removeItem("customer");
-    setCustomer(null);
     Swal.fire({
       icon: "success",
       title: "Đăng xuất thành công!",

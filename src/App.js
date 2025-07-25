@@ -28,17 +28,17 @@ import DetailBoat from "./pages/DetailBoat";
 import FindBoat from "./pages/FindBoat";
 import HomePage from "./pages/HomePage";
 
-import Calender from "./components/calender/Calender";
-import Dashboard from "./components/company/Dashboard";
-import ManageCompany from "./components/company/ManageCompany";
-import ManageRoom from "./components/company/ManageRoom";
-import ManageSchedule from "./components/company/ManageSchedule";
-import ManageServiceYacht from "./components/company/ManageServiceYacht";
-import ManageYacht from "./components/company/ManageYacht";
-import ProfileCompany from "./components/company/Profile";
-import ViewBooking from "./components/company/ViewBooking";
-import ViewYacht from "./components/company/ViewYacht";
-import ProtectedRoute from "./components/routers/ProtectedRoute";
+import Calender from './components/company/Calender';
+import Dashboard from './components/company/Dashboard';
+import ManageCompany from './components/company/ManageCompany';
+import ManageRoom from './components/company/ManageRoom';
+import ManageSchedule from './components/company/ManageSchedule';
+import ManageServiceYacht from './components/company/ManageServiceYacht';
+import ManageYacht from './components/company/ManageYacht';
+import ProfileCompany from './components/company/Profile';
+import ViewBooking from './components/company/ViewBooking';
+import ViewYacht from './components/company/ViewYacht';
+import ProtectedRoute from './components/routers/ProtectedRoute';
 
 // Footer Info Pages
 import FAQ from "./layout/componentsFooter/FAQ";

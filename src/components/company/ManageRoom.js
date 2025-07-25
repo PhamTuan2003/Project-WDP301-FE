@@ -38,6 +38,8 @@ const ManageRoom = () => {
 
     const [listRoomType, setListRoomType] = useState([]);
 
+    const [maxRoom, setMaxRoom] = useState(0);
+
     const handlManageImageRoom = (idRoom) => {
         setIsShowModalRoomImage(true);
         setIdRoom(idRoom);
@@ -60,7 +62,8 @@ const ManageRoom = () => {
         let res = await getAllRoomByYacht(idYacht);
         console.log('rommmmm', res.data);
         if (res && res.data) {
-            setListRoom(res.data.sort((a, b) => {
+            setMaxRoom(res.data.maxRoom);
+            setListRoom(res.data.rooms.sort((a, b) => {
                 return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
             }))
         } else {
@@ -166,6 +169,8 @@ const ManageRoom = () => {
                     getAllRoom={getAllRoom}
                     fetchRoomType={fetchRoomType}
                     listRoomType={listRoomType}
+                    maxRoom={maxRoom}
+                    listRoom={listRoom}
                 />
                 <ModalRoomType
                     show={isShowModalRoomType}

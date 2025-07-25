@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Form, FormControl } from 'react-bootstrap';
-import Accordion from "react-bootstrap/Accordion";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
@@ -133,53 +132,55 @@ const ManageSchedule = () => {
             </div>
 
             <div className="container">
-                <Accordion defaultActiveKey="0">
-                    <Accordion.Item eventKey="0">
-                        <Accordion.Header>Create new schedule</Accordion.Header>
-                        <Accordion.Body>
-                            <Form>
-                                <Row className="mb-3">
-                                    <Form.Group as={Col}>
-                                        <Form.Label>Start date</Form.Label>
-                                        <FormControl
-                                            type="datetime-local"
-                                            value={getStartDate}
-                                            onChange={e => setStartDate(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </Form.Group>
+                <div className="create-schedule-form">
+                    <h5 style={{ marginBottom: '1rem' }}>Create new schedule</h5>
+                    <Form>
+                        <Row className="mb-3">
+                            <Form.Group as={Col}>
+                                <Form.Label>Start date</Form.Label>
+                                <FormControl
+                                    type="datetime-local"
+                                    value={getStartDate}
+                                    onChange={e => setStartDate(e.target.value)}
+                                    disabled={loading}
+                                />
+                            </Form.Group>
 
-                                    <Form.Group as={Col}>
-                                        <Form.Label>End date</Form.Label>
-                                        <FormControl
-                                            type="datetime-local"
-                                            value={getEndDate}
-                                            onChange={e => setEndDate(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </Form.Group>
-                                </Row>
-                                <div className="d-flex flex-column align-items-center" style={{ justifyContent: 'center' }}>
-                                    <Button
-                                        onClick={handleCreateYachtSchedule}
-                                        variant="success"
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                Đang tạo...
-                                            </>
-                                        ) : (
-                                            'Create'
-                                        )}
-                                    </Button>
-                                    {loading && <div style={{marginTop: 8, color: '#1cb5e0'}}>Đang tạo lịch, vui lòng đợi...</div>}
+                            <Form.Group as={Col}>
+                                <Form.Label>End date</Form.Label>
+                                <FormControl
+                                    type="datetime-local"
+                                    value={getEndDate}
+                                    onChange={e => setEndDate(e.target.value)}
+                                    disabled={loading}
+                                />
+                            </Form.Group>
+                        </Row>
+
+                        <div className="d-flex flex-column align-items-center" style={{ justifyContent: 'center' }}>
+                            <Button
+                                onClick={handleCreateYachtSchedule}
+                                variant="success"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Đang tạo...
+                                    </>
+                                ) : (
+                                    'Create'
+                                )}
+                            </Button>
+                            {loading && (
+                                <div style={{ marginTop: 8, color: '#1cb5e0' }}>
+                                    Đang tạo lịch, vui lòng đợi...
                                 </div>
-                            </Form>
-                        </Accordion.Body>
-                    </Accordion.Item>
-                </Accordion>
+                            )}
+                        </div>
+                    </Form>
+                </div>
+
                 <div className="table-responsive my-5">
                     <table className="table table-striped table-hover table-borderless table-primary align-middle">
                         <thead className="table-dark">

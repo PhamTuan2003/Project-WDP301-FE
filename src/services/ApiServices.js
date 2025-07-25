@@ -53,7 +53,7 @@ export const deleteYachtImage = (idImage) => {
 }
 
 export const getYachtImage = (idYacht) => {
-    return axios.get(`/api/v1/yachts/image/${idYacht}`);
+    return axios.get(`/api/v1/yachtImage/image/${idYacht}`);
 }
 
 export const createServiceYacht = (yachtId, serviceName, price) => {
@@ -305,3 +305,24 @@ export const companyCancelBooking = (bookingId) => {
 export const confirmFullPaymentBooking = (bookingId) => {
     return axios.put(`/api/v1/bookings/${bookingId}/confirm-full-payment`);
 }
+
+// Calendar Schedules API (Company)
+export const getCompanyCalendarSchedules = (yachtId) => {
+  // Nếu có yachtId thì truyền lên query, không thì lấy tất cả
+  return axios.get('/company/calendar-schedules', {
+    params: yachtId ? { yachtId } : {},
+  });
+};
+
+export const createCompanyCalendarSchedule = (data) => {
+  // data: { title, description, start, end, yachtId, type, color, ... }
+  return axios.post('/company/calendar-schedules', data);
+};
+
+export const updateCompanyCalendarSchedule = (id, data) => {
+  return axios.put(`/company/calendar-schedules/${id}`, data);
+};
+
+export const deleteCompanyCalendarSchedule = (id) => {
+  return axios.delete(`/company/calendar-schedules/${id}`);
+};
