@@ -64,7 +64,7 @@ const ModalUpdateProfile = (props) => {
 
         console.log("== Response:", res);
 
-        if (res && res.data && res.data.success === true) {
+        if (res || res.data) {
           toast.success("Update Successfully");
           handleClose();
           await props.getProfile();
