@@ -50,6 +50,12 @@ import ConfirmationModal from "./components/DetailBoat/Booking/ConfirmationModal
 import InvoiceModal from "./components/DetailBoat/Booking/InvoiceModal";
 import TransactionModal from "./components/DetailBoat/Booking/TransactionModal";
 
+// Admin Components
+import AdminLoginForm from "./components/Admin/AdminLoginForm";
+import AdminDashboard from "./components/Admin/AdminDashboard";
+import AdminProfile from "./components/Admin/AdminProfile";
+import ProtectedAdminRoute from "./components/routers/ProtectedAdminRoute";
+
 function useBodyScrollLock() {
   const showTransactionModal = useSelector((state) => state.ui.modals.showTransactionModal);
   const showConfirmationModal = useSelector((state) => state.ui.modals.showConfirmationModal);
@@ -117,24 +123,47 @@ function AppWrapper() {
           <Route path="/booking-history" element={<BookingHistory />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/admin-login" element={<AdminLoginForm />} />
         </Route>
 
-        <Route path="/manage-company" element={
-          <ProtectedRoute>
-            <ManageCompany />
-          </ProtectedRoute>
-        }>
+        <Route
+          path="/manage-company"
+          element={
+            <ProtectedRoute>
+              <ManageCompany />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="booking" element={<ViewBooking />} />
           <Route path="view-yacht" element={<ViewYacht />} />
           <Route path="profile" element={<ProfileCompany />} />
-          <Route path='schedule' element={<Calender />} />
+          <Route path="schedule" element={<Calender />} />
         </Route>
 
-        <Route path='manage-yacht/:idYacht' element={<ManageYacht />} />
-        <Route path='manage-room/:idYacht' element={<ManageRoom />} />
-        <Route path='manage-services-yacht/:idYacht' element={<ManageServiceYacht />} />
-        <Route path='manage-schedule/:idYacht' element={<ManageSchedule />} />
+        <Route path="manage-yacht/:idYacht" element={<ManageYacht />} />
+        <Route path="manage-room/:idYacht" element={<ManageRoom />} />
+        <Route path="manage-services-yacht/:idYacht" element={<ManageServiceYacht />} />
+        <Route path="manage-schedule/:idYacht" element={<ManageSchedule />} />
+
+        {/* Khai báo các route cho admin */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <AdminDashboard toggleTheme={toggleTheme} mode={mode} />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/profile"
+          element={
+            <ProtectedAdminRoute>
+              <AdminProfile toggleTheme={toggleTheme} mode={mode} />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route path="/admin-login" element={<AdminLoginForm />} />
       </Routes>
 
       <ToastContainer
@@ -159,9 +188,7 @@ function AppWrapper() {
 
 // ✅ Bao ngoài bằng BrowserRouter đúng cách
 function App() {
-  return (
-      <AppWrapper />
-  );
+  return <AppWrapper />;
 }
 
 export default App;

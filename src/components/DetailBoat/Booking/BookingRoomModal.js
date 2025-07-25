@@ -1122,6 +1122,7 @@ const BookingRoomModal = ({
                   <Button
                     onClick={() => handleSubmit("consultation_requested")}
                     disabled={submitting}
+                    style={{height: "50px"}}
                     variant="outlined"
                     sx={{
                       flex: 1,

@@ -13,6 +13,7 @@ import {
   yachtReducer,
 } from "./reducers";
 import userReducer from "./reducers/UserReducer";
+import adminReducer from "./reducers/adminReducer";
 
 const rootReducer = combineReducers({
   yacht: yachtReducer,
@@ -26,7 +27,9 @@ const rootReducer = combineReducers({
   filters: filtersReducer,
   payment: paymentReducer,
   invoice: invoiceReducer,
-  account: userReducer
+  account: userReducer,
+  admin: adminReducer,
 });
 
 export default rootReducer;
+
