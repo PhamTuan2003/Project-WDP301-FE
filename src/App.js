@@ -130,7 +130,7 @@ function AppWrapper() {
           path="/manage-company"
           element={
             <ProtectedRoute>
-              <ManageCompany />
+              <ManageCompany toggleTheme={toggleTheme} mode={mode}/>
             </ProtectedRoute>
           }
         >

@@ -3,21 +3,16 @@ import { ImProfile } from "react-icons/im";
 import { MdDashboard } from "react-icons/md";
 import { SlCalender } from "react-icons/sl";
 import { TbBrandBooking, TbLogout2 } from "react-icons/tb";
-import {
-  Menu,
-  MenuItem,
-  ProSidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-} from "react-pro-sidebar";
+import { Menu, MenuItem, ProSidebar, SidebarContent, SidebarFooter, SidebarHeader } from "react-pro-sidebar";
 import "react-pro-sidebar/dist/css/styles.css";
 import { useDispatch } from "react-redux";
 import { Link, NavLink } from "react-router-dom";
 import sidebarBg from "../../assets/sidebar.jpg";
-import { doLogout } from "../../redux/actions/UserAction";
+import { doLogout } from "../../redux/actions/userAction";
+import { AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
+
 const Sidebar = (props) => {
-  const { collapsed, toggled, handleToggleSidebar } = props;
+  const { collapsed, toggled, handleToggleSidebar, toggleTheme, mode } = props;
 
   const dispatch = useDispatch();
 
@@ -90,15 +85,43 @@ const Sidebar = (props) => {
         </SidebarContent>
 
         <SidebarFooter style={{ textAlign: "center" }}>
-          <div
-            className="sidebar-btn-wrapper d-flex justify-content-center"
-            style={{
-              padding: "20px 24px",
-            }}
-          >
-            <NavLink onClick={handleLogout} className="nav-link " to="/login">
-              <TbLogout2 />
-              Logout
+          <div className="sidebar-btn-wrapper d-flex flex-column align-items-center" style={{ padding: "20px 24px" }}>
+            {/* Nút đổi theme */}
+            <button
+              onClick={toggleTheme}
+              className="btn btn-outline-light mb-2 d-flex align-items-center"
+              style={{ fontSize: "14px" }}
+            >
+              {mode === "light" ? (
+                <>
+                  <AiOutlineMoon style={{ marginRight: 8 }} /> Chế độ tối
+                </>
+              ) : (
+                <>
+                  <AiOutlineSun style={{ marginRight: 8 }} /> Chế độ sáng
+                </>
+              )}
+            </button>
+
+            {/* Nút logout */}
+            <NavLink
+              onClick={handleLogout}
+              className="nav-link mt-2"
+              to="/login"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <TbLogout2 size={25} />
+              <span
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "white",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Logout
+              </span>
             </NavLink>
           </div>
         </SidebarFooter>
