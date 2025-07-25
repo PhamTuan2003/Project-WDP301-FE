@@ -21,7 +21,7 @@ import { AiFillPhone, AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { doLogout } from "../redux/actions/UserAction";
+import { doLogout } from "../redux/actions/userAction";
 
 const menuLinks = [
   { label: "Tìm du thuyền", href: "/find-boat" },
