@@ -67,20 +67,12 @@ const InvoiceModal = () => {
   const { showInvoiceModal, invoiceData } = useSelector(
     (state) => state.ui.modals
   );
-  // Debug log for invoiceData and schedule
-  console.log("[DEBUG] invoiceData:", invoiceData);
-  if (invoiceData) {
-    console.log(
-      "[DEBUG] invoiceData.yachtInfo.scheduleInfo:",
-      invoiceData.yachtInfo?.scheduleInfo
-    );
-    console.log(
-      "[DEBUG] invoiceData.bookingId.schedule:",
-      invoiceData.bookingId?.schedule
-    );
-  }
+
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Thêm state lưu ngày mở modal
+  const [openedDate] = React.useState(() => new Date());
 
   if (!showInvoiceModal || !invoiceData) return null;
 
@@ -123,6 +115,7 @@ const InvoiceModal = () => {
     (sum, item) => sum + item.totalPrice,
     0
   );
+
   const discount = invoiceData.financials?.totalDiscount ?? 0;
   const amountBeforeTax = subtotal - discount;
   const tax = amountBeforeTax * 0.05;
@@ -141,7 +134,6 @@ const InvoiceModal = () => {
     return "Phường Cầu Giấy - Hà Nội";
   };
   invoiceData.items?.forEach((item, idx) => {
-    console.log(`ITEM ${idx}:`, item);
     if (item.type === "room") {
       invoiceData.bookingId?.consultationData?.requestedRooms?.forEach(
         (r, i) => {}
@@ -346,9 +338,7 @@ const InvoiceModal = () => {
                     fontWeight={600}
                     color={theme.palette.text.primary}
                   >
-                    {new Date(invoiceData.issueDate).toLocaleDateString(
-                      "vi-VN"
-                    )}
+                    {openedDate.toLocaleDateString("vi-VN")}
                   </Typography>
                 </Box>
               </Stack>
