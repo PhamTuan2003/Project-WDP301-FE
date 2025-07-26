@@ -9,7 +9,7 @@ import "react-pro-sidebar/dist/css/styles.css";
 import { useDispatch } from "react-redux";
 import { Link, NavLink } from "react-router-dom";
 import sidebarBg from "../../assets/sidebar.jpg";
-import { doLogout } from "../../redux/actions/UserAction";
+import { doLogout } from "../../redux/actions/userAction";
 
 const Sidebar = (props) => {
   const { collapsed, toggled, handleToggleSidebar, toggleTheme, mode } = props;

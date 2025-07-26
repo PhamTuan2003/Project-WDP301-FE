@@ -78,7 +78,7 @@ const BookingRoomModal = ({
     editingBookingId,
     guestCounter,
   } = useSelector((state) => state.booking);
-  const authCustomer = useSelector((state) => state.auth.customer);
+  const authCustomer = useSelector((state) => state.account.account.customer); // Sửa thành state.account.account.customer
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const rooms = useSelector((state) => state.booking.rooms);
@@ -125,9 +125,9 @@ const BookingRoomModal = ({
       "confirmed",
     ];
 
-    const isActive = activeStatuses.includes(status);
+    const active = activeStatuses.includes(status);
 
-    return isActive;
+    return active;
   };
 
   const getBookingButtonText = () => {
@@ -590,8 +590,7 @@ const BookingRoomModal = ({
                 gap: 2,
               }}
             >
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {" "}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}> 
                 <div
                   style={{
                     width: "100%",
