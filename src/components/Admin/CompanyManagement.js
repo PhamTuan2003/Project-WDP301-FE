@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function CompanyManagement() {
@@ -72,7 +73,11 @@ export default function CompanyManagement() {
     if (!editingCompany) {
       // Kiểm tra password và confirmPassword
       if (formData.password !== formData.confirmPassword) {
-        toast.error("Mật khẩu và xác nhận mật khẩu không khớp!");
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi",
+          text: "Mật khẩu và xác nhận mật khẩu không khớp!",
+        });
         return;
       }
       try {
@@ -83,16 +88,29 @@ export default function CompanyManagement() {
           username: formData.username,
           password: formData.password,
         });
-        toast.success(res.message || "Thêm mới thành công!");
+        Swal.fire({
+          icon: "success",
+          title: "Thành công",
+          text: res.message || "Thêm mới thành công!",
+        });
+
         const resList = await axiosClient.get("/api/v1/companies/all");
         setCompanies(Array.isArray(resList) ? resList : []); // Chỉ thay đổi ở đây
         handleCloseDialog();
       } catch (err) {
         console.error(err);
         if (err.response?.data?.error?.includes("duplicate")) {
-          toast.error("Username đã tồn tại!");
+          Swal.fire({
+            icon: "error",
+            title: "Lỗi",
+            text: "Username đã tồn tại!",
+          });
         } else {
-          toast.error("Thêm công ty thất bại!");
+          Swal.fire({
+            icon: "error",
+            title: "Lỗi",
+            text: "Thêm công ty thất bại!",
+          });
         }
       }
     } else {
@@ -103,24 +121,54 @@ export default function CompanyManagement() {
           email: formData.email,
           username: formData.username,
         });
-        toast.success(res.message || "Cập nhật thành công!");
+        Swal.fire({
+          icon: "success",
+          title: "Thành công",
+          text: res.message || "Cập nhật thành công!",
+        });
+
         const resList = await axiosClient.get("/api/v1/companies/all");
         setCompanies(Array.isArray(resList) ? resList : []); // Chỉ thay đổi ở đây
         handleCloseDialog();
       } catch (err) {
-        toast.error("Cập nhật công ty thất bại!");
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi",
+          text: "Cập nhật công ty thất bại!",
+        });
       }
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa công ty này?")) return;
+    const result = await Swal.fire({
+      title: "Bạn có chắc chắn?",
+      text: "Hành động này sẽ xoá công ty vĩnh viễn!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Xoá",
+      cancelButtonText: "Huỷ",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const res = await axiosClient.delete(`/api/v1/companies/${id}`);
-      toast.success(res.message || "Xóa thành công!");
+      Swal.fire({
+        icon: "success",
+        title: "Thành công",
+        text: res.message || "Xoá thành công!",
+      });
+
       setCompanies((prev) => prev.filter((c) => c._id !== id));
     } catch (err) {
-      toast.error("Xóa công ty thất bại!");
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi",
+        text: "Xoá công ty thất bại!",
+      });
     }
   };
 
