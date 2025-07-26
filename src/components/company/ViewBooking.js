@@ -110,6 +110,7 @@ const ViewBooking = () => {
         const filtered = listBooking
             .filter(b => (b.customerInfo?.fullName || b.customer?.fullName || '').toLowerCase().includes(filterSearch.toLowerCase().trim()))
             .filter(b => filterStatus === '0' ? b : b.status.includes(filterStatus))
+            .filter(b => b.status !== 'pending_payment') // Không hiển thị booking có status pending_payment
 
         setFilterBooking(filtered);
     };
@@ -129,27 +130,23 @@ const ViewBooking = () => {
 
     // Helper: render nút thao tác
     const renderActions = (booking) => {
-        // Đã hoàn thành hoặc đã huỷ thì không thao tác
-        if (booking.status === 'completed' || booking.status === 'canceled' || booking.status === 'rejected') {
+        // Nếu đã completed thì chỉ hiển thị View Detail
+        if (booking.status === 'completed') {
             return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
         }
-        // Đặt cọc, chờ xác nhận thanh toán đủ
-        if (booking.status === 'confirmed_deposit' && booking.paymentStatus === 'deposit_paid') {
-            return <>
-                <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
-                <Link onClick={() => handleConfirmFullPayment(booking._id)} className="btn btn-sm btn-success">Xác nhận thanh toán đủ</Link>
-            </>;
+        // Nếu rejected thì chỉ hiển thị View Detail
+        if (booking.status === 'rejected') {
+            return <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>;
         }
-        // Đã thanh toán đủ, chờ xác nhận hoàn thành
-        if (booking.status === 'confirmed' && booking.paymentStatus === 'fully_paid') {
-            return <>
-                <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
-                <Link onClick={() => handleConfirmCompleted(booking._id)} className="btn btn-sm btn-primary">Xác nhận hoàn thành</Link>
-            </>;
-        }
-        // Trường hợp khác: luôn cho phép Cancel
+        // Các thao tác khác vẫn giữ nguyên, nhưng luôn có Cancel
         return <>
             <Link onClick={() => handleViewDetailBooking(booking)} className="btn btn-sm btn-warning">View Detail</Link>
+            {booking.status === 'confirmed_deposit' && booking.paymentStatus === 'deposit_paid' && (
+                <Link onClick={() => handleConfirmFullPayment(booking._id)} className="btn btn-sm btn-success ms-2">Xác nhận thanh toán đủ</Link>
+            )}
+            {booking.status === 'confirmed' && booking.paymentStatus === 'fully_paid' && (
+                <Link onClick={() => handleConfirmCompleted(booking._id)} className="btn btn-sm btn-primary ms-2">Xác nhận hoàn thành</Link>
+            )}
             <Button
                 className="btn btn-sm btn-danger ms-2"
                 onClick={() => handleCancelBooking(booking._id)}
@@ -269,7 +266,9 @@ const ViewBooking = () => {
                                                 </div>
                                                 <div className="mt-2">
                                                     <b>Thanh toán:</b> Tổng tiền: {booking.paymentBreakdown?.totalAmount?.toLocaleString() || booking.amount?.toLocaleString()} VNĐ |
-                                                    Đặt cọc: {booking.paymentBreakdown?.depositAmount?.toLocaleString() || 0} VNĐ ({booking.paymentBreakdown?.depositPercentage || 0}%) |
+                                                    {booking.paymentStatus === 'deposit_paid' ? (
+                                                        <>Đặt cọc: {booking.paymentBreakdown?.depositAmount?.toLocaleString() || 0} VNĐ ({booking.paymentBreakdown?.depositPercentage || 0}%) | </>
+                                                    ) : null}
                                                     Đã thanh toán: {booking.paymentBreakdown?.totalPaid?.toLocaleString() || 0} VNĐ |
                                                     Còn lại: {booking.paymentBreakdown?.remainingAmount?.toLocaleString() || 0} VNĐ
                                                 </div>

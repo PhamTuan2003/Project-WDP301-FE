@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Form from 'react-bootstrap/Form';
 import { FaCalendar, FaCalendarCheck, FaCalendarDay, FaCalendarTimes, FaMoneyCheckAlt } from "react-icons/fa";
-import { RiFileExcel2Fill } from "react-icons/ri";
 import { useSelector } from 'react-redux';
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
 import { exportBookingOrder, getAllBooking, getBookingByYear, getStatisticBooking, getStatisticService } from '../../services/ApiServices';
@@ -76,17 +75,40 @@ const Dashboard = () => {
 
     const reportBookingOrder = async () => {
         try {
-
-            let res = await exportBookingOrder(idCompany);
-            // Tạo URL và tải file về
-            const url = window.URL.createObjectURL(new Blob([res.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `YachtBooking_${month}/${year}.xls`); // Tên file khi tải về
-            document.body.appendChild(link);
-            link.click();
+            const res = await exportBookingOrder(idCompany, month, year);
+            // Nếu response là Blob và content-type đúng, tải file
+            if (res.data instanceof Blob && res.headers['content-type'] && res.headers['content-type'].includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+                const url = window.URL.createObjectURL(res.data);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `YachtBooking_${month || 'all'}_${year || 'all'}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('Export lỗi: Dữ liệu trả về không phải file Excel!');
+                console.log('Export response:', res.data, typeof res.data, res.data instanceof Blob);
+            }
         } catch (error) {
-            console.log('Export error')
+            if (error.response && error.response.data) {
+                if (error.response.data instanceof Blob) {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        alert('Export lỗi (blob): ' + reader.result);
+                    };
+                    reader.readAsText(error.response.data);
+                } else if (typeof error.response.data === 'string') {
+                    alert('Export lỗi (string): ' + error.response.data);
+                } else if (typeof error.response.data === 'object') {
+                    alert('Export lỗi (object): ' + JSON.stringify(error.response.data));
+                } else {
+                    alert('Export lỗi: Không xác định');
+                }
+            } else {
+                alert('Export lỗi: ' + error.message);
+            }
+            console.log('Export error', error)
         }
     }
     const total = Object.values(allBooking).reduce((sum, count) => sum + count, 0);
@@ -118,12 +140,7 @@ const Dashboard = () => {
                             <option value="2028">2028</option>
                         </Form.Select>
                     </div>
-                    <div className='mx-3 '>
-                        <button onClick={reportBookingOrder} className='btn btn-success d-flex'>
-                            <RiFileExcel2Fill style={{ marginRight: 5, marginTop: 5 }} />
-                            Export Booking Order
-                        </button>
-                    </div>
+                    
                 </div>
                 <div className='d-flex booking'>
                     <div style={{ backgroundColor: '#F8F0E3' }} className='child'>
@@ -135,10 +152,10 @@ const Dashboard = () => {
                     </div>
                     <div style={{ backgroundColor: '#F4FAF8' }} className='child'>
                         <div className='d-flex justify-content-between'>
-                            <h4 className='fw-bold'>{allBooking.confirmed ? allBooking.confirmed : 0}</h4>
+                            <h4 className='fw-bold'>{allBooking.rejected ? allBooking.rejected : 0}</h4>
                             <FaCalendarCheck />
                         </div>
-                        <p>Confirmed Booking</p>
+                        <p>Reject Booking</p>
                     </div>
                     <div style={{ backgroundColor: '#FBF2F2' }} className='child'>
                         <div className='d-flex justify-content-between'>
@@ -152,7 +169,7 @@ const Dashboard = () => {
                             <h4 className='fw-bold'>{allBooking.completed ? allBooking.completed : 0}</h4>
                             <FaCalendarDay />
                         </div>
-                        <p>Pending Booking</p>
+                        <p>Completed Booking</p>
                     </div>
                 </div>
                 <div style={{ backgroundColor: "#F5F6F7" }} className='d-flex revenue my-2 py-2'>

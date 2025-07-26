@@ -7,7 +7,7 @@ import ReactPaginate from 'react-paginate';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { deleteYacht, getAllLocation, getYachtByIdCompany, getYachtType } from '../../services/ApiServices';
+import { getAllLocation, getYachtByIdCompany, getYachtType, updateYachtStatus } from '../../services/ApiServices';
 import './Company.scss';
 import ModalCreateYacht from './Modal/ModalCreateYacht';
 import './ViewYacht.scss';
@@ -48,24 +48,15 @@ const ViewYacht = () => {
         }
     }
 
-    const handleDeleteYacht = async (id, name) => {
-        let confirm;
-        if (!name) {
-            confirm = window.confirm(`You Want To Show Yacht`)
-        } else {
-            confirm = window.confirm(`Delete Yacht With Name: ${name}`)
-        }
-        if (confirm) {
-            let res = await deleteYacht(id);
-            if (res.data) {
-                toast.success('Successfully');
+    const handleToggleYachtStatus = async (id, isDeleted) => {
+        let confirmMsg = isDeleted ? 'Bạn muốn ẩn du thuyền này?' : 'Bạn muốn hiển thị lại du thuyền này?';
+        if (window.confirm(confirmMsg)) {
+            let res = await updateYachtStatus(id, isDeleted);
+            if (res && res.data) {
+                toast.success(isDeleted ? 'Đã ẩn du thuyền!' : 'Đã hiển thị du thuyền!');
                 listYacht();
-                setCurrentPage(prevPage => {
-                    const maxPage = Math.ceil((yacht.length - 1) / itemsPerPage) - 1;
-                    return prevPage > maxPage ? maxPage : prevPage;
-                });
             } else {
-                toast.error('Delete Fail')
+                toast.error('Cập nhật trạng thái thất bại!');
             }
         }
     }
@@ -192,11 +183,10 @@ const ViewYacht = () => {
                                                                 <Button className="btn btn-sm btn-light" onClick={() => navigate(`/manage-schedule/${yacht._id}`)}><i className="feather-trash" /> Manage Schedule </Button>
                                                                 <Button className="btn btn-sm btn-success" onClick={() => navigate(`/manage-yacht/${yacht._id}`)}><i className="feather-check-circle" />Manage Yacht</Button>
                                                                 <Button className="btn btn-sm btn-warning" onClick={() => navigate(`/manage-room/${yacht._id}`)}><i className="feather-trash" /> Manage Room </Button>
-                                                                <Button className="btn btn-sm btn-danger" onClick={() => handleDeleteYacht(yacht._id, yacht.name)}><i className="feather-trash" /> Hidden Yacht </Button>
+                                                                <Button className="btn btn-sm btn-danger" onClick={() => handleToggleYachtStatus(yacht._id, true)}><i className="feather-trash" /> Hidden Yacht </Button>
                                                             </>
                                                             :
-                                                            <Button className="btn btn-sm btn-success" onClick={() => handleDeleteYacht(yacht._id)}><i className="feather-trash" /> Show Yacht </Button>
-
+                                                            <Button className="btn btn-sm btn-success" onClick={() => handleToggleYachtStatus(yacht._id, false)}><i className="feather-trash" /> Show Yacht </Button>
                                                     }
 
                                                 </div>

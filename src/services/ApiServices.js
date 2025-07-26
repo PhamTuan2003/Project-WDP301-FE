@@ -1,7 +1,7 @@
 import axios from "../utils/axiosClient";
 
 export const deleteYacht = (idYacht) => {
-  return axios.delete(`/api/v1/yachts/delete/${idYacht}`);
+  return axios.put(`/api/v1/yachts/delete/${idYacht}`, {isDeleted: false});
 };
 
 export const getAllLocation = () => {
@@ -121,14 +121,12 @@ export const updateYacht = (
   return axios.put(`/api/v1/yachts/updateYacht/${idYacht}`, data);
 };
 
-export const exportBookingOrder = (idCompany, year, month) => {
-  return axios.get(`/api/companies/exportBooking/excel/${idCompany}`, {
-    params: {
-      month: "7",
-      year: "2024",
-    },
-    responseType: "blob", // Để xử lý dữ liệu dưới dạng binary
-  });
+export const exportBookingOrder = (idCompany, month, year) => {
+    let params = [];
+    if (month) params.push(`month=${month}`);
+    if (year) params.push(`year=${year}`);
+    const query = params.length ? `?${params.join('&')}` : '';
+    return axios.get(`/api/v1/companies/export/${idCompany}${query}`, { responseType: 'blob' });
 };
 
 export const getAllBooking = (idCompany, month, year) => {
@@ -353,3 +351,8 @@ export const updateCompanyCalendarSchedule = (id, data) => {
 export const deleteCompanyCalendarSchedule = (id) => {
   return axios.delete(`/company/calendar-schedules/${id}`);
 };
+
+// Cập nhật trạng thái ẩn/hiện (isDeleted) cho du thuyền
+export const updateYachtStatus = (idYacht, isDeleted) => {
+    return axios.put(`/api/v1/yachts/delete/${idYacht}`, { isDeleted });
+}

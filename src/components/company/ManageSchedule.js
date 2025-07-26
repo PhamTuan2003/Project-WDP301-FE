@@ -207,14 +207,6 @@ const ManageSchedule = () => {
                                             >
                                                 Edit
                                             </Button>
-                                            <Button
-                                                variant="danger"
-                                                className="mx-2"
-                                                onClick={() => handleDeleteScheduleYacht(schedule)}
-                                                disabled={isPastDate(schedule.scheduleId.endDate)}
-                                            >
-                                                Delete
-                                            </Button>
                                         </td>
                                     </tr>
                                 )

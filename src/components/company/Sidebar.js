@@ -1,3 +1,4 @@
+import { AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
 import { FaShip } from "react-icons/fa6";
 import { ImProfile } from "react-icons/im";
 import { MdDashboard } from "react-icons/md";
@@ -8,8 +9,7 @@ import "react-pro-sidebar/dist/css/styles.css";
 import { useDispatch } from "react-redux";
 import { Link, NavLink } from "react-router-dom";
 import sidebarBg from "../../assets/sidebar.jpg";
-import { doLogout } from "../../redux/actions/userAction";
-import { AiOutlineMoon, AiOutlineSun } from "react-icons/ai";
+import { doLogout } from "../../redux/actions/UserAction";
 
 const Sidebar = (props) => {
   const { collapsed, toggled, handleToggleSidebar, toggleTheme, mode } = props;
